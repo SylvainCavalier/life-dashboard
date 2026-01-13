@@ -1,9 +1,9 @@
 class ApplicationController < ActionController::Base
   # Include Pundit for authorization
   include Pundit::Authorization
-  
-  # Include Pagy for pagination
-  include Pagy::Backend
+
+  # Include Pagy for pagination (v43+)
+  include Pagy::Method
   
   # Protect from forgery with exception
   protect_from_forgery with: :exception

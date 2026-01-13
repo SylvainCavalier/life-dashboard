@@ -3,7 +3,7 @@ source "https://rubygems.org"
 ruby "3.3.5"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.1.5", ">= 7.1.5.1"
+gem "rails", "~> 8.0.0"
 
 # Database PostgreSQL
 gem "pg"
@@ -46,7 +46,7 @@ gem "lograge"
 gem "friendly_id", "~> 5.5" # Friendly URLs formatting
 gem "meta-tags" # SEO tags
 gem "paper_trail", "~> 16.0" # Version control for models
-gem "pagy" # Light Pagination
+gem "pagy", "~> 43.0" # Light Pagination
 gem "pg_search" # Full-text search for models
 gem "image_processing", "~> 1.2" # Image processing for Active Storage
 
@@ -66,6 +66,8 @@ group :development, :test do
   gem "brakeman", require: false # Brakeman for security
   gem "bundler-audit", require: false # Bundler audit for security
   gem "annotate" # Annotate models with schema inside the model file
+  gem "rubocop", require: false # Ruby linter
+  gem "rubocop-rails", require: false # Rails-specific RuboCop rules
 end
 
 group :development do

@@ -14,50 +14,15 @@ export function useApi() {
   const isLoading = (operation) => computed(() => apiStore.isLoadingOperation(operation))
 
   // API methods
-  const get = async (url, config) => {
-    try {
-      const response = await apiStore.get(url, config)
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  }
+  const get = async (url, config) => (await apiStore.get(url, config)).data
 
-  const post = async (url, data, config) => {
-    try {
-      const response = await apiStore.post(url, data, config)
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  }
+  const post = async (url, data, config) => (await apiStore.post(url, data, config)).data
 
-  const put = async (url, data, config) => {
-    try {
-      const response = await apiStore.put(url, data, config)
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  }
+  const put = async (url, data, config) => (await apiStore.put(url, data, config)).data
 
-  const patch = async (url, data, config) => {
-    try {
-      const response = await apiStore.patch(url, data, config)
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  }
+  const patch = async (url, data, config) => (await apiStore.patch(url, data, config)).data
 
-  const del = async (url, config) => {
-    try {
-      const response = await apiStore.delete(url, config)
-      return response.data
-    } catch (error) {
-      throw error
-    }
-  }
+  const del = async (url, config) => (await apiStore.delete(url, config)).data
 
   // Utility methods
   const clearError = () => apiStore.clearError()

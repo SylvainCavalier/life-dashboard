@@ -44,3 +44,6 @@ node_modules/.vite
 # https://vitejs.dev/guide/env-and-mode.html#env-files
 *.local
 
+# Demo mode initializer (should not be deployed to production)
+/config/initializers/disable_db_checks.rb
+

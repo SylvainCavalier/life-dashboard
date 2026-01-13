@@ -22,13 +22,14 @@ Open http://localhost:3000 to see the dashboard with Axios + Pinia examples!
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Ruby on Rails 7.1.x** with PostgreSQL
+- **Ruby on Rails 8.0** with PostgreSQL
 - **Good Job** for background jobs (no Redis needed)
 - **Devise** for authentication (ready to configure)
 - **Pundit** for authorization
-- **Pagy** for pagination
+- **Pagy 43** for pagination (simplified API)
 
-- **Vue 3.4+** with Composition API
+### Frontend
+- **Vue 3.5** with Composition API
 - **Vite 5** for lightning-fast builds
 - **Pinia** for state management
 - **Axios** pre-configured with CSRF
@@ -52,12 +53,14 @@ Open http://localhost:3000 to see the dashboard with Axios + Pinia examples!
 - **Background jobs** with Good Job (PostgreSQL-based)
 - **Email preview** in development (Letter Opener)
 
-### 🔧 Developer Experience  
+### 🔧 Developer Experience
 - **Hot-reload** with Vite during development
 - **Vue DevTools** support with Pinia stores
 - **API-first** approach with dedicated composables
 - **Error handling** and loading states built-in
 - **Clean architecture** with stores, composables, and components
+- **ESLint** for Vue/JS linting (relaxed config)
+- **RuboCop** for Ruby linting (relaxed config)
 
 ### 🛡️ Production Ready
 - **Security headers** configured (CSP, HSTS, etc.)
@@ -101,6 +104,16 @@ rails server
 ```
 
 📖 **Detailed Setup:** See [README_GEMS_SETUP.md](README_GEMS_SETUP.md) and [README_DEVISE_INTEGRATION.md](README_DEVISE_INTEGRATION.md)
+
+### Linting
+
+```bash
+npm run lint              # ESLint for Vue/JS
+npm run lint:fix          # ESLint with auto-fix
+bundle exec rubocop       # RuboCop for Ruby
+bundle exec rubocop -a    # RuboCop with auto-fix
+```
+
 ## 📁 Project Structure
 
 ```
@@ -130,7 +143,7 @@ app/
 │   └── styles/
 │       └── application.css        # Tailwind base
 ├── helpers/
-│   └── application_helper.rb      # Pagy::Frontend included
+│   └── application_helper.rb      # App helpers
 └── views/
     └── spa/
         └── index.html.erb         # Vue app mount point
@@ -138,12 +151,16 @@ app/
 config/
 ├── initializers/
 │   ├── good_job.rb               # Background jobs config
-│   ├── pagy.rb                   # Pagination config  
+│   ├── pagy.rb                   # Pagination config
 │   ├── rack_attack.rb            # Rate limiting rules
 │   ├── secure_headers.rb         # Security headers + CSP
 │   └── disable_db_checks.rb     # Demo mode (remove for production)
 └── database.yml                 # PostgreSQL configuration
+
+eslint.config.js                  # ESLint config (Vue/JS)
+.rubocop.yml                      # RuboCop config (Ruby)
 ```
+
 ## 🔐 Authentication & Security
 
 This boilerplate includes **Devise** pre-configured but not installed by default. When you're ready:

@@ -136,7 +136,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div class="text-center">
             <div class="text-3xl mb-2">⚡</div>
-            <h3 class="font-semibold text-gray-900 mb-1">Rails 7.1.x</h3>
+            <h3 class="font-semibold text-gray-900 mb-1">Rails 8.0</h3>
             <p class="text-sm text-gray-600">Modern Ruby framework</p>
           </div>
           <div class="text-center">

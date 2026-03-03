@@ -58,8 +58,11 @@ class Rack::Attack
   end
 end
 
-# Enable Rack::Attack logging
+# Enable Rack::Attack logging (only for throttles and blocks, not safelists)
 ActiveSupport::Notifications.subscribe('rack.attack') do |name, start, finish, request_id, payload|
   req = payload[:request]
-  Rails.logger.warn "[Rack::Attack] #{req.ip} #{req.request_method} #{req.fullpath} blocked: #{payload[:match_type]} #{payload[:match_discriminator]}"
+  match_type = payload[:match_type]
+  next if match_type == :safelist
+
+  Rails.logger.warn "[Rack::Attack] #{req.ip} #{req.request_method} #{req.fullpath} #{match_type}: #{payload[:match_discriminator]}"
 end

@@ -32,16 +32,16 @@ rails db:migrate
 
 Then uncomment the `before_action` lines in `ApplicationController`.
 
-### 2. Annotate (Automatic model documentation)
+### 2. AnnotateRb (Automatic model documentation)
 
 After creating your first models:
 
 ```bash
 # Generate configuration
-rails generate annotate:install
+rails generate annotate_rb:install
 
 # Annotate all existing models
-bundle exec annotate
+bundle exec annotaterb models
 ```
 
 ### 3. Good Job (Job tables)
@@ -129,7 +129,7 @@ To test the boilerplate immediately, see instructions in [README.md](README.md) 
 4. Install Good Job: `rails generate good_job:install && rails db:migrate`  
 5. Install Paper Trail if needed
 6. Generate your models
-7. Install Annotate: `rails generate annotate:install && rails annotate`
+7. Install AnnotateRb: `rails generate annotate_rb:install && bundle exec annotaterb models`
 8. Configure Friendly ID on your models if needed
 
 ## Important Notes

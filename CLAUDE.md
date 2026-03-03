@@ -4,7 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
+**This repository is a boilerplate / starter template**, meant to be cloned as a starting point for new projects. It must remain generic and reusable.
+
 Rails 8.0 monolith with Vue 3 SPA frontend. Single domain architecture where Vue handles all UI and Rails serves as API backend. Uses Vite for frontend build tooling.
+
+## Important: Boilerplate Rules
+
+- **Do NOT run `bundle install` or `npm install`** unless explicitly asked. Dependency changes should only update the Gemfile/package.json, not the lock files.
+- **Do NOT run database commands** (`db:create`, `db:migrate`, `db:seed`, etc.) — there is no database to operate on.
+- **Do NOT run the dev server, tests, or linters** unless explicitly asked.
+- **Keep everything generic**: avoid adding project-specific code, hardcoded values, or opinionated configurations that would limit reuse.
 
 ## Common Commands
 
@@ -30,10 +39,10 @@ npm install          # Node packages
 ### Database
 ```bash
 rails db:create db:migrate
-bundle exec annotate  # Update model annotations after migrations
+bundle exec annotaterb models  # Update model annotations after migrations
 ```
 
-### Testing
+### Testing (Minitest)
 ```bash
 rails test                          # Run all tests
 rails test test/path/to/file.rb    # Run single test file
@@ -67,8 +76,8 @@ bundle exec bundler-audit  # Gem vulnerability check
 - **plugins/axios.js** - Axios instance with CSRF and auth token handling
 - **stores/** - Pinia stores (auth, api, counter)
 - **composables/** - Reusable Vue composition functions (useApi, useAuth)
-- **router/** - Vue Router config and route definitions
-- **pages/** - Page components
+- **router/** - Vue Router config with navigation guards and route definitions
+- **pages/** - Page components (Dashboard, NotFound)
 - **components/** - Reusable Vue components
 
 ### Backend Patterns

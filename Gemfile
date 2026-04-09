@@ -46,6 +46,13 @@ gem "good_job"
 # Better logs
 gem "lograge"
 
+# PDF generation
+gem "prawn", "~> 2.5"
+gem "prawn-table", "~> 0.2"
+
+# ICS calendar feed
+gem "icalendar", "~> 2.10"
+
 # Content / SEO / Search / Media
 gem "friendly_id", "~> 5.5" # Friendly URLs formatting
 gem "meta-tags" # SEO tags
@@ -53,6 +60,7 @@ gem "paper_trail", "~> 16.0" # Version control for models
 gem "pagy", "~> 43.0" # Light Pagination
 gem "pg_search" # Full-text search for models
 gem "image_processing", "~> 1.2" # Image processing for Active Storage
+gem "aws-sdk-s3", require: false # S3-compatible storage (OVH Object Storage)
 
 # Security / Auth / Authorization
 gem "devise" # Auth users

@@ -1,18 +1,16 @@
 # Good Job configuration
 Rails.application.configure do
-  # Use Good Job for Active Job in all environments (disabled in boilerplate until DB is set up)
-  # Uncomment the line below when you have set up your database
-  # config.active_job.queue_adapter = :good_job
+  config.active_job.queue_adapter = :good_job
 
   # Configure Good Job to use PostgreSQL for job storage
   # Jobs will be stored in the same database as your application
   config.good_job.enable_cron = true
   config.good_job.cron = {
-    # Example cron job (commented out)
-    # cleanup_job: {
-    #   cron: "0 0 * * *", # Daily at midnight
-    #   class: "CleanupJob"
-    # }
+    langochat_sync: {
+      cron: "0 22 * * *",
+      class: "LangochatSyncJob",
+      description: "Synchronise les sessions Langochat quotidiennement a 22h"
+    }
   }
 
   # Preserve job records for debugging

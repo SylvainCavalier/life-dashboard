@@ -9,11 +9,12 @@ local:
 # OVH Object Storage (S3-compatible)
 ovh:
   service: S3
-  access_key_id: <%= ENV["OVH_S3_ACCESS_KEY_ID"] %>
-  secret_access_key: <%= ENV["OVH_S3_SECRET_ACCESS_KEY"] %>
+  access_key_id: <%= ENV["OVH_S3_ACCESS_KEY"] %>
+  secret_access_key: <%= ENV["OVH_S3_SECRET_KEY"] %>
   region: <%= ENV.fetch("OVH_S3_REGION", "gra") %>
   bucket: <%= ENV["OVH_S3_BUCKET"] %>
   endpoint: <%= ENV["OVH_S3_ENDPOINT"] %>
+  force_path_style: true
 
 # Remember not to checkin your GCS keyfile to a repository
 # google:

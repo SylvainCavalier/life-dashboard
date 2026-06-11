@@ -1,9 +1,29 @@
+# == Schema Information
+#
+# Table name: budget_entries
+#
+#  id         :bigint           not null, primary key
+#  amount     :decimal(10, 2)   not null
+#  category   :string
+#  entry_type :string           not null
+#  month      :integer
+#  name       :string           not null
+#  recurrence :string           default("fixed"), not null
+#  year       :integer
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+# Indexes
+#
+#  index_budget_entries_on_entry_type_and_recurrence  (entry_type,recurrence)
+#  index_budget_entries_on_year_and_month             (year,month)
+#
 class BudgetEntry < ApplicationRecord
   ENTRY_TYPES = %w[income expense].freeze
   RECURRENCES = %w[fixed variable].freeze
   CATEGORIES = %w[
-    salaire freelance loyer_percu investissement autre_revenu
-    loyer credit assurance abonnement impot taxe_fonciere charge
+    salaire freelance loyer_percu investissement reseaux_sociaux cours autre_revenu
+    loyer credit assurance abonnement impot taxe_fonciere charge frais
     transport sante education autre_depense
   ].freeze
 

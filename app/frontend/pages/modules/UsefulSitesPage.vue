@@ -197,6 +197,7 @@ const categories = [
   { value: 'administratif', label: 'Administratif' },
   { value: 'sante', label: 'Sante' },
   { value: 'langues', label: 'Langues' },
+  { value: 'juridique', label: 'Juridique' },
 ]
 
 const categoryLabels = Object.fromEntries(categories.map(c => [c.value, c.label]))
@@ -210,6 +211,7 @@ const categoryColors = {
   administratif: 'bg-blue-100 text-blue-700',
   sante: 'bg-emerald-100 text-emerald-700',
   langues: 'bg-amber-100 text-amber-700',
+  juridique: 'bg-slate-100 text-slate-700',
 }
 
 const categoryDots = {
@@ -221,6 +223,7 @@ const categoryDots = {
   administratif: 'bg-blue-500',
   sante: 'bg-emerald-500',
   langues: 'bg-amber-500',
+  juridique: 'bg-slate-500',
 }
 
 const defaultForm = {

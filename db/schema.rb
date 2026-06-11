@@ -10,9 +10,37 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_09_212326) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
 
   create_table "budget_entries", force: :cascade do |t|
     t.string "name", null: false
@@ -24,6 +52,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_212326) do
     t.integer "year"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "notes"
     t.index ["entry_type", "recurrence"], name: "index_budget_entries_on_entry_type_and_recurrence"
     t.index ["year", "month"], name: "index_budget_entries_on_year_and_month"
   end
@@ -84,6 +113,64 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_212326) do
     t.string "social_youtube"
     t.index ["last_name", "first_name"], name: "index_contacts_on_last_name_and_first_name"
     t.index ["relationship_type"], name: "index_contacts_on_relationship_type"
+  end
+
+  create_table "cv_experiences", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "company", null: false
+    t.string "location"
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "start_year", null: false
+    t.integer "end_year"
+    t.index ["position"], name: "index_cv_experiences_on_position"
+    t.index ["start_year"], name: "index_cv_experiences_on_start_year"
+  end
+
+  create_table "cv_formations", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "institution"
+    t.string "category", default: "diplome", null: false
+    t.string "location"
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "start_year"
+    t.integer "end_year"
+    t.index ["category"], name: "index_cv_formations_on_category"
+    t.index ["position"], name: "index_cv_formations_on_position"
+    t.index ["start_year"], name: "index_cv_formations_on_start_year"
+  end
+
+  create_table "cv_interests", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_cv_interests_on_position"
+  end
+
+  create_table "cv_settings", force: :cascade do |t|
+    t.string "default_template", default: "classic", null: false
+    t.string "default_color", default: "indigo", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "pitch"
+  end
+
+  create_table "cv_skills", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "category", default: "autre", null: false
+    t.string "level"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_cv_skills_on_category"
+    t.index ["position"], name: "index_cv_skills_on_position"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -490,6 +577,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_212326) do
     t.index ["category"], name: "index_useful_sites_on_category"
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "companies"
   add_foreign_key "invoices", "quotes"

@@ -25,6 +25,26 @@ Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère
 - Toujours demander confirmation avant de lancer `db:migrate` ou toute commande destructive.
 - Le projet est en français (UI, commentaires) sauf le code (variables, méthodes en anglais).
 
+## Subagent Alfred (intendant)
+
+Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.claude/agents/alfred.md`), via les skills `life-dashboard` (lecture) et `life-dashboard-write` (écriture limitée). Alfred est l'intendant personnel de Sylvain : il gère agenda, mails et toutes les opérations CRUD courantes sur le dashboard.
+
+**Implications pour toute évolution du code de ce projet :**
+
+1. **Nouveau modèle ajouté ?** Considère :
+   - L'ajouter à la whitelist du skill lecture (`~/.claude/skills/life-dashboard/SKILL.md` + `scripts/query.rb`) pour qu'Alfred puisse le lire.
+   - Décider s'il rejoint la whitelist du skill écriture (`life-dashboard-write/SKILL.md` + `scripts/write.rb`). Critères : modèle low-stakes, attributs sans risque financier/sécurité direct. Modèles à risque (Invoice, Quote, PasswordEntry, HealthProfile…) restent exclus.
+
+2. **Nouveau champ ajouté à un modèle whitelisté ?** Mets à jour la liste des `allowed attributes` dans `life-dashboard-write/SKILL.md` si tu veux qu'Alfred puisse l'écrire. Pour la lecture, le skill expose tous les champs non explicitement exclus.
+
+3. **Champ sensible ajouté ?** Pense à l'exclure côté skill lecture (`scripts/query.rb`, section `EXCLUDED_FIELDS`).
+
+4. **Renommage d'un modèle ou d'un champ ?** Mets à jour les deux skills, sinon Alfred plantera silencieusement.
+
+5. **Nouvelle fonctionnalité métier ?** Si elle peut être pilotée depuis l'extérieur (ex: génération de PDF, envoi de mail), pense à exposer un point d'entrée scriptable utilisable par Alfred.
+
+→ Quand tu termines une feature, fais le tour de cette checklist avant de considérer le travail comme fini.
+
 ## Common Commands
 
 ### Development

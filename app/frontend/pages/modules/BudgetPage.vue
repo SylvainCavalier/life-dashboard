@@ -218,122 +218,238 @@
             </div>
           </div>
 
-          <!-- Tableau des entrees fixes -->
+          <!-- Entrees fixes -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Entrees fixes (mensuelles)</h3>
-            <div v-if="fixedEntries.length === 0" class="text-center text-gray-400 py-6 text-sm">
-              Aucune entree fixe
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Entrees fixes (mensuelles)</h3>
+              <router-link
+                v-if="monthSubscriptions.length > 0"
+                to="/subscriptions"
+                class="text-xs text-indigo-600 hover:text-indigo-800"
+              >
+                Gerer les abonnements →
+              </router-link>
             </div>
-            <table v-else class="w-full">
-              <thead>
-                <tr class="border-b border-gray-200 text-left text-sm text-gray-500">
-                  <th class="pb-3 font-medium">Nom</th>
-                  <th class="pb-3 font-medium">Type</th>
-                  <th class="pb-3 font-medium">Categorie</th>
-                  <th class="pb-3 font-medium text-right">Montant</th>
-                  <th class="pb-3 font-medium w-24"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="entry in fixedEntries"
-                  :key="entry.id"
-                  class="border-b border-gray-100 hover:bg-gray-50"
-                >
-                  <td class="py-3 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
-                  <td class="py-3 text-sm">
-                    <span
-                      class="px-2 py-0.5 rounded-full text-xs font-medium"
-                      :class="entry.entry_type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                    >
-                      {{ entry.entry_type === 'income' ? 'Revenu' : 'Depense' }}
-                    </span>
-                  </td>
-                  <td class="py-3 text-sm">
-                    <span v-if="entry.category" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="categoryBadgeClass(entry.category)">
-                      {{ categoryLabel(entry.category) }}
-                    </span>
-                    <span v-else class="text-gray-400">—</span>
-                  </td>
-                  <td class="py-3 text-sm text-right font-medium" :class="entry.entry_type === 'income' ? 'text-green-700' : 'text-red-700'">
-                    {{ entry.entry_type === 'income' ? '+' : '-' }}{{ formatMoney(entry.amount) }}
-                  </td>
-                  <td class="py-3 text-right flex gap-2 justify-end">
-                    <button @click="editEntry(entry)" class="text-gray-400 hover:text-indigo-600 text-sm" title="Modifier">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600 text-sm" title="Supprimer">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+            <!-- Revenus fixes -->
+            <div class="rounded-lg border border-green-100 overflow-hidden mb-4">
+              <div class="bg-green-50 px-4 py-2 flex items-center justify-between border-b border-green-100">
+                <span class="text-sm font-medium text-green-800">Revenus fixes</span>
+                <span class="text-sm font-semibold text-green-900">+{{ formatMoney(monthlyFixedIncome) }}</span>
+              </div>
+              <div v-if="fixedIncomeEntries.length === 0" class="text-center text-gray-400 py-4 text-sm">
+                Aucun revenu fixe
+              </div>
+              <table v-else class="w-full">
+                <tbody>
+                  <tr
+                    v-for="entry in fixedIncomeEntries"
+                    :key="entry.id"
+                    class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td class="py-2.5 px-4 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
+                    <td class="py-2.5 px-4 text-sm">
+                      <span v-if="entry.category" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="categoryBadgeClass(entry.category)">
+                        {{ categoryLabel(entry.category) }}
+                      </span>
+                      <span v-else class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-sm text-right font-medium text-green-700">
+                      +{{ formatMoney(entry.amount) }}
+                    </td>
+                    <td class="py-2.5 px-4 text-right w-24">
+                      <div class="flex gap-2 justify-end">
+                        <button @click="editEntry(entry)" class="text-gray-400 hover:text-indigo-600" title="Modifier">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600" title="Supprimer">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Depenses fixes -->
+            <div class="rounded-lg border border-red-100 overflow-hidden">
+              <div class="bg-red-50 px-4 py-2 flex items-center justify-between border-b border-red-100">
+                <span class="text-sm font-medium text-red-800">Depenses fixes</span>
+                <span class="text-sm font-semibold text-red-900">-{{ formatMoney(monthlyFixedExpense) }}</span>
+              </div>
+              <div v-if="fixedExpenseEntries.length === 0 && monthSubscriptions.length === 0" class="text-center text-gray-400 py-4 text-sm">
+                Aucune depense fixe
+              </div>
+              <table v-else class="w-full">
+                <tbody>
+                  <tr
+                    v-for="entry in fixedExpenseEntries"
+                    :key="entry.id"
+                    class="border-b border-gray-100 hover:bg-gray-50"
+                  >
+                    <td class="py-2.5 px-4 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
+                    <td class="py-2.5 px-4 text-sm">
+                      <span v-if="entry.category" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="categoryBadgeClass(entry.category)">
+                        {{ categoryLabel(entry.category) }}
+                      </span>
+                      <span v-else class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-sm text-right font-medium text-red-700">
+                      -{{ formatMoney(entry.amount) }}
+                    </td>
+                    <td class="py-2.5 px-4 text-right w-24">
+                      <div class="flex gap-2 justify-end">
+                        <button @click="editEntry(entry)" class="text-gray-400 hover:text-indigo-600" title="Modifier">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600" title="Supprimer">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Lignes auto: abonnements -->
+                  <tr
+                    v-for="sub in monthSubscriptions"
+                    :key="'sub-' + sub.id"
+                    class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 bg-blue-50/30"
+                  >
+                    <td class="py-2.5 px-4 text-sm text-gray-900 font-medium">
+                      <span class="inline-flex items-center gap-2">
+                        {{ sub.name }}
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 uppercase tracking-wider">Auto</span>
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-4 text-sm">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Abonnement</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-sm text-right font-medium text-red-700">
+                      -{{ formatMoney(subscriptionMonthlyCost(sub)) }}
+                      <span v-if="sub.billing_cycle === 'yearly'" class="text-xs text-gray-400 ml-1">(annuel)</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-right w-24">
+                      <router-link
+                        to="/subscriptions"
+                        class="text-gray-400 hover:text-indigo-600 inline-block"
+                        title="Modifier dans la page Abonnements"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </router-link>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <!-- Tableau des entrees variables du mois -->
+          <!-- Entrees variables du mois -->
           <div>
             <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
               Entrees variables — {{ monthName(selectedMonth) }} {{ selectedYear }}
             </h3>
-            <div v-if="monthVariableEntries.length === 0" class="text-center text-gray-400 py-6 text-sm">
-              Aucune entree variable pour ce mois
+
+            <!-- Revenus variables -->
+            <div class="rounded-lg border border-emerald-100 overflow-hidden mb-4">
+              <div class="bg-emerald-50 px-4 py-2 flex items-center justify-between border-b border-emerald-100">
+                <span class="text-sm font-medium text-emerald-800">Revenus variables</span>
+                <span class="text-sm font-semibold text-emerald-900">+{{ formatMoney(monthlyVariableIncome) }}</span>
+              </div>
+              <div v-if="monthVariableIncomeEntries.length === 0" class="text-center text-gray-400 py-4 text-sm">
+                Aucun revenu variable pour ce mois
+              </div>
+              <table v-else class="w-full">
+                <tbody>
+                  <tr
+                    v-for="entry in monthVariableIncomeEntries"
+                    :key="entry.id"
+                    class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td class="py-2.5 px-4 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
+                    <td class="py-2.5 px-4 text-sm">
+                      <span v-if="entry.category" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="categoryBadgeClass(entry.category)">
+                        {{ categoryLabel(entry.category) }}
+                      </span>
+                      <span v-else class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-sm text-gray-500 max-w-xs truncate">{{ entry.notes || '—' }}</td>
+                    <td class="py-2.5 px-4 text-sm text-right font-medium text-green-700">
+                      +{{ formatMoney(entry.amount) }}
+                    </td>
+                    <td class="py-2.5 px-4 text-right w-24">
+                      <div class="flex gap-2 justify-end">
+                        <button @click="editEntry(entry)" class="text-gray-400 hover:text-indigo-600" title="Modifier">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600" title="Supprimer">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <table v-else class="w-full">
-              <thead>
-                <tr class="border-b border-gray-200 text-left text-sm text-gray-500">
-                  <th class="pb-3 font-medium">Nom</th>
-                  <th class="pb-3 font-medium">Type</th>
-                  <th class="pb-3 font-medium">Categorie</th>
-                  <th class="pb-3 font-medium">Notes</th>
-                  <th class="pb-3 font-medium text-right">Montant</th>
-                  <th class="pb-3 font-medium w-24"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="entry in monthVariableEntries"
-                  :key="entry.id"
-                  class="border-b border-gray-100 hover:bg-gray-50"
-                >
-                  <td class="py-3 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
-                  <td class="py-3 text-sm">
-                    <span
-                      class="px-2 py-0.5 rounded-full text-xs font-medium"
-                      :class="entry.entry_type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                    >
-                      {{ entry.entry_type === 'income' ? 'Revenu' : 'Depense' }}
-                    </span>
-                  </td>
-                  <td class="py-3 text-sm">
-                    <span v-if="entry.category" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="categoryBadgeClass(entry.category)">
-                      {{ categoryLabel(entry.category) }}
-                    </span>
-                    <span v-else class="text-gray-400">—</span>
-                  </td>
-                  <td class="py-3 text-sm text-gray-500 max-w-xs truncate">{{ entry.notes || '—' }}</td>
-                  <td class="py-3 text-sm text-right font-medium" :class="entry.entry_type === 'income' ? 'text-green-700' : 'text-red-700'">
-                    {{ entry.entry_type === 'income' ? '+' : '-' }}{{ formatMoney(entry.amount) }}
-                  </td>
-                  <td class="py-3 text-right flex gap-2 justify-end">
-                    <button @click="editEntry(entry)" class="text-gray-400 hover:text-indigo-600 text-sm" title="Modifier">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600 text-sm" title="Supprimer">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+            <!-- Depenses variables -->
+            <div class="rounded-lg border border-orange-100 overflow-hidden">
+              <div class="bg-orange-50 px-4 py-2 flex items-center justify-between border-b border-orange-100">
+                <span class="text-sm font-medium text-orange-800">Depenses variables</span>
+                <span class="text-sm font-semibold text-orange-900">-{{ formatMoney(monthlyVariableExpense) }}</span>
+              </div>
+              <div v-if="monthVariableExpenseEntries.length === 0" class="text-center text-gray-400 py-4 text-sm">
+                Aucune depense variable pour ce mois
+              </div>
+              <table v-else class="w-full">
+                <tbody>
+                  <tr
+                    v-for="entry in monthVariableExpenseEntries"
+                    :key="entry.id"
+                    class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td class="py-2.5 px-4 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
+                    <td class="py-2.5 px-4 text-sm">
+                      <span v-if="entry.category" class="px-2 py-0.5 rounded-full text-xs font-medium" :class="categoryBadgeClass(entry.category)">
+                        {{ categoryLabel(entry.category) }}
+                      </span>
+                      <span v-else class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-sm text-gray-500 max-w-xs truncate">{{ entry.notes || '—' }}</td>
+                    <td class="py-2.5 px-4 text-sm text-right font-medium text-red-700">
+                      -{{ formatMoney(entry.amount) }}
+                    </td>
+                    <td class="py-2.5 px-4 text-right w-24">
+                      <div class="flex gap-2 justify-end">
+                        <button @click="editEntry(entry)" class="text-gray-400 hover:text-indigo-600" title="Modifier">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600" title="Supprimer">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </template>
 
@@ -423,7 +539,7 @@
                   <td class="py-3 text-right text-green-600">{{ formatMoney(monthlyFixedIncome * 12) }}</td>
                   <td class="py-3 text-right text-emerald-600">{{ formatMoney(annualVariableIncomeTotal) }}</td>
                   <td class="py-3 text-right text-green-700">{{ formatMoney(annualTotalIncome) }}</td>
-                  <td class="py-3 text-right text-red-500">{{ formatMoney(monthlyFixedExpense * 12) }}</td>
+                  <td class="py-3 text-right text-red-500">{{ formatMoney(annualFixedExpenseTotal) }}</td>
                   <td class="py-3 text-right text-orange-500">{{ formatMoney(annualVariableExpenseTotal) }}</td>
                   <td class="py-3 text-right text-red-700">{{ formatMoney(annualTotalExpense) }}</td>
                   <td class="py-3 text-right" :class="annualBalance >= 0 ? 'text-green-700' : 'text-red-700'">
@@ -444,10 +560,12 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 
-const { useCrud, get } = useApi()
+const { useCrud } = useApi()
 const { list, create, update, destroy } = useCrud('budget_entries')
+const { list: listSubscriptions } = useCrud('subscriptions')
 
 const entries = ref([])
+const subscriptions = ref([])
 const showForm = ref(false)
 const editingId = ref(null)
 const activeView = ref('monthly')
@@ -473,6 +591,8 @@ const incomeCategories = [
   { value: 'freelance', label: 'Freelance' },
   { value: 'loyer_percu', label: 'Loyer percu' },
   { value: 'investissement', label: 'Investissement' },
+  { value: 'reseaux_sociaux', label: 'Reseaux sociaux' },
+  { value: 'cours', label: 'Cours' },
   { value: 'autre_revenu', label: 'Autre revenu' },
 ]
 
@@ -484,6 +604,7 @@ const expenseCategories = [
   { value: 'impot', label: 'Impots' },
   { value: 'taxe_fonciere', label: 'Taxe fonciere' },
   { value: 'charge', label: 'Charges' },
+  { value: 'frais', label: 'Frais' },
   { value: 'transport', label: 'Transport' },
   { value: 'sante', label: 'Sante' },
   { value: 'education', label: 'Education' },
@@ -498,6 +619,8 @@ const categoryColors = {
   freelance: 'bg-emerald-100 text-emerald-700',
   loyer_percu: 'bg-teal-100 text-teal-700',
   investissement: 'bg-cyan-100 text-cyan-700',
+  reseaux_sociaux: 'bg-sky-100 text-sky-700',
+  cours: 'bg-purple-100 text-purple-700',
   autre_revenu: 'bg-lime-100 text-lime-700',
   loyer: 'bg-red-100 text-red-700',
   credit: 'bg-rose-100 text-rose-700',
@@ -506,6 +629,7 @@ const categoryColors = {
   impot: 'bg-orange-100 text-orange-700',
   taxe_fonciere: 'bg-amber-100 text-amber-700',
   charge: 'bg-pink-100 text-pink-700',
+  frais: 'bg-stone-100 text-stone-700',
   transport: 'bg-violet-100 text-violet-700',
   sante: 'bg-fuchsia-100 text-fuchsia-700',
   education: 'bg-indigo-100 text-indigo-700',
@@ -534,11 +658,43 @@ const formatMoney = (val) => {
   return num.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 }
 
+// --- Abonnements ---
+
+const subscriptionMonthlyCost = (sub) => {
+  const cost = parseFloat(sub.cost || 0)
+  return sub.billing_cycle === 'yearly' ? cost / 12 : cost
+}
+
+const isSubscriptionActiveFor = (sub, month, year) => {
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 0)
+  if (sub.start_date && new Date(sub.start_date) > monthEnd) return false
+  if (sub.end_date && new Date(sub.end_date) < monthStart) return false
+  return true
+}
+
+const activeSubscriptionsForMonth = (month, year) =>
+  subscriptions.value
+    .filter(s => isSubscriptionActiveFor(s, month, year))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+
+const subscriptionsExpenseForMonth = (month, year) =>
+  activeSubscriptionsForMonth(month, year).reduce((s, sub) => s + subscriptionMonthlyCost(sub), 0)
+
+const monthSubscriptions = computed(() => activeSubscriptionsForMonth(selectedMonth.value, selectedYear.value))
+
+const monthlySubscriptionExpense = computed(() =>
+  subscriptionsExpenseForMonth(selectedMonth.value, selectedYear.value)
+)
+
 // --- Donnees filtrees ---
 
 const fixedEntries = computed(() =>
   entries.value.filter(e => e.recurrence === 'fixed').sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 )
+
+const fixedIncomeEntries = computed(() => fixedEntries.value.filter(e => e.entry_type === 'income'))
+const fixedExpenseEntries = computed(() => fixedEntries.value.filter(e => e.entry_type === 'expense'))
 
 const variableEntries = computed(() =>
   entries.value.filter(e => e.recurrence === 'variable')
@@ -550,6 +706,9 @@ const monthVariableEntries = computed(() =>
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 )
 
+const monthVariableIncomeEntries = computed(() => monthVariableEntries.value.filter(e => e.entry_type === 'income'))
+const monthVariableExpenseEntries = computed(() => monthVariableEntries.value.filter(e => e.entry_type === 'expense'))
+
 // --- Calculs mensuels ---
 
 const monthlyFixedIncome = computed(() =>
@@ -558,6 +717,7 @@ const monthlyFixedIncome = computed(() =>
 
 const monthlyFixedExpense = computed(() =>
   fixedEntries.value.filter(e => e.entry_type === 'expense').reduce((s, e) => s + parseFloat(e.amount), 0)
+  + monthlySubscriptionExpense.value
 )
 
 const monthlyVariableIncome = computed(() =>
@@ -604,8 +764,13 @@ const annualVariableExpenseTotal = computed(() =>
 )
 
 const annualTotalIncome = computed(() => monthlyFixedIncome.value * 12 + annualVariableIncomeTotal.value)
-const annualTotalExpense = computed(() => monthlyFixedExpense.value * 12 + annualVariableExpenseTotal.value)
+const annualFixedExpenseTotal = computed(() => fixedExpenseEntriesTotal.value * 12 + annualSubscriptionExpenseTotal.value)
+const annualTotalExpense = computed(() => annualFixedExpenseTotal.value + annualVariableExpenseTotal.value)
 const annualBalance = computed(() => annualTotalIncome.value - annualTotalExpense.value)
+
+const fixedExpenseEntriesTotal = computed(() =>
+  fixedEntries.value.filter(e => e.entry_type === 'expense').reduce((s, e) => s + parseFloat(e.amount), 0)
+)
 
 const annualGrid = computed(() => {
   let cumulative = 0
@@ -614,8 +779,10 @@ const annualGrid = computed(() => {
     const monthVar = variableForYear.value.filter(e => e.month === m)
     const varIncome = monthVar.filter(e => e.entry_type === 'income').reduce((s, e) => s + parseFloat(e.amount), 0)
     const varExpense = monthVar.filter(e => e.entry_type === 'expense').reduce((s, e) => s + parseFloat(e.amount), 0)
+    const subExpense = subscriptionsExpenseForMonth(m, selectedYear.value)
+    const fixedExpense = fixedExpenseEntriesTotal.value + subExpense
     const totalIncome = monthlyFixedIncome.value + varIncome
-    const totalExpense = monthlyFixedExpense.value + varExpense
+    const totalExpense = fixedExpense + varExpense
     const balance = totalIncome - totalExpense
     cumulative += balance
     return {
@@ -623,7 +790,7 @@ const annualGrid = computed(() => {
       fixedIncome: monthlyFixedIncome.value,
       variableIncome: varIncome,
       totalIncome,
-      fixedExpense: monthlyFixedExpense.value,
+      fixedExpense,
       variableExpense: varExpense,
       totalExpense,
       balance,
@@ -631,6 +798,11 @@ const annualGrid = computed(() => {
     }
   })
 })
+
+const annualSubscriptionExpenseTotal = computed(() =>
+  Array.from({ length: 12 }, (_, i) => subscriptionsExpenseForMonth(i + 1, selectedYear.value))
+    .reduce((a, b) => a + b, 0)
+)
 
 // --- Navigation ---
 
@@ -661,6 +833,14 @@ const goToMonth = (month) => {
 
 const fetchEntries = async () => {
   entries.value = await list()
+}
+
+const fetchSubscriptions = async () => {
+  subscriptions.value = await listSubscriptions()
+}
+
+const fetchAll = async () => {
+  await Promise.all([fetchEntries(), fetchSubscriptions()])
 }
 
 const openForm = () => {
@@ -716,5 +896,5 @@ const deleteEntry = async (id) => {
   await fetchEntries()
 }
 
-onMounted(fetchEntries)
+onMounted(fetchAll)
 </script>

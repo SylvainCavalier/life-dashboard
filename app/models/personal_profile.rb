@@ -1,3 +1,51 @@
+# == Schema Information
+#
+# Table name: personal_profiles
+#
+#  id                             :bigint           not null, primary key
+#  address_line1                  :string
+#  address_line2                  :string
+#  bank_name                      :string
+#  bic                            :string
+#  birth_city                     :string
+#  birth_country                  :string
+#  birth_date                     :date
+#  city                           :string
+#  country                        :string
+#  driver_license_expiry          :date
+#  driver_license_number          :string
+#  email                          :string
+#  emergency_contact_name         :string
+#  emergency_contact_phone        :string
+#  emergency_contact_relationship :string
+#  employer                       :string
+#  employer_address               :string
+#  first_name                     :string           not null
+#  gender                         :string
+#  iban                           :string
+#  last_name                      :string           not null
+#  maiden_name                    :string
+#  marital_status                 :string
+#  mobile_phone                   :string
+#  national_id_expiry             :date
+#  national_id_number             :string
+#  nationality                    :string
+#  number_of_children             :integer
+#  occupation                     :string
+#  passport_expiry                :date
+#  passport_number                :string
+#  phone                          :string
+#  postal_code                    :string
+#  professional_email             :string
+#  professional_phone             :string
+#  siret_number                   :string
+#  social_security_number         :string
+#  spouse_name                    :string
+#  state                          :string
+#  created_at                     :datetime         not null
+#  updated_at                     :datetime         not null
+#  tax_id                         :string
+#
 class PersonalProfile < ApplicationRecord
   # Chiffrement des données sensibles
   encrypts :social_security_number

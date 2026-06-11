@@ -49,6 +49,7 @@ gem "lograge"
 # PDF generation
 gem "prawn", "~> 2.5"
 gem "prawn-table", "~> 0.2"
+gem "grover", "~> 1.1" # HTML → PDF via Puppeteer (for styled CV export)
 
 # ICS calendar feed
 gem "icalendar", "~> 2.10"

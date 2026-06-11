@@ -1,3 +1,23 @@
+# == Schema Information
+#
+# Table name: mail_accounts
+#
+#  id           :bigint           not null, primary key
+#  email        :string           not null
+#  imap_port    :integer
+#  imap_server  :string
+#  password     :string
+#  provider     :string           not null
+#  provider_url :string           not null
+#  smtp_port    :integer
+#  smtp_server  :string
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#
+# Indexes
+#
+#  index_mail_accounts_on_email  (email) UNIQUE
+#
 class MailAccount < ApplicationRecord
   PROVIDERS = %w[gmail zoho orange microsoft yahoo protonmail other].freeze
 

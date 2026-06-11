@@ -64,7 +64,7 @@ root to: 'spa#index'
         post :fetch_meta
       end
     end
-    resources :documents, only: [:index, :create, :destroy] do
+    resources :documents, only: [:index, :create, :update, :destroy] do
       member do
         get :download
       end
@@ -72,6 +72,17 @@ root to: 'spa#index'
         get :categories
       end
     end
+
+    # CV module
+    resources :cv_experiences, only: [:index, :create, :update, :destroy]
+    resources :cv_formations, only: [:index, :create, :update, :destroy]
+    resources :cv_skills, only: [:index, :create, :update, :destroy]
+    resources :cv_interests, only: [:index, :create, :update, :destroy]
+    resource :cv_setting, only: [:show, :update] do
+      delete :photo, action: :destroy_photo
+    end
+    get  "cv/data",        to: "cvs#data"
+    post "cv/export_pdf",  to: "cvs#export_pdf"
   end
 
 get '*path', to: 'spa#index', constraints: ->(req) { !req.xhr? && req.format.html? }

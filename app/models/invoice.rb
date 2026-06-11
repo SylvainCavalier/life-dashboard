@@ -1,3 +1,48 @@
+# == Schema Information
+#
+# Table name: invoices
+#
+#  id                   :bigint           not null, primary key
+#  client_address_line1 :string
+#  client_address_line2 :string
+#  client_city          :string
+#  client_country       :string           default("France")
+#  client_email         :string
+#  client_name          :string           not null
+#  client_phone         :string
+#  client_postal_code   :string
+#  client_siret         :string
+#  client_vat_number    :string
+#  conditions           :text
+#  due_date             :date
+#  issue_date           :date             not null
+#  notes                :text
+#  number               :string           not null
+#  paid_at              :date
+#  payment_method       :string
+#  status               :string           default("pending"), not null
+#  subject              :string
+#  total_ht             :decimal(10, 2)   default(0.0)
+#  total_ttc            :decimal(10, 2)   default(0.0)
+#  total_tva            :decimal(10, 2)   default(0.0)
+#  tva_rate             :decimal(5, 2)    default(20.0)
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  company_id           :bigint           not null
+#  quote_id             :bigint
+#
+# Indexes
+#
+#  index_invoices_on_company_id             (company_id)
+#  index_invoices_on_company_id_and_status  (company_id,status)
+#  index_invoices_on_number                 (number) UNIQUE
+#  index_invoices_on_quote_id               (quote_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (company_id => companies.id)
+#  fk_rails_...  (quote_id => quotes.id)
+#
 class Invoice < ApplicationRecord
   belongs_to :company
   belongs_to :quote, optional: true

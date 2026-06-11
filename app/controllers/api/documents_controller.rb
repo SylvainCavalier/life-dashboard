@@ -20,6 +20,16 @@ class Api::DocumentsController < ApplicationController
     end
   end
 
+  # PATCH /api/documents/:id
+  def update
+    @document = Document.find(params[:id])
+    if @document.update(document_params)
+      render json: document_json(@document)
+    else
+      render json: { errors: @document.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   # DELETE /api/documents/:id
   def destroy
     @document = Document.find(params[:id])

@@ -1,3 +1,18 @@
+# == Schema Information
+#
+# Table name: subscriptions
+#
+#  id            :bigint           not null, primary key
+#  billing_cycle :string           default("monthly"), not null
+#  category      :string
+#  cost          :decimal(8, 2)    not null
+#  end_date      :date
+#  name          :string           not null
+#  start_date    :date
+#  url           :string
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#
 class Subscription < ApplicationRecord
   BILLING_CYCLES = %w[monthly yearly].freeze
   CATEGORIES = %w[ia sport telecom streaming assurance logiciel media alimentation autre].freeze

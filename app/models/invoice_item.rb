@@ -1,3 +1,28 @@
+# == Schema Information
+#
+# Table name: invoice_items
+#
+#  id             :bigint           not null, primary key
+#  description    :string           not null
+#  discount_type  :string           default("none")
+#  discount_value :decimal(10, 2)   default(0.0)
+#  position       :integer          default(0)
+#  quantity       :decimal(10, 2)   default(1.0), not null
+#  total_ht       :decimal(10, 2)   not null
+#  unit           :string           default("unite")
+#  unit_price     :decimal(10, 2)   not null
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  invoice_id     :bigint           not null
+#
+# Indexes
+#
+#  index_invoice_items_on_invoice_id  (invoice_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (invoice_id => invoices.id)
+#
 class InvoiceItem < ApplicationRecord
   belongs_to :invoice
 

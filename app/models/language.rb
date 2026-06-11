@@ -1,3 +1,20 @@
+# == Schema Information
+#
+# Table name: languages
+#
+#  id         :bigint           not null, primary key
+#  color      :string           default("#6366f1")
+#  flag_emoji :string
+#  level      :string           default("A1"), not null
+#  name       :string           not null
+#  notes      :text
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+# Indexes
+#
+#  index_languages_on_name  (name) UNIQUE
+#
 class Language < ApplicationRecord
   has_many :language_sessions, dependent: :destroy
 

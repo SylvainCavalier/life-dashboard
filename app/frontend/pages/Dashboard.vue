@@ -117,6 +117,8 @@ const modules = computed(() => [
   { name: 'Sites utiles', icon: '🔗', subtitle: `${counts.value.useful_sites} site${counts.value.useful_sites > 1 ? 's' : ''}`, to: '/useful-sites' },
   { name: 'Mes projets', icon: '🚀', subtitle: `${counts.value.projects} projet${counts.value.projects > 1 ? 's' : ''}`, to: '/projects' },
   { name: 'Mon profil', icon: '👤', subtitle: 'Donnees personnelles', to: '/profile' },
+  { name: 'CV', icon: '📄', subtitle: 'Experiences, formations, competences', to: '/cv' },
+  { name: 'Documents', icon: '📁', subtitle: `${counts.value.documents} document${counts.value.documents > 1 ? 's' : ''}`, to: '/documents' },
 ])
 
 const summaryPanels = [

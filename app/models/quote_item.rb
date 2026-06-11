@@ -1,3 +1,28 @@
+# == Schema Information
+#
+# Table name: quote_items
+#
+#  id             :bigint           not null, primary key
+#  description    :string           not null
+#  discount_type  :string           default("none")
+#  discount_value :decimal(10, 2)   default(0.0)
+#  position       :integer          default(0)
+#  quantity       :decimal(10, 2)   default(1.0), not null
+#  total_ht       :decimal(10, 2)   not null
+#  unit           :string           default("unite")
+#  unit_price     :decimal(10, 2)   not null
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  quote_id       :bigint           not null
+#
+# Indexes
+#
+#  index_quote_items_on_quote_id  (quote_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (quote_id => quotes.id)
+#
 class QuoteItem < ApplicationRecord
   belongs_to :quote
 

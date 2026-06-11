@@ -1,3 +1,32 @@
+# == Schema Information
+#
+# Table name: companies
+#
+#  id              :bigint           not null, primary key
+#  activity        :string
+#  address_line1   :string
+#  address_line2   :string
+#  capital         :decimal(12, 2)
+#  city            :string
+#  country         :string           default("France")
+#  creation_date   :date
+#  email           :string
+#  employees_count :integer
+#  legal_form      :string
+#  name            :string           not null
+#  notes           :text
+#  phone           :string
+#  postal_code     :string
+#  rcs             :string
+#  revenue         :decimal(12, 2)
+#  siren           :string
+#  siret           :string
+#  status          :string           default("active")
+#  vat_number      :string
+#  website         :string
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#
 class Company < ApplicationRecord
   has_many :quotes, dependent: :destroy
   has_many :invoices, dependent: :destroy

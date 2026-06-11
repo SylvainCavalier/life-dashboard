@@ -81,6 +81,16 @@ export default [
     component: () => import('../pages/modules/ProjectsPage.vue'),
   },
   {
+    path: '/cv',
+    name: 'CV',
+    component: () => import('../pages/modules/CVPage.vue'),
+  },
+  {
+    path: '/documents',
+    name: 'Documents',
+    component: () => import('../pages/modules/DocumentsPage.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),

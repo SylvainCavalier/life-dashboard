@@ -173,6 +173,8 @@ GEM
       fugit (>= 1.11.0)
       railties (>= 6.1.0)
       thor (>= 1.0.0)
+    grover (1.2.10)
+      nokogiri (~> 1)
     i18n (1.14.8)
       concurrent-ruby (~> 1.0)
     icalendar (2.12.2)
@@ -459,6 +461,7 @@ DEPENDENCIES
   faker
   friendly_id (~> 5.5)
   good_job
+  grover (~> 1.1)
   icalendar (~> 2.10)
   image_processing (~> 1.2)
   invisible_captcha

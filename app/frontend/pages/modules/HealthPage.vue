@@ -486,7 +486,11 @@ const fetchDocuments = async () => {
 }
 
 const onFileSelected = (event) => {
-  selectedFile.value = event.target.files[0]
+  const file = event.target.files[0]
+  selectedFile.value = file
+  if (file && !docForm.name.trim()) {
+    docForm.name = file.name.replace(/\.[^.]+$/, '')
+  }
 }
 
 const uploadDocument = async () => {

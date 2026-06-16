@@ -1,3 +1,25 @@
+# == Schema Information
+#
+# Table name: cv_formations
+#
+#  id          :bigint           not null, primary key
+#  category    :string           default("diplome"), not null
+#  description :text
+#  end_year    :integer
+#  institution :string
+#  location    :string
+#  position    :integer          default(0), not null
+#  start_year  :integer
+#  title       :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#
+# Indexes
+#
+#  index_cv_formations_on_category    (category)
+#  index_cv_formations_on_position    (position)
+#  index_cv_formations_on_start_year  (start_year)
+#
 class CvFormation < ApplicationRecord
   CATEGORIES = %w[diplome memoire seminaire certification autre].freeze
   CURRENT_YEAR = Time.current.year

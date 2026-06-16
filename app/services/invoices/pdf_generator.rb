@@ -32,31 +32,21 @@ module Invoices
     private
 
     def render_header(pdf)
-      pdf.font_size(FONT_SIZE_TITLE) do
-        pdf.text @company.name, color: COLOR_PRIMARY, style: :bold
-      end
-      if @company.legal_form.present?
-        pdf.text @company.legal_form.upcase, size: FONT_SIZE_SMALL, color: COLOR_MUTED
-      end
-      pdf.move_down 5
-
-      pdf.float do
-        pdf.bounding_box([pdf.bounds.width - 200, pdf.cursor + 50], width: 200) do
-          pdf.text "FACTURE", size: 16, style: :bold, color: COLOR_ACCENT, align: :right
-          pdf.text @invoice.number, size: FONT_SIZE_SECTION, color: COLOR_PRIMARY, align: :right
+      pdf.bounding_box([pdf.bounds.width - 200, pdf.cursor], width: 200) do
+        pdf.text "FACTURE", size: 16, style: :bold, color: COLOR_ACCENT, align: :right
+        pdf.text @invoice.number, size: FONT_SIZE_SECTION, color: COLOR_PRIMARY, align: :right
+        pdf.move_down 5
+        pdf.text "Date : #{format_date(@invoice.issue_date)}", size: FONT_SIZE_SMALL, align: :right
+        if @invoice.due_date
+          pdf.text "Echeance : #{format_date(@invoice.due_date)}", size: FONT_SIZE_SMALL, align: :right
+        end
+        if @invoice.status == "paid"
           pdf.move_down 5
-          pdf.text "Date : #{format_date(@invoice.issue_date)}", size: FONT_SIZE_SMALL, align: :right
-          if @invoice.due_date
-            pdf.text "Echeance : #{format_date(@invoice.due_date)}", size: FONT_SIZE_SMALL, align: :right
-          end
-          if @invoice.status == "paid"
-            pdf.move_down 5
-            pdf.text "PAYEE", size: FONT_SIZE_SECTION, style: :bold, color: "16A34A", align: :right
-          end
+          pdf.text "PAYEE", size: FONT_SIZE_SECTION, style: :bold, color: "16A34A", align: :right
         end
       end
 
-      pdf.move_down 30
+      pdf.move_down 20
     end
 
     def render_parties(pdf)
@@ -67,6 +57,7 @@ module Invoices
         pdf.text "EMETTEUR", size: FONT_SIZE_SMALL, style: :bold, color: COLOR_ACCENT
         pdf.move_down 4
         pdf.text @company.name, size: FONT_SIZE_NORMAL, style: :bold
+        pdf.text @company.legal_form.upcase, size: FONT_SIZE_SMALL, color: COLOR_MUTED if @company.legal_form.present?
         build_address(@company).each { |line| pdf.text line, size: FONT_SIZE_SMALL }
         pdf.text @company.email, size: FONT_SIZE_SMALL if @company.email.present?
         pdf.text @company.phone, size: FONT_SIZE_SMALL if @company.phone.present?

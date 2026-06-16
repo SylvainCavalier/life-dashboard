@@ -37,6 +37,7 @@ module Api
       params.require(:contact).permit(
         :first_name, :last_name, :birth_date, :gender, :occupation,
         :city, :phone, :email, :last_contacted_on, :relationship_type, :followed,
+        :callback_pending, :callback_on,
         :notes, :likes, :dislikes, :loans,
         :address, :met_through, :met_year,
         :social_instagram, :social_linkedin, :social_twitter,

@@ -31,35 +31,24 @@ module Quotes
     private
 
     def render_header(pdf)
-      # Company name as title
-      pdf.font_size(FONT_SIZE_TITLE) do
-        pdf.text @company.name, color: COLOR_PRIMARY, style: :bold
-      end
-      if @company.legal_form.present?
-        pdf.text @company.legal_form.upcase, size: FONT_SIZE_SMALL, color: COLOR_MUTED
-      end
-      pdf.move_down 5
-
       # Quote number and dates - right aligned
-      pdf.float do
-        pdf.bounding_box([pdf.bounds.width - 200, pdf.cursor + 50], width: 200) do
-          pdf.text "DEVIS", size: 16, style: :bold, color: COLOR_ACCENT, align: :right
-          pdf.text @quote.number, size: FONT_SIZE_SECTION, color: COLOR_PRIMARY, align: :right
+      pdf.bounding_box([pdf.bounds.width - 200, pdf.cursor], width: 200) do
+        pdf.text "DEVIS", size: 16, style: :bold, color: COLOR_ACCENT, align: :right
+        pdf.text @quote.number, size: FONT_SIZE_SECTION, color: COLOR_PRIMARY, align: :right
+        pdf.move_down 5
+        pdf.text "Date : #{format_date(@quote.issue_date)}", size: FONT_SIZE_SMALL, align: :right
+        if @quote.validity_date
+          pdf.text "Valide jusqu'au : #{format_date(@quote.validity_date)}", size: FONT_SIZE_SMALL, align: :right
+        end
+        if @quote.status != "pending"
           pdf.move_down 5
-          pdf.text "Date : #{format_date(@quote.issue_date)}", size: FONT_SIZE_SMALL, align: :right
-          if @quote.validity_date
-            pdf.text "Valide jusqu'au : #{format_date(@quote.validity_date)}", size: FONT_SIZE_SMALL, align: :right
-          end
-          if @quote.status != "pending"
-            pdf.move_down 5
-            status_text = @quote.status == "accepted" ? "ACCEPTE" : "REFUSE"
-            pdf.text status_text, size: FONT_SIZE_SECTION, style: :bold,
-                     color: @quote.status == "accepted" ? "16A34A" : "DC2626", align: :right
-          end
+          status_text = @quote.status == "accepted" ? "ACCEPTE" : "REFUSE"
+          pdf.text status_text, size: FONT_SIZE_SECTION, style: :bold,
+                   color: @quote.status == "accepted" ? "16A34A" : "DC2626", align: :right
         end
       end
 
-      pdf.move_down 30
+      pdf.move_down 20
     end
 
     def render_parties(pdf)
@@ -71,6 +60,7 @@ module Quotes
         pdf.text "EMETTEUR", size: FONT_SIZE_SMALL, style: :bold, color: COLOR_ACCENT
         pdf.move_down 4
         pdf.text @company.name, size: FONT_SIZE_NORMAL, style: :bold
+        pdf.text @company.legal_form.upcase, size: FONT_SIZE_SMALL, color: COLOR_MUTED if @company.legal_form.present?
         address_lines = build_address(@company)
         address_lines.each { |line| pdf.text line, size: FONT_SIZE_SMALL }
         pdf.text @company.email, size: FONT_SIZE_SMALL if @company.email.present?

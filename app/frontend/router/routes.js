@@ -21,6 +21,12 @@ export default [
     component: () => import('../pages/modules/CompaniesPage.vue'),
   },
   {
+    path: '/companies/:id',
+    name: 'CompanyShow',
+    component: () => import('../pages/modules/CompanyShowPage.vue'),
+    props: true,
+  },
+  {
     path: '/budget',
     name: 'Budget',
     component: () => import('../pages/modules/BudgetPage.vue'),

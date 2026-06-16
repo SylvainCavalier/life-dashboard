@@ -10,13 +10,20 @@
 #  notes         :text
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
+#  company_id    :bigint
 #
 # Indexes
 #
+#  index_documents_on_company_id           (company_id)
 #  index_documents_on_domain               (domain)
 #  index_documents_on_domain_and_category  (domain,category)
 #
+# Foreign Keys
+#
+#  fk_rails_...  (company_id => companies.id)
+#
 class Document < ApplicationRecord
+  belongs_to :company, optional: true
   has_one_attached :file
 
   DOMAINS = %w[

@@ -61,6 +61,7 @@ class Api::QuotesController < ApplicationController
 
   def quote_params
     params.permit(
+      :client_id,
       :client_name, :client_email, :client_phone, :client_siret, :client_vat_number,
       :client_address_line1, :client_address_line2, :client_postal_code, :client_city, :client_country,
       :subject, :tva_rate, :issue_date, :validity_date, :notes, :conditions,
@@ -72,6 +73,7 @@ class Api::QuotesController < ApplicationController
     {
       id: quote.id,
       company_id: quote.company_id,
+      client_id: quote.client_id,
       number: quote.number,
       client_name: quote.client_name,
       client_email: quote.client_email,
@@ -116,6 +118,7 @@ class Api::QuotesController < ApplicationController
     pdf_data = Quotes::PdfGenerator.new(quote).generate
 
     doc = Document.find_or_initialize_by(domain: "companies", category: "quote", name: quote.number)
+    doc.company = quote.company
     doc.document_date = quote.issue_date
     doc.notes = "Devis #{quote.number} - #{quote.client_name} (#{quote.status})"
     doc.file.attach(

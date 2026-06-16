@@ -22,7 +22,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0A1.75 1.75 0 003 15.546V12a9 9 0 0118 0v3.546zM12 3v1m0 0a3 3 0 013 3H9a3 3 0 013-3z" />
         </svg>
         <span>
-          <strong>{{ alert.first_name }} {{ alert.last_name }}</strong>
+          <strong>{{ [alert.first_name, alert.last_name].filter(Boolean).join(' ') }}</strong>
           {{ alert.message }}
         </span>
       </div>
@@ -37,7 +37,22 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span>
-          <strong>{{ alert.first_name }} {{ alert.last_name }}</strong> — pas de contact depuis {{ alert.days }} jours
+          <strong>{{ [alert.first_name, alert.last_name].filter(Boolean).join(' ') }}</strong> — pas de contact depuis {{ alert.days }} jours
+        </span>
+      </div>
+
+      <!-- Alertes contacts à rappeler -->
+      <div
+        v-for="alert in callbackAlerts"
+        :key="'callback-' + alert.id"
+        class="mb-3 flex items-center gap-3 px-4 py-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-800"
+      >
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+        <span>
+          <strong>{{ [alert.first_name, alert.last_name].filter(Boolean).join(' ') }}</strong>
+          — à rappeler<template v-if="alert.callback_on"> le {{ formatDate(alert.callback_on) }}</template>
         </span>
       </div>
 
@@ -57,13 +72,12 @@
         </div>
 
         <!-- Formulaire d'ajout / édition -->
-        <form v-if="showForm" @submit.prevent="saveContact" class="mb-6 p-5 bg-gray-50 rounded-lg">
+        <form v-if="showForm" ref="formEl" @submit.prevent="saveContact" class="mb-6 p-5 bg-gray-50 rounded-lg">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <input
               v-model="form.last_name"
               type="text"
-              placeholder="Nom *"
-              required
+              placeholder="Nom"
               class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <input
@@ -117,6 +131,15 @@
               <input
                 v-model="form.last_contacted_on"
                 type="date"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Date de rappel</label>
+              <input
+                v-model="form.callback_on"
+                type="date"
+                title="Date à laquelle tu veux rappeler ce contact (facultatif)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -302,11 +325,6 @@
                     Activité <span v-html="sortIcon('occupation')"></span>
                   </button>
                 </th>
-                <th class="pb-3 font-medium">
-                  <button @click="toggleSort('city')" class="inline-flex items-center gap-1 hover:text-gray-700">
-                    Ville <span v-html="sortIcon('city')"></span>
-                  </button>
-                </th>
                 <th class="pb-3 font-medium">Téléphone</th>
                 <th class="pb-3 font-medium">Email</th>
                 <th class="pb-3 font-medium">
@@ -319,11 +337,7 @@
                     Dernier contact <span v-html="sortIcon('last_contacted_on')"></span>
                   </button>
                 </th>
-                <th class="pb-3 font-medium">
-                  <button @click="toggleSort('relationship_type')" class="inline-flex items-center gap-1 hover:text-gray-700">
-                    Relation <span v-html="sortIcon('relationship_type')"></span>
-                  </button>
-                </th>
+                <th class="pb-3 font-medium">Relation</th>
                 <th class="pb-3 font-medium">Réseaux</th>
                 <th class="pb-3 font-medium w-24"></th>
               </tr>
@@ -332,15 +346,19 @@
               <tr
                 v-for="contact in filteredContacts"
                 :key="contact.id"
-                class="border-b border-gray-100 hover:bg-gray-50"
+                :class="contact.callback_pending
+                  ? 'border-b border-rose-100 bg-rose-50 hover:bg-rose-100'
+                  : 'border-b border-gray-100 hover:bg-gray-50'"
+                :title="contact.callback_pending
+                  ? 'À rappeler' + (contact.callback_on ? ' le ' + formatDate(contact.callback_on) : '')
+                  : null"
               >
                 <td class="py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
-                  {{ contact.last_name }} {{ contact.first_name }}
+                  {{ [contact.last_name, contact.first_name].filter(Boolean).join(' ') }}
                 </td>
                 <td class="py-3 text-sm text-gray-700">{{ computeAge(contact.birth_date) }}</td>
                 <td class="py-3 text-sm text-gray-700">{{ genderLabel(contact.gender) }}</td>
                 <td class="py-3 text-sm text-gray-700">{{ contact.occupation || '—' }}</td>
-                <td class="py-3 text-sm text-gray-700">{{ contact.city || '—' }}</td>
                 <td class="py-3 text-sm text-gray-700 whitespace-nowrap">
                   <a v-if="contact.phone" :href="'tel:' + contact.phone" class="text-indigo-600 hover:underline">{{ contact.phone }}</a>
                   <span v-else>—</span>
@@ -389,6 +407,18 @@
                 </td>
                 <td class="py-3 text-right whitespace-nowrap">
                   <button
+                    @click="toggleCallback(contact)"
+                    class="text-sm mr-2 transition-colors"
+                    :class="contact.callback_pending ? 'text-rose-500 hover:text-rose-600' : 'text-gray-300 hover:text-rose-500'"
+                    :title="contact.callback_pending
+                      ? 'Ne plus marquer comme à rappeler' + (contact.callback_on ? ' (le ' + formatDate(contact.callback_on) + ')' : '')
+                      : 'Marquer comme à rappeler'"
+                  >
+                    <svg class="w-4 h-4 inline" :fill="contact.callback_pending ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </button>
+                  <button
                     @click="toggleFollowed(contact)"
                     class="text-sm mr-2 transition-colors"
                     :class="contact.followed ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-amber-500'"
@@ -427,7 +457,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useApi } from '../../composables/useApi'
 
 const { useCrud } = useApi()
@@ -436,6 +466,13 @@ const { list, create, update, destroy } = useCrud('contacts')
 const contacts = ref([])
 const showForm = ref(false)
 const editingId = ref(null)
+const formEl = ref(null)
+
+const scrollToForm = () => {
+  nextTick(() => {
+    formEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
 const filterName = ref('')
 const filterCity = ref('')
 const filterType = ref('')
@@ -456,6 +493,23 @@ const relationshipTypes = [
   { value: 'autre', label: 'Autre' },
 ]
 
+// Ordre d'affichage des relations (connaissance toujours en dernier)
+const RELATIONSHIP_ORDER = [
+  'famille',
+  'copine',
+  'ami',
+  'collegue',
+  'client',
+  'eleve',
+  'medias',
+  'autre',
+  'connaissance',
+]
+const relationshipRank = (type) => {
+  const idx = RELATIONSHIP_ORDER.indexOf(type)
+  return idx === -1 ? RELATIONSHIP_ORDER.length : idx
+}
+
 const defaultForm = {
   first_name: '',
   last_name: '',
@@ -466,6 +520,7 @@ const defaultForm = {
   phone: '',
   email: '',
   last_contacted_on: '',
+  callback_on: '',
   relationship_type: '',
   notes: '',
   likes: '',
@@ -529,7 +584,7 @@ const filteredContacts = computed(() => {
   })
 
   const dir = sortDir.value === 'asc' ? 1 : -1
-  result.sort((a, b) => {
+  const secondaryCompare = (a, b) => {
     let valA, valB
     if (sortKey.value === 'age') {
       valA = a.birth_date ? new Date(a.birth_date).getTime() : 0
@@ -545,6 +600,11 @@ const filteredContacts = computed(() => {
     valA = (a[sortKey.value] || '').toLowerCase()
     valB = (b[sortKey.value] || '').toLowerCase()
     return valA.localeCompare(valB, 'fr') * dir
+  }
+  result.sort((a, b) => {
+    const rankDiff = relationshipRank(a.relationship_type) - relationshipRank(b.relationship_type)
+    if (rankDiff !== 0) return rankDiff
+    return secondaryCompare(a, b)
   })
 
   return result
@@ -563,6 +623,7 @@ const openForm = () => {
   Object.assign(form, defaultForm)
   editingId.value = null
   showForm.value = true
+  scrollToForm()
 }
 
 const editContact = (contact) => {
@@ -576,6 +637,7 @@ const editContact = (contact) => {
     phone: contact.phone || '',
     email: contact.email || '',
     last_contacted_on: contact.last_contacted_on || '',
+    callback_on: contact.callback_on || '',
     relationship_type: contact.relationship_type,
     notes: contact.notes || '',
     likes: contact.likes || '',
@@ -594,6 +656,7 @@ const editContact = (contact) => {
   })
   editingId.value = contact.id
   showForm.value = true
+  scrollToForm()
 }
 
 const saveContact = async () => {
@@ -615,6 +678,14 @@ const saveContact = async () => {
 
 const toggleFollowed = async (contact) => {
   await update(contact.id, { contact: { followed: !contact.followed } })
+  await fetchContacts()
+}
+
+const toggleCallback = async (contact) => {
+  const turningOff = contact.callback_pending
+  const payload = { callback_pending: !turningOff }
+  if (turningOff) payload.callback_on = null
+  await update(contact.id, { contact: payload })
   await fetchContacts()
 }
 
@@ -720,6 +791,23 @@ const contactAlerts = computed(() => {
     if (b.days === '?') return -1
     return b.days - a.days
   })
+})
+
+const callbackAlerts = computed(() => {
+  return contacts.value
+    .filter((c) => c.callback_pending)
+    .map((c) => ({
+      id: c.id,
+      first_name: c.first_name,
+      last_name: c.last_name,
+      callback_on: c.callback_on,
+    }))
+    .sort((a, b) => {
+      if (!a.callback_on && !b.callback_on) return 0
+      if (!a.callback_on) return 1
+      if (!b.callback_on) return -1
+      return new Date(a.callback_on) - new Date(b.callback_on)
+    })
 })
 
 const lastContactColor = (date) => {

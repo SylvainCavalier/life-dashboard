@@ -5,6 +5,7 @@
 #  id               :bigint           not null, primary key
 #  default_color    :string           default("indigo"), not null
 #  default_template :string           default("classic"), not null
+#  pitch            :text
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
 #

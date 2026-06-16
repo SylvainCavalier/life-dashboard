@@ -1,3 +1,23 @@
+# == Schema Information
+#
+# Table name: cv_experiences
+#
+#  id          :bigint           not null, primary key
+#  company     :string           not null
+#  description :text
+#  end_year    :integer
+#  location    :string
+#  position    :integer          default(0), not null
+#  start_year  :integer          not null
+#  title       :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#
+# Indexes
+#
+#  index_cv_experiences_on_position    (position)
+#  index_cv_experiences_on_start_year  (start_year)
+#
 class CvExperience < ApplicationRecord
   CURRENT_YEAR = Time.current.year
 

@@ -70,6 +70,9 @@ gem "rack-attack" # Rate limiting
 gem "secure_headers" # Content security policy
 gem "invisible_captcha" # Prevent bots from submitting forms
 
+# Guess gender from first name (Jörg Michael dataset, multilingual, offline)
+gem "gender_detector"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]

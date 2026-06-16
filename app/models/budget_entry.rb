@@ -8,6 +8,7 @@
 #  entry_type :string           not null
 #  month      :integer
 #  name       :string           not null
+#  notes      :text
 #  recurrence :string           default("fixed"), not null
 #  year       :integer
 #  created_at :datetime         not null

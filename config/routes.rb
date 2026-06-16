@@ -10,6 +10,10 @@ root to: 'spa#index'
     resource :personal_profile, only: [:show, :create, :update]
     resource :health_profile, only: [:show, :create, :update]
     resources :companies do
+      member do
+        get :budget
+      end
+      resources :clients, only: [:index, :create, :update, :destroy]
       resources :quotes, only: [:index, :create, :destroy] do
         member do
           patch :accept

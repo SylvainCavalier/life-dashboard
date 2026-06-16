@@ -26,20 +26,24 @@
 #  validity_date        :date
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
+#  client_id            :bigint
 #  company_id           :bigint           not null
 #
 # Indexes
 #
+#  index_quotes_on_client_id              (client_id)
 #  index_quotes_on_company_id             (company_id)
 #  index_quotes_on_company_id_and_status  (company_id,status)
 #  index_quotes_on_number                 (number) UNIQUE
 #
 # Foreign Keys
 #
+#  fk_rails_...  (client_id => clients.id)
 #  fk_rails_...  (company_id => companies.id)
 #
 class Quote < ApplicationRecord
   belongs_to :company
+  belongs_to :client, optional: true
   has_many :quote_items, dependent: :destroy
   has_many :invoices
 

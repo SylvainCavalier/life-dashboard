@@ -13,6 +13,12 @@ class Api::CompaniesController < ApplicationController
     render json: company_json(@company)
   end
 
+  # GET /api/companies/:id/budget
+  def budget
+    @company = Company.find(params[:id])
+    render json: @company.budget_summary
+  end
+
   # POST /api/companies
   def create
     @company = Company.new(company_params)
@@ -44,7 +50,7 @@ class Api::CompaniesController < ApplicationController
 
   def company_params
     params.permit(
-      :name, :legal_form, :siren, :siret, :vat_number, :rcs, :activity, :status,
+      :name, :legal_form, :siren, :siret, :vat_number, :rcs, :activity, :ape_code, :idcc, :status,
       :creation_date, :capital, :revenue, :employees_count,
       :address_line1, :address_line2, :postal_code, :city, :country,
       :website, :email, :phone, :notes
@@ -60,6 +66,8 @@ class Api::CompaniesController < ApplicationController
       siret: company.siret,
       vat_number: company.vat_number,
       activity: company.activity,
+      ape_code: company.ape_code,
+      idcc: company.idcc,
       status: company.status,
       creation_date: company.creation_date,
       capital: company.capital,
@@ -75,6 +83,7 @@ class Api::CompaniesController < ApplicationController
       phone: company.phone,
       rcs: company.rcs,
       notes: company.notes,
+      budget: company.budget_summary,
       created_at: company.created_at,
       updated_at: company.updated_at
     }

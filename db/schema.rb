@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_15_202713) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,6 +57,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
     t.index ["year", "month"], name: "index_budget_entries_on_year_and_month"
   end
 
+  create_table "clients", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "name"
+    t.string "email"
+    t.string "phone"
+    t.string "siret"
+    t.string "vat_number"
+    t.string "address_line1"
+    t.string "address_line2"
+    t.string "postal_code"
+    t.string "city"
+    t.string "country"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_clients_on_company_id"
+  end
+
   create_table "companies", force: :cascade do |t|
     t.string "name", null: false
     t.string "legal_form"
@@ -81,10 +99,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "rcs"
+    t.string "ape_code"
+    t.string "idcc"
   end
 
   create_table "contacts", force: :cascade do |t|
-    t.string "last_name", null: false
+    t.string "last_name"
     t.string "first_name", null: false
     t.date "birth_date"
     t.string "gender"
@@ -111,6 +131,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
     t.string "social_tiktok"
     t.string "social_snapchat"
     t.string "social_youtube"
+    t.boolean "callback_pending", default: false, null: false
+    t.date "callback_on"
+    t.index ["callback_pending"], name: "index_contacts_on_callback_pending"
     t.index ["last_name", "first_name"], name: "index_contacts_on_last_name_and_first_name"
     t.index ["relationship_type"], name: "index_contacts_on_relationship_type"
   end
@@ -181,6 +204,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "company_id"
+    t.index ["company_id"], name: "index_documents_on_company_id"
     t.index ["domain", "category"], name: "index_documents_on_domain_and_category"
     t.index ["domain"], name: "index_documents_on_domain"
   end
@@ -351,6 +376,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
     t.datetime "updated_at", null: false
     t.string "payment_method"
     t.date "paid_at"
+    t.bigint "client_id"
+    t.index ["client_id"], name: "index_invoices_on_client_id"
     t.index ["company_id", "status"], name: "index_invoices_on_company_id_and_status"
     t.index ["company_id"], name: "index_invoices_on_company_id"
     t.index ["number"], name: "index_invoices_on_number", unique: true
@@ -539,6 +566,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
     t.text "conditions"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "client_id"
+    t.index ["client_id"], name: "index_quotes_on_client_id"
     t.index ["company_id", "status"], name: "index_quotes_on_company_id_and_status"
     t.index ["company_id"], name: "index_quotes_on_company_id"
     t.index ["number"], name: "index_quotes_on_number", unique: true
@@ -579,10 +608,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_27_201955) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "clients", "companies"
+  add_foreign_key "documents", "companies"
   add_foreign_key "invoice_items", "invoices"
+  add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "companies"
   add_foreign_key "invoices", "quotes"
   add_foreign_key "language_sessions", "languages"
   add_foreign_key "quote_items", "quotes"
+  add_foreign_key "quotes", "clients"
   add_foreign_key "quotes", "companies"
 end

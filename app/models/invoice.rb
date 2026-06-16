@@ -28,11 +28,13 @@
 #  tva_rate             :decimal(5, 2)    default(20.0)
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
+#  client_id            :bigint
 #  company_id           :bigint           not null
 #  quote_id             :bigint
 #
 # Indexes
 #
+#  index_invoices_on_client_id              (client_id)
 #  index_invoices_on_company_id             (company_id)
 #  index_invoices_on_company_id_and_status  (company_id,status)
 #  index_invoices_on_number                 (number) UNIQUE
@@ -40,12 +42,14 @@
 #
 # Foreign Keys
 #
+#  fk_rails_...  (client_id => clients.id)
 #  fk_rails_...  (company_id => companies.id)
 #  fk_rails_...  (quote_id => quotes.id)
 #
 class Invoice < ApplicationRecord
   belongs_to :company
   belongs_to :quote, optional: true
+  belongs_to :client, optional: true
   has_many :invoice_items, dependent: :destroy
 
   accepts_nested_attributes_for :invoice_items, allow_destroy: true
@@ -81,6 +85,7 @@ class Invoice < ApplicationRecord
     invoice = new(
       company: quote.company,
       quote: quote,
+      client_id: quote.client_id,
       client_name: quote.client_name,
       client_email: quote.client_email,
       client_phone: quote.client_phone,

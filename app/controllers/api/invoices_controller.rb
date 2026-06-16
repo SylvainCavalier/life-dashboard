@@ -73,6 +73,7 @@ class Api::InvoicesController < ApplicationController
 
   def invoice_params
     params.permit(
+      :client_id,
       :client_name, :client_email, :client_phone, :client_siret, :client_vat_number,
       :client_address_line1, :client_address_line2, :client_postal_code, :client_city, :client_country,
       :subject, :tva_rate, :issue_date, :due_date, :notes, :conditions,
@@ -85,6 +86,7 @@ class Api::InvoicesController < ApplicationController
       id: invoice.id,
       company_id: invoice.company_id,
       quote_id: invoice.quote_id,
+      client_id: invoice.client_id,
       number: invoice.number,
       client_name: invoice.client_name,
       client_email: invoice.client_email,
@@ -131,6 +133,7 @@ class Api::InvoicesController < ApplicationController
     pdf_data = Invoices::PdfGenerator.new(invoice).generate
 
     doc = Document.find_or_initialize_by(domain: "companies", category: "invoice", name: invoice.number)
+    doc.company = invoice.company
     doc.document_date = invoice.issue_date
     doc.notes = "Facture #{invoice.number} - #{invoice.client_name} (#{invoice.status})"
     doc.file.attach(

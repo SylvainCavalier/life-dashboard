@@ -27,21 +27,34 @@ Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère
 
 ## Subagent Alfred (intendant)
 
-Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.claude/agents/alfred.md`), via les skills `life-dashboard` (lecture) et `life-dashboard-write` (écriture limitée). Alfred est l'intendant personnel de Sylvain : il gère agenda, mails et toutes les opérations CRUD courantes sur le dashboard.
+Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.claude/agents/alfred.md`), via les skills `life-dashboard` (lecture) et `life-dashboard-write` (écriture étendue). Alfred est l'intendant personnel de Sylvain : il gère agenda, mails et la majorité des opérations CRUD sur le dashboard.
 
-**Implications pour toute évolution du code de ce projet :**
+### Périmètre actuel d'Alfred sur les modèles
 
-1. **Nouveau modèle ajouté ?** Considère :
-   - L'ajouter à la whitelist du skill lecture (`~/.claude/skills/life-dashboard/SKILL.md` + `scripts/query.rb`) pour qu'Alfred puisse le lire.
-   - Décider s'il rejoint la whitelist du skill écriture (`life-dashboard-write/SKILL.md` + `scripts/write.rb`). Critères : modèle low-stakes, attributs sans risque financier/sécurité direct. Modèles à risque (Invoice, Quote, PasswordEntry, HealthProfile…) restent exclus.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
-2. **Nouveau champ ajouté à un modèle whitelisté ?** Mets à jour la liste des `allowed attributes` dans `life-dashboard-write/SKILL.md` si tu veux qu'Alfred puisse l'écrire. Pour la lecture, le skill expose tous les champs non explicitement exclus.
+**Écriture** :
+- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task`, `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`.
+- **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
+- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`.
 
-3. **Champ sensible ajouté ?** Pense à l'exclure côté skill lecture (`scripts/query.rb`, section `EXCLUDED_FIELDS`).
+### Implications pour toute évolution du code
 
-4. **Renommage d'un modèle ou d'un champ ?** Mets à jour les deux skills, sinon Alfred plantera silencieusement.
+1. **Nouveau modèle ajouté ?** Décide :
+   - Faut-il l'exposer à la lecture ? → ajout dans `~/.claude/skills/life-dashboard/scripts/query.rb` (constante `ALLOWED`).
+   - Faut-il l'exposer à l'écriture ? → ajout dans `~/.claude/skills/life-dashboard-write/scripts/write.rb` (constante `ALLOWED_WRITE`). Choix de format :
+     - `:all` pour autoriser toutes les colonnes (Tier 2)
+     - `{ create: [...], update: [...] }` pour un contrôle granulaire (Tier 1)
+     - `{ exclude: [...] }` pour autoriser tout sauf certains champs
+   - Met à jour `SKILL.md` correspondant + la section "Périmètre actuel" ci-dessus.
 
-5. **Nouvelle fonctionnalité métier ?** Si elle peut être pilotée depuis l'extérieur (ex: génération de PDF, envoi de mail), pense à exposer un point d'entrée scriptable utilisable par Alfred.
+2. **Nouveau champ ajouté à un modèle Tier 1 ?** Pense à l'ajouter aux listes explicites `create:` / `update:`. Pour un modèle Tier 2 (`:all`), c'est automatique.
+
+3. **Champ sensible ajouté ?** Pense à l'exclure côté skill lecture (`scripts/query.rb`, clé `exclude:` dans `ALLOWED`).
+
+4. **Renommage d'un modèle ou d'un champ ?** Met à jour les deux skills, sinon Alfred plantera silencieusement.
+
+5. **Nouvelle fonctionnalité métier scriptable** (génération PDF, envoi mail, génération automatique d'événement…) : pense à exposer un point d'entrée utilisable par Alfred (rake task, méthode de modèle, ou extension du script write).
 
 → Quand tu termines une feature, fais le tour de cette checklist avant de considérer le travail comme fini.
 

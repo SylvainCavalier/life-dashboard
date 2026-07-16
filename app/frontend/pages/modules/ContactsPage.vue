@@ -12,6 +12,8 @@
         Retour au dashboard
       </router-link>
 
+      <ContactsCrmTabs />
+
       <!-- Alertes anniversaires -->
       <div
         v-for="alert in birthdayAlerts"
@@ -38,21 +40,6 @@
         </svg>
         <span>
           <strong>{{ [alert.first_name, alert.last_name].filter(Boolean).join(' ') }}</strong> — pas de contact depuis {{ alert.days }} jours
-        </span>
-      </div>
-
-      <!-- Alertes contacts à rappeler -->
-      <div
-        v-for="alert in callbackAlerts"
-        :key="'callback-' + alert.id"
-        class="mb-3 flex items-center gap-3 px-4 py-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-800"
-      >
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-        <span>
-          <strong>{{ [alert.first_name, alert.last_name].filter(Boolean).join(' ') }}</strong>
-          — à rappeler<template v-if="alert.callback_on"> le {{ formatDate(alert.callback_on) }}</template>
         </span>
       </div>
 
@@ -131,15 +118,6 @@
               <input
                 v-model="form.last_contacted_on"
                 type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">Date de rappel</label>
-              <input
-                v-model="form.callback_on"
-                type="date"
-                title="Date à laquelle tu veux rappeler ce contact (facultatif)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -346,12 +324,7 @@
               <tr
                 v-for="contact in filteredContacts"
                 :key="contact.id"
-                :class="contact.callback_pending
-                  ? 'border-b border-rose-100 bg-rose-50 hover:bg-rose-100'
-                  : 'border-b border-gray-100 hover:bg-gray-50'"
-                :title="contact.callback_pending
-                  ? 'À rappeler' + (contact.callback_on ? ' le ' + formatDate(contact.callback_on) : '')
-                  : null"
+                class="border-b border-gray-100 hover:bg-gray-50"
               >
                 <td class="py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
                   {{ [contact.last_name, contact.first_name].filter(Boolean).join(' ') }}
@@ -407,15 +380,13 @@
                 </td>
                 <td class="py-3 text-right whitespace-nowrap">
                   <button
-                    @click="toggleCallback(contact)"
+                    @click="toggleCrm(contact)"
                     class="text-sm mr-2 transition-colors"
-                    :class="contact.callback_pending ? 'text-rose-500 hover:text-rose-600' : 'text-gray-300 hover:text-rose-500'"
-                    :title="contact.callback_pending
-                      ? 'Ne plus marquer comme à rappeler' + (contact.callback_on ? ' (le ' + formatDate(contact.callback_on) + ')' : '')
-                      : 'Marquer comme à rappeler'"
+                    :class="contact.crm_profile ? 'text-indigo-600 hover:text-indigo-700' : 'text-gray-300 hover:text-indigo-500'"
+                    :title="contact.crm_profile ? 'Retirer du CRM' : 'Ajouter au CRM'"
                   >
-                    <svg class="w-4 h-4 inline" :fill="contact.callback_pending ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    <svg class="w-4 h-4 inline" :fill="contact.crm_profile ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </button>
                   <button
@@ -459,9 +430,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useApi } from '../../composables/useApi'
+import ContactsCrmTabs from '../../components/contacts/ContactsCrmTabs.vue'
 
 const { useCrud } = useApi()
 const { list, create, update, destroy } = useCrud('contacts')
+const crmCrud = useCrud('crm_profiles')
 
 const contacts = ref([])
 const showForm = ref(false)
@@ -520,7 +493,6 @@ const defaultForm = {
   phone: '',
   email: '',
   last_contacted_on: '',
-  callback_on: '',
   relationship_type: '',
   notes: '',
   likes: '',
@@ -637,7 +609,6 @@ const editContact = (contact) => {
     phone: contact.phone || '',
     email: contact.email || '',
     last_contacted_on: contact.last_contacted_on || '',
-    callback_on: contact.callback_on || '',
     relationship_type: contact.relationship_type,
     notes: contact.notes || '',
     likes: contact.likes || '',
@@ -681,11 +652,13 @@ const toggleFollowed = async (contact) => {
   await fetchContacts()
 }
 
-const toggleCallback = async (contact) => {
-  const turningOff = contact.callback_pending
-  const payload = { callback_pending: !turningOff }
-  if (turningOff) payload.callback_on = null
-  await update(contact.id, { contact: payload })
+const toggleCrm = async (contact) => {
+  if (contact.crm_profile) {
+    if (!confirm('Retirer ce contact du CRM ?')) return
+    await crmCrud.destroy(contact.crm_profile.id)
+  } else {
+    await crmCrud.create({ crm_profile: { contact_id: contact.id } })
+  }
   await fetchContacts()
 }
 
@@ -791,23 +764,6 @@ const contactAlerts = computed(() => {
     if (b.days === '?') return -1
     return b.days - a.days
   })
-})
-
-const callbackAlerts = computed(() => {
-  return contacts.value
-    .filter((c) => c.callback_pending)
-    .map((c) => ({
-      id: c.id,
-      first_name: c.first_name,
-      last_name: c.last_name,
-      callback_on: c.callback_on,
-    }))
-    .sort((a, b) => {
-      if (!a.callback_on && !b.callback_on) return 0
-      if (!a.callback_on) return 1
-      if (!b.callback_on) return -1
-      return new Date(a.callback_on) - new Date(b.callback_on)
-    })
 })
 
 const lastContactColor = (date) => {

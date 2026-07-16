@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_15_202713) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_06_163020) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -131,11 +131,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_15_202713) do
     t.string "social_tiktok"
     t.string "social_snapchat"
     t.string "social_youtube"
-    t.boolean "callback_pending", default: false, null: false
-    t.date "callback_on"
-    t.index ["callback_pending"], name: "index_contacts_on_callback_pending"
     t.index ["last_name", "first_name"], name: "index_contacts_on_last_name_and_first_name"
     t.index ["relationship_type"], name: "index_contacts_on_relationship_type"
+  end
+
+  create_table "crm_profiles", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "priority", default: "moyenne", null: false
+    t.date "last_contact_on"
+    t.string "last_contact_method"
+    t.date "next_appointment_on"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_crm_profiles_on_contact_id", unique: true
   end
 
   create_table "cv_experiences", force: :cascade do |t|
@@ -148,6 +157,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_15_202713) do
     t.datetime "updated_at", null: false
     t.integer "start_year", null: false
     t.integer "end_year"
+    t.string "category"
+    t.string "domain", default: [], array: true
     t.index ["position"], name: "index_cv_experiences_on_position"
     t.index ["start_year"], name: "index_cv_experiences_on_start_year"
   end
@@ -609,6 +620,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_15_202713) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "clients", "companies"
+  add_foreign_key "crm_profiles", "contacts"
   add_foreign_key "documents", "companies"
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "clients"

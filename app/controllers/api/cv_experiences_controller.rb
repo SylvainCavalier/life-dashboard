@@ -33,7 +33,8 @@ module Api
 
     def experience_params
       params.require(:cv_experience).permit(
-        :title, :company, :location, :start_year, :end_year, :description, :position
+        :title, :company, :location, :start_year, :end_year, :description, :position,
+        :category, domain: []
       )
     end
   end

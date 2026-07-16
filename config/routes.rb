@@ -6,6 +6,7 @@ root to: 'spa#index'
   namespace :api do
     get 'test', to: 'test#index'
     resources :contacts, only: [:index, :create, :update, :destroy]
+    resources :crm_profiles, only: [:index, :create, :update, :destroy]
     resources :password_entries, only: [:index, :create, :destroy]
     resource :personal_profile, only: [:show, :create, :update]
     resource :health_profile, only: [:show, :create, :update]

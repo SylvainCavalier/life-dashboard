@@ -3,8 +3,8 @@ module Api
     protect_from_forgery with: :null_session
 
     def index
-      @contacts = Contact.ordered
-      render json: @contacts
+      @contacts = Contact.ordered.includes(:crm_profile)
+      render json: @contacts.as_json(include: :crm_profile)
     end
 
     def create
@@ -37,7 +37,6 @@ module Api
       params.require(:contact).permit(
         :first_name, :last_name, :birth_date, :gender, :occupation,
         :city, :phone, :email, :last_contacted_on, :relationship_type, :followed,
-        :callback_pending, :callback_on,
         :notes, :likes, :dislikes, :loans,
         :address, :met_through, :met_year,
         :social_instagram, :social_linkedin, :social_twitter,

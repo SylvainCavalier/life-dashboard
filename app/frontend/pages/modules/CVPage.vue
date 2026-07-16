@@ -95,19 +95,30 @@
       <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Expériences professionnelles</h2>
-          <button @click="openExperienceForm()" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
+          <button @click="openExperienceForm(null, null)" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
           </button>
         </div>
 
-        <div v-if="experienceForm.open" class="bg-gray-50 rounded-lg p-4 mb-4">
+        <div v-if="experienceForm.open && PRO_CATEGORIES.includes(experienceForm.category)" class="bg-gray-50 rounded-lg p-4 mb-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <input v-model="experienceForm.title" placeholder="Titre du poste *" class="border rounded-lg px-3 py-2 text-sm" />
             <input v-model="experienceForm.company" placeholder="Entreprise *" class="border rounded-lg px-3 py-2 text-sm" />
             <input v-model="experienceForm.location" placeholder="Lieu" class="border rounded-lg px-3 py-2 text-sm" />
+            <select v-model="experienceForm.category" class="border rounded-lg px-3 py-2 text-sm">
+              <option :value="null">— Catégorie —</option>
+              <option v-for="cat in experienceCategories" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
+            </select>
             <div class="grid grid-cols-2 gap-2">
               <input v-model.number="experienceForm.start_year" type="number" min="1900" :max="maxYear" placeholder="Année de début *" class="border rounded-lg px-3 py-2 text-sm" />
               <input v-model.number="experienceForm.end_year" type="number" min="1900" :max="maxYear + 10" placeholder="Année de fin (vide = en cours)" class="border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-500">Domaine(s) :</span>
+              <label v-for="d in experienceDomains" :key="d.value" class="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" :value="d.value" v-model="experienceForm.domain" class="accent-indigo-600" />
+                {{ d.label }}
+              </label>
             </div>
           </div>
           <textarea v-model="experienceForm.description" rows="3" placeholder="Description, missions, résultats..." class="w-full border rounded-lg px-3 py-2 text-sm mb-3"></textarea>
@@ -119,18 +130,138 @@
           </div>
         </div>
 
-        <div v-if="experiences.length === 0 && !experienceForm.open" class="text-sm text-gray-400 italic text-center py-4">
+        <div v-if="experiencesProf.length === 0 && !(experienceForm.open && PRO_CATEGORIES.includes(experienceForm.category))" class="text-sm text-gray-400 italic text-center py-4">
           Aucune expérience enregistrée
         </div>
         <ul class="space-y-3">
-          <li v-for="exp in experiences" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
+          <li v-for="exp in experiencesProf" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
-                <div class="font-semibold text-gray-900">{{ exp.title }}</div>
-                <div class="text-sm text-gray-600">{{ exp.company }}<span v-if="exp.location"> · {{ exp.location }}</span></div>
-                <div class="text-xs text-gray-400 mt-0.5">
-                  {{ formatYearRange(exp.start_year, exp.end_year) }}
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-gray-900">{{ exp.title }}</span>
+                  <span v-if="exp.category" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{{ categoryLabel(exp.category) }}</span>
+                  <span v-for="d in (exp.domain || [])" :key="d" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{{ domainLabel(d) }}</span>
                 </div>
+                <div class="text-sm text-gray-600">{{ exp.company }}<span v-if="exp.location"> · {{ exp.location }}</span></div>
+                <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
+                <p v-if="exp.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ exp.description }}</p>
+              </div>
+              <div class="flex gap-2 text-xs">
+                <button @click="openExperienceForm(exp)" class="text-blue-500 hover:text-blue-700">Modifier</button>
+                <button @click="deleteExperience(exp.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Conférences & Interventions -->
+      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Conférences & Interventions</h2>
+          <button @click="openExperienceForm(null, 'intervention')" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
+            + Ajouter
+          </button>
+        </div>
+
+        <div v-if="experienceForm.open && experienceForm.category === 'intervention'" class="bg-gray-50 rounded-lg p-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <input v-model="experienceForm.title" placeholder="Titre / intitulé *" class="border rounded-lg px-3 py-2 text-sm" />
+            <input v-model="experienceForm.company" placeholder="Organisateur *" class="border rounded-lg px-3 py-2 text-sm" />
+            <input v-model="experienceForm.location" placeholder="Lieu" class="border rounded-lg px-3 py-2 text-sm" />
+            <div class="grid grid-cols-2 gap-2">
+              <input v-model.number="experienceForm.start_year" type="number" min="1900" :max="maxYear" placeholder="Année *" class="border rounded-lg px-3 py-2 text-sm" />
+              <input v-model.number="experienceForm.end_year" type="number" min="1900" :max="maxYear + 10" placeholder="Année de fin (si différente)" class="border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-500">Domaine(s) :</span>
+              <label v-for="d in experienceDomains" :key="d.value" class="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" :value="d.value" v-model="experienceForm.domain" class="accent-indigo-600" />
+                {{ d.label }}
+              </label>
+            </div>
+          </div>
+          <textarea v-model="experienceForm.description" rows="3" placeholder="Description, contexte, public..." class="w-full border rounded-lg px-3 py-2 text-sm mb-3"></textarea>
+          <div class="flex justify-end gap-2">
+            <button @click="experienceForm.open = false" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Annuler</button>
+            <button @click="saveExperience" class="bg-black text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800">
+              {{ experienceForm.id ? 'Modifier' : 'Ajouter' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="experiencesConf.length === 0 && !(experienceForm.open && experienceForm.category === 'intervention')" class="text-sm text-gray-400 italic text-center py-4">
+          Aucune intervention enregistrée
+        </div>
+        <ul class="space-y-3">
+          <li v-for="exp in experiencesConf" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-gray-900">{{ exp.title }}</span>
+                  <span v-for="d in (exp.domain || [])" :key="d" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{{ domainLabel(d) }}</span>
+                </div>
+                <div class="text-sm text-gray-600">{{ exp.company }}<span v-if="exp.location"> · {{ exp.location }}</span></div>
+                <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
+                <p v-if="exp.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ exp.description }}</p>
+              </div>
+              <div class="flex gap-2 text-xs">
+                <button @click="openExperienceForm(exp)" class="text-blue-500 hover:text-blue-700">Modifier</button>
+                <button @click="deleteExperience(exp.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Publications -->
+      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Publications & Médias</h2>
+          <button @click="openExperienceForm(null, 'media')" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
+            + Ajouter
+          </button>
+        </div>
+
+        <div v-if="experienceForm.open && experienceForm.category === 'media'" class="bg-gray-50 rounded-lg p-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <input v-model="experienceForm.title" placeholder="Titre / intitulé *" class="border rounded-lg px-3 py-2 text-sm" />
+            <input v-model="experienceForm.company" placeholder="Média / éditeur *" class="border rounded-lg px-3 py-2 text-sm" />
+            <input v-model="experienceForm.location" placeholder="Support (web, presse, TV...)" class="border rounded-lg px-3 py-2 text-sm" />
+            <div class="grid grid-cols-2 gap-2">
+              <input v-model.number="experienceForm.start_year" type="number" min="1900" :max="maxYear" placeholder="Année *" class="border rounded-lg px-3 py-2 text-sm" />
+              <input v-model.number="experienceForm.end_year" type="number" min="1900" :max="maxYear + 10" placeholder="Année de fin (si différente)" class="border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-500">Domaine(s) :</span>
+              <label v-for="d in experienceDomains" :key="d.value" class="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" :value="d.value" v-model="experienceForm.domain" class="accent-indigo-600" />
+                {{ d.label }}
+              </label>
+            </div>
+          </div>
+          <textarea v-model="experienceForm.description" rows="3" placeholder="Sujet, contexte, lien..." class="w-full border rounded-lg px-3 py-2 text-sm mb-3"></textarea>
+          <div class="flex justify-end gap-2">
+            <button @click="experienceForm.open = false" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Annuler</button>
+            <button @click="saveExperience" class="bg-black text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800">
+              {{ experienceForm.id ? 'Modifier' : 'Ajouter' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="experiencesPub.length === 0 && !(experienceForm.open && experienceForm.category === 'media')" class="text-sm text-gray-400 italic text-center py-4">
+          Aucune publication enregistrée
+        </div>
+        <ul class="space-y-3">
+          <li v-for="exp in experiencesPub" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-gray-900">{{ exp.title }}</span>
+                  <span v-for="d in (exp.domain || [])" :key="d" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{{ domainLabel(d) }}</span>
+                </div>
+                <div class="text-sm text-gray-600">{{ exp.company }}<span v-if="exp.location"> · {{ exp.location }}</span></div>
+                <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
                 <p v-if="exp.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ exp.description }}</p>
               </div>
               <div class="flex gap-2 text-xs">
@@ -320,6 +451,20 @@ const settings = ref({ default_template: 'classic', default_color: 'indigo' })
 
 const showPreview = ref(false)
 
+const experienceCategories = [
+  { value: 'emploi',       label: 'Emploi salarié' },
+  { value: 'freelance',    label: 'Mission freelance' },
+  { value: 'intervention', label: 'Intervention / conférence' },
+  { value: 'media',        label: 'Presse & médias' },
+  { value: 'associatif',   label: 'Associatif / bénévolat' },
+]
+
+const experienceDomains = [
+  { value: 'dev',            label: 'Développement' },
+  { value: 'droit',          label: 'Droit du travail' },
+  { value: 'desinformation', label: 'Désinformation' },
+]
+
 const formationCategories = [
   { value: 'diplome',       label: 'Diplôme' },
   { value: 'memoire',       label: 'Mémoire' },
@@ -337,12 +482,20 @@ const skillCategories = [
 ]
 
 const categoryLabel = (value) => {
-  const all = [...formationCategories, ...skillCategories]
+  const all = [...experienceCategories, ...formationCategories, ...skillCategories]
   return all.find(c => c.value === value)?.label || value
 }
 
+const domainLabel = (value) => experienceDomains.find(d => d.value === value)?.label || value
+
+// ---- Experience filters ----
+const PRO_CATEGORIES = [null, 'emploi', 'freelance', 'associatif']
+const experiencesProf = computed(() => experiences.value.filter(e => PRO_CATEGORIES.includes(e.category)))
+const experiencesConf = computed(() => experiences.value.filter(e => e.category === 'intervention'))
+const experiencesPub  = computed(() => experiences.value.filter(e => e.category === 'media'))
+
 // ---- Forms state ----
-const emptyExperience = () => ({ open: false, id: null, title: '', company: '', location: '', start_year: null, end_year: null, description: '' })
+const emptyExperience = (defaultCategory = null) => ({ open: false, id: null, title: '', company: '', location: '', start_year: null, end_year: null, description: '', category: defaultCategory, domain: [] })
 const emptyFormation  = () => ({ open: false, id: null, title: '', institution: '', category: 'diplome', location: '', start_year: null, end_year: null, description: '' })
 
 const maxYear = new Date().getFullYear() + 1
@@ -380,14 +533,18 @@ const fetchAll = async () => {
 }
 
 // ---- Experience ----
-const openExperienceForm = (exp = null) => {
-  Object.assign(experienceForm, exp ? { open: true, ...exp } : { ...emptyExperience(), open: true })
+const openExperienceForm = (exp = null, defaultCategory = null) => {
+  Object.assign(experienceForm, exp
+    ? { open: true, ...exp, domain: exp.domain || [] }
+    : { ...emptyExperience(defaultCategory), open: true }
+  )
 }
 const saveExperience = async () => {
   if (!experienceForm.title || !experienceForm.company || !experienceForm.start_year) return
   const payload = { cv_experience: {
     title: experienceForm.title, company: experienceForm.company, location: experienceForm.location || null,
     start_year: experienceForm.start_year, end_year: experienceForm.end_year || null, description: experienceForm.description || null,
+    category: experienceForm.category || null, domain: experienceForm.domain,
   }}
   if (experienceForm.id) await experienceCrud.update(experienceForm.id, payload)
   else                   await experienceCrud.create(payload)

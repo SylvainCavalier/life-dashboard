@@ -11,6 +11,11 @@ export default [
     component: () => import('../pages/modules/ContactsPage.vue'),
   },
   {
+    path: '/crm',
+    name: 'Crm',
+    component: () => import('../pages/modules/CrmPage.vue'),
+  },
+  {
     path: '/properties',
     name: 'Properties',
     component: () => import('../pages/modules/PropertiesPage.vue'),

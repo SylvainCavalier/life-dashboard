@@ -1,0 +1,428 @@
+# Interventions publiques — Debunker des Étoiles
+# Modèle cible : CvExperience (ou futur CvAppearance)
+# Champs : title, company, location, description, position, start_year, end_year
+
+cv_appearances:
+
+  # ── 2018 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Table ronde Fake news (Storyzy)"
+    company: "Storyzy / Arnaud Jacolin"
+    location: "Lyon"
+    position: "Intervenant"
+    start_year: 2018
+    end_year: 2018
+    description: >
+      Table ronde sur les fake news, organisée via Storyzy. Échange
+      suivi d'un déjeuner de travail.
+
+  - title: "Public Reputation Lab — Syntec RP"
+    company: "Syntec RP / MEDEF"
+    location: "Paris (MEDEF, 75007)"
+    position: "Conférencier"
+    start_year: 2018
+    end_year: 2018
+    description: >
+      Événement annuel du Syntec Conseil en Relations Publiques,
+      organisé au siège du MEDEF. Sylvain intervient en tant que
+      vidéaste / debunker de théories du complot. 5 invitations
+      attribuées en tant qu'intervenant.
+
+  - title: "Afterwork Cyber — CCI France / CyberCercle"
+    company: "CCI France / CyberCercle (Thibault Renard)"
+    location: "France (lieu exact non précisé)"
+    position: "Intervenant"
+    start_year: 2018
+    end_year: 2018
+    description: >
+      Événement cybersécurité organisé dans le cadre du CyberCercle
+      via CCI France. Participation convenue.
+
+  - title: "Table ronde CyberCercle — Avignon"
+    company: "CyberCercle (Bénédicte Pilliet)"
+    location: "Avignon"
+    position: "Panéliste"
+    start_year: 2018
+    end_year: 2018
+    description: >
+      Table ronde organisée par le CyberCercle le 17 octobre 2018.
+      Sylvain intervient comme vidéaste spécialiste des théories du
+      complot. Retour de Montréal juste avant l'événement.
+
+  - title: "Formation au Planétarium de Montréal — Chaire UNESCO"
+    company: "Université de Sherbrooke / Chaire UNESCO en prévention de la radicalisation et de l'extrémisme violents (Marie-Eve Carignan, Ph.D.)"
+    location: "Montréal (Canada) — Planétarium"
+    position: "Formateur / Intervenant expert"
+    start_year: 2018
+    end_year: 2018
+    description: >
+      Formation organisée au Planétarium de Montréal dans le cadre des
+      travaux de la Chaire UNESCO en prévention de la radicalisation et
+      de l'extrémisme violents (Université de Sherbrooke). Marie-Eve
+      Carignan, Ph.D. (co-titulaire, directrice du pôle médias) et
+      David Morin font référence à cet échange dans un courrier de
+      juillet 2022. Séjour à Montréal en octobre 2018 (retour juste
+      avant la table ronde d'Avignon du 17 octobre 2018).
+
+  # ── 2019 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Kamo-Con — Convention culturelle"
+    company: "Kamo-Con"
+    location: "Dijon"
+    position: "Exposant / Intervenant"
+    start_year: 2019
+    end_year: 2019
+    description: >
+      Convention de culture japonaise à Dijon (mars 2019).
+      Présence en tant qu'exposant ou intervenant.
+
+  - title: "Conférence au lycée Saint-Joseph"
+    company: "Lycée Saint-Joseph"
+    location: "France (lieu exact non précisé)"
+    position: "Conférencier"
+    start_year: 2019
+    end_year: 2019
+    description: >
+      Intervention pédagogique dans un lycée, organisée par Flavien
+      Cunis. Invitation officiellement tamponnée et signée par la
+      responsable pédagogique (principale). Avril 2019.
+
+  # ── 2021 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Conférence de presse TimeWorld"
+    company: "TimeWorld"
+    location: "Paris (Hôtel de Ville)"
+    position: "Invité / Intervenant"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Conférence de presse du congrès TimeWorld, le 13 janvier 2021
+      à l'Hôtel de Ville de Paris.
+
+  - title: "Conférence en ligne — Agence de Presse du Québec"
+    company: "Agence de Presse du Québec"
+    location: "En ligne (Québec / France)"
+    position: "Conférencier"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Conférence en ligne sur la désinformation et les théories du
+      complot, organisée par l'Agence de Presse du Québec.
+
+  - title: "Émission \"On est fait pour s'entendre\" — RTL"
+    company: "RTL (Céline Bonnet)"
+    location: "Neuilly-sur-Seine — RTL, 56 avenue Charles de Gaulle"
+    position: "Invité radio"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Participation en direct à l'émission "On est fait pour s'entendre"
+      sur RTL, le vendredi 16 avril 2021 (14h30–15h30). Thème :
+      « Pourrions-nous tous devenir des complotistes ? ». Invitation et
+      confirmation par Céline Bonnet (celine.bonnet@rtl.fr).
+
+  - title: "Livret YouTube — créateurs contre la désinformation"
+    company: "YouTube / Google (agence TBWA)"
+    location: "Publication nationale — distribué avec M le Monde"
+    position: "Créateur contributeur"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Livret imprimé présentant des profils de créateurs YouTube
+      engagés dans la lutte contre la désinformation, réalisé par
+      l'agence TBWA pour YouTube/Google. Publié en supplément avec
+      M le Monde, sorti le 10 septembre 2021. Sylvain a signé une
+      décharge et reçu 3 exemplaires physiques.
+
+  - title: "Magazine Azerty n°5 — Google (fact-checking)"
+    company: "Google / TBWA (Ruben Curiel)"
+    location: "Publication nationale — 1,6 million d'exemplaires"
+    position: "Expert interviewé / Contributeur"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      5ème numéro du magazine Azerty de Google, dédié à la vie
+      numérique et la technologie. Tirage : 1,6 million d'exemplaires,
+      distribué en supplément dans Le Point, M le mag, L'Obs,
+      L'Opinion, Les Echos, Le Parisien, Le Figaro Mag, Courrier
+      International, L'Express et le JDD. Thème du numéro : information
+      de qualité. Contribution de Sylvain sur le fact-checking (ses
+      techniques et habitudes). Shooting photo réalisé à domicile par
+      un photographe mandaté par TBWA.
+
+  - title: "Vidéo Loopsider — ex-conspirationniste"
+    company: "Loopsider"
+    location: "Paris / Créteil"
+    position: "Témoignant"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Tournage d'une vidéo documentaire pour Loopsider sur le parcours
+      d'un ancien conspirationniste reconverti. Vidéo publiée.
+
+  - title: "Interview GéoAdo"
+    company: "GéoAdo (Natacha Scheidhauer)"
+    location: "Téléphonique"
+    position: "Expert interviewé"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Interview pour le magazine jeunesse GéoAdo sur les théories du
+      complot. Échange téléphonique le 1er avril 2021.
+
+  - title: "Article L'Express — mécanismes des théories conspirationnistes"
+    company: "L'Express (Juliette Chaignon)"
+    location: "Téléphonique / Paris"
+    position: "Expert cité"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Interview pour un article de L'Express sur les mécanismes des
+      théories conspirationnistes et la manière d'en sortir.
+
+  - title: "Article Arrêt sur Images"
+    company: "Arrêt sur Images (Loris Guémart)"
+    location: "Téléphonique"
+    position: "Expert interviewé"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Interview pour Arrêt sur Images. Article publié, citations
+      validées avant publication.
+
+  - title: "France 24 — interview désinformation"
+    company: "France 24 (Nabia Makhloufi-Oussibrahim)"
+    location: "Téléphonique"
+    position: "Expert interviewé"
+    start_year: 2021
+    end_year: 2021
+    description: >
+      Demande d'interview de France 24 sur la désinformation et les
+      théories du complot.
+
+  # ── 2022 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Rencontres InfoCom de Toulouse 2022"
+    company: "Comité InfoCom (Julien Leroy) / Diagora Toulouse Labège"
+    location: "Toulouse (Quai des Savoirs / Diagora Labège)"
+    position: "Conférencier"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Conférence lors des Rencontres InfoCom de Toulouse, le jeudi
+      17 février 2022 (15h15–16h). Déplacement en train depuis Paris,
+      pris en charge par les organisateurs.
+
+  - title: "Conférence — Médiathèques d'Argenteuil"
+    company: "Médiathèques de la ville d'Argenteuil (Lisa Dumas)"
+    location: "Argenteuil — Médiathèque Elsa Triolet & Aragon"
+    position: "Conférencier"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Cycle de conférences des médiathèques d'Argenteuil. Intervention
+      le samedi 12 mars 2022. Honoraires versés via devis (Antoine Daoust).
+
+  - title: "Intervention pédagogique — Lycée (Académie de Nice)"
+    company: "Académie de Nice (Marion Sievers)"
+    location: "Visioconférence"
+    position: "Intervenant pédagogique"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Visio avec une classe de 1ère générale, le mardi 5 avril 2022
+      (9h, 45 min). Séquence pédagogique préparée autour de la
+      désinformation et du complotisme.
+
+  - title: "Table ronde — Mouvement UP / Creatis"
+    company: "Mouvement UP / Creatis (Laetitia Moreni)"
+    location: "France (format non précisé)"
+    position: "Panéliste"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Rencontre inspirante organisée par Mouvement UP et Creatis
+      autour des théories du complot. Animée par Laetitia Moreni,
+      journaliste. 21 avril 2022.
+
+  - title: "Table ronde — Wolfgang Theurer & Neset Mandi"
+    company: "Organisation non précisée"
+    location: "France"
+    position: "Panéliste"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Table ronde avec Wolfgang Theurer et Neset Mandi, mi-avril 2022.
+      Trame proposée par Wolfgang Theurer avec participation constante
+      du public.
+
+  - title: "Journée d'étude EMI — Enssib Lyon"
+    company: "Enssib / Inspé Université Lyon 1 (Mathilde Larrieu)"
+    location: "Lyon (Villeurbanne)"
+    position: "Conférencier"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Journée d'étude sur les enjeux de l'Éducation aux Médias et à
+      l'Information (EMI), le 18 mai 2022. Organisée par l'Enssib en
+      partenariat avec l'Inspé Lyon 1. Frais de déplacement pris en
+      charge.
+
+  - title: "Débat / apéro — théories du complot"
+    company: "Organisation privée (Florent Moyer / Zoé)"
+    location: "France"
+    position: "Intervenant débat"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Apéro-débat sur le décryptage de la vie numérique et les théories
+      du complot, le 14 juin 2022 à 19h.
+
+  - title: "Séminaire en ligne QAnon in Europe — Lighthouse Reports / Bellingcat"
+    company: "Lighthouse Reports & Bellingcat"
+    location: "En ligne (international)"
+    position: "Panéliste"
+    start_year: 2022
+    end_year: 2022
+    description: >
+      Séminaire international en ligne « QAnon in Europe: Tracing a
+      Conspiracy ». Panel « Surviving QAnon, Lessons from the US »,
+      le 2 novembre 2022, 16h30–17h45 CET.
+
+  # ── 2023 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Conférence Connex'Cité / GEMPPI / Miviludes — Marseille"
+    company: "Connex'Cité / GEMPPI / Miviludes"
+    location: "Marseille (Cité des Associations, 93 La Canebière)"
+    position: "Conférencier"
+    start_year: 2023
+    end_year: 2023
+    description: >
+      Événement sur la lutte contre le complotisme et les dérives
+      sectaires, le 20 avril 2023 à 17h, organisé en partenariat avec
+      le GEMPPI et la Miviludes.
+
+  - title: "Conférence désinformation — Toulouse (Diagora Labège)"
+    company: "Organisation non précisée"
+    location: "Toulouse (Diagora Centre de Congrès, Labège)"
+    position: "Conférencier"
+    start_year: 2023
+    end_year: 2023
+    description: >
+      Intervention lors d'un événement à Toulouse au centre de congrès
+      Diagora Labège, avril–mai 2023.
+
+  - title: "Rencontres Défense & Cyber — 2ème édition"
+    company: "CyberCercle AURA (Bénédicte Pilliet)"
+    location: "Lyon (Hôtel du Département du Rhône)"
+    position: "Intervenant / Panéliste"
+    start_year: 2023
+    end_year: 2023
+    description: >
+      Deuxième édition des Rencontres Défense & Cyber, le mardi
+      19 septembre 2023 dans les salons de l'Hôtel du Département
+      du Rhône à Lyon. Intervenant confirmé.
+
+  - title: "Conférence désinformation — ILERI"
+    company: "ILERI (Institut Libre d'Étude des Relations Internationales)"
+    location: "Lyon (ou Paris)"
+    position: "Conférencier"
+    start_year: 2023
+    end_year: 2023
+    description: >
+      Conférence sur la désinformation pour l'ILERI, mentionnée comme
+      récente dans un mail d'octobre 2023 (« il y a peu »).
+
+  - title: "Assises nationales de la lutte contre les dérives sectaires"
+    company: "Ministère de l'Intérieur et des Outre-mer / MIVILUDES (Secrétariat d'État de Sonia Backès)"
+    location: "Paris — Hôtel de Beauvau (Ministère de l'Intérieur)"
+    position: "Invité"
+    start_year: 2023
+    end_year: 2023
+    description: >
+      Invitation officielle du Bureau du cabinet / Protocole du
+      Ministère de l'Intérieur et des Outre-mer aux Assises nationales
+      de la lutte contre les dérives sectaires, présidées par Sonia
+      Backès, Secrétaire d'État chargée de la Citoyenneté. Deux jours :
+      journée du jeudi 9 mars 2023 et après-midi du vendredi 10 mars
+      2023, à l'Hôtel de Beauvau. Programme joint à l'invitation.
+
+  # ── 2024 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Matinée Défense & Cyber — CyberCercle 2024"
+    company: "CyberCercle"
+    location: "France (lieu exact non précisé)"
+    position: "Invité"
+    start_year: 2024
+    end_year: 2024
+    description: >
+      Premier rendez-vous du cycle Défense & Cyber 2024, le 12 avril
+      2024. Invitation reçue. Participation non confirmée dans les
+      archives.
+
+  - title: "Conférence désinformation — CyberCercle AURA / IHEDN"
+    company: "CyberCercle Auvergne-Rhône-Alpes / AR14 IHEDN / Jeunes IHEDN"
+    location: "Lyon"
+    position: "Intervenant table ronde"
+    start_year: 2024
+    end_year: 2024
+    description: >
+      Conférence co-organisée par le CyberCercle AURA, l'AR14 IHEDN
+      et les Jeunes IHEDN, le jeudi 30 mai 2024 (18h–20h30). Sylvain
+      intervient lors des tables rondes. Déplacement depuis Paris.
+      Remerciements reçus pour son intervention « très pédagogue ».
+
+  - title: "Article — Science et Pseudo-Sciences"
+    company: "Revue Science et Pseudo-Sciences (AFIS)"
+    location: "Publication écrite"
+    position: "Auteur / Contributeur"
+    start_year: 2024
+    end_year: 2024
+    description: >
+      Article pour le dossier « documentaires trompeurs et mensongers »
+      de la revue Science et Pseudo-Sciences. Texte rédigé et validé.
+
+  - title: "Rencontres Cybersécurité Auvergne-Rhône-Alpes 2024"
+    company: "Région Auvergne-Rhône-Alpes"
+    location: "Lyon (Hôtel de Région AURA)"
+    position: "Invité / Intervenant"
+    start_year: 2024
+    end_year: 2024
+    description: >
+      Journée sur la sécurité et la confiance numériques au service
+      des acteurs du territoire. Session désinformation.
+
+  # ── 2025 ─────────────────────────────────────────────────────────────────────
+
+  - title: "Conférence internationale — IFPIM / FIP"
+    company: "IFPIM / FIP (Forum International de la Presse)"
+    location: "France (lieu exact non précisé)"
+    position: "Intervenant"
+    start_year: 2025
+    end_year: 2025
+    description: >
+      Conférence internationale de haut niveau sur l'intégrité de
+      l'information et les médias indépendants, co-organisée par
+      l'IFPIM et le FIP.
+
+  - title: "Intervention pédagogique — Collège Le Grand Champ"
+    company: "Collège Le Grand Champ (Pont-de-Chéruy, Isère)"
+    location: "Pont-de-Chéruy (Isère)"
+    position: "Intervenant pédagogique"
+    start_year: 2025
+    end_year: 2025
+    description: >
+      Projet pédagogique autour de la désinformation avec un professeur
+      d'histoire. Club de débunkage de fake news, les jeudis 13h–14h.
+      Public : collégiens.
+
+  - title: "Conférence EJCAM — Université Aix-Marseille"
+    company: "EJCAM — École de Journalisme et de Communication d'Aix-Marseille (M1)"
+    location: "Aix-Marseille"
+    position: "Conférencier invité"
+    start_year: 2025
+    end_year: 2025
+    description: >
+      Conférence organisée par des étudiants de M1 journalisme de
+      l'EJCAM (Université d'Aix-Marseille) sur la désinformation.
+      Invitation reçue.

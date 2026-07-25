@@ -143,6 +143,7 @@ import ModernTemplate from './templates/ModernTemplate.vue'
 import cvPrintCss from './cv-print.css?raw'
 import './cv-print.css'
 import { useApi } from '../../composables/useApi'
+import { PRO_EXPERIENCE_CATEGORIES } from './templates/helpers.js'
 
 const props = defineProps({
   profile: { type: Object, default: () => ({}) },
@@ -175,22 +176,30 @@ const template = ref(props.initialTemplate || 'classic')
 const accentColor = ref(props.initialColor || 'indigo')
 const interestsDetailed = ref(false)
 
+const experiencesPro  = computed(() => props.experiences.filter(e => PRO_EXPERIENCE_CATEGORIES.includes(e.category)))
+const experiencesConf = computed(() => props.experiences.filter(e => e.category === 'intervention'))
+const experiencesPub  = computed(() => props.experiences.filter(e => e.category === 'media'))
+
 const selectedIds = ref({
-  experiences: props.experiences.map(e => e.id),
-  formations:  props.formations.map(f => f.id),
-  skills:      props.skills.map(s => s.id),
-  interests:   props.interests.map(i => i.id),
+  experiences_pro:  experiencesPro.value.map(e => e.id),
+  experiences_conf: experiencesConf.value.map(e => e.id),
+  experiences_pub:  experiencesPub.value.map(e => e.id),
+  formations:       props.formations.map(f => f.id),
+  skills:           props.skills.map(s => s.id),
+  interests:        props.interests.map(i => i.id),
 })
 
 const sections = computed(() => [
-  { key: 'experiences', label: 'Expériences',   items: props.experiences },
-  { key: 'formations',  label: 'Formations',    items: props.formations },
-  { key: 'skills',      label: 'Compétences',   items: props.skills },
-  { key: 'interests',   label: 'Centres d\'intérêt', items: props.interests },
+  { key: 'experiences_pro',  label: 'Expériences professionnelles', items: experiencesPro.value },
+  { key: 'experiences_conf', label: 'Conférences & Interventions',  items: experiencesConf.value },
+  { key: 'experiences_pub',  label: 'Publications & Médias',        items: experiencesPub.value },
+  { key: 'formations',       label: 'Formations',                   items: props.formations },
+  { key: 'skills',           label: 'Compétences',                  items: props.skills },
+  { key: 'interests',        label: 'Centres d\'intérêt',           items: props.interests },
 ])
 
 const labelFor = (key, item) => {
-  if (key === 'experiences') return `${item.title} — ${item.company}`
+  if (key.startsWith('experiences')) return `${item.title} — ${item.company}`
   if (key === 'formations')  return `${item.title}${item.institution ? ' — ' + item.institution : ''}`
   if (key === 'skills')      return `${item.name}${item.level ? ' (' + item.level + ')' : ''}`
   return item.name
@@ -212,7 +221,11 @@ const toggleSection = (key, checked) => {
 }
 
 const filterBy = (items, key) => items.filter(i => selectedIds.value[key].includes(i.id))
-const filteredExperiences = computed(() => filterBy(props.experiences, 'experiences'))
+const filteredExperiences = computed(() => props.experiences.filter(e =>
+  selectedIds.value.experiences_pro.includes(e.id) ||
+  selectedIds.value.experiences_conf.includes(e.id) ||
+  selectedIds.value.experiences_pub.includes(e.id)
+))
 const filteredFormations  = computed(() => filterBy(props.formations,  'formations'))
 const filteredSkills      = computed(() => filterBy(props.skills,      'skills'))
 const filteredInterests   = computed(() => filterBy(props.interests,   'interests'))

@@ -50,7 +50,7 @@ class Api::CompaniesController < ApplicationController
 
   def company_params
     params.permit(
-      :name, :legal_form, :siren, :siret, :vat_number, :rcs, :activity, :ape_code, :idcc, :status,
+      :trade_name, :legal_representative_name, :legal_form, :siren, :siret, :vat_number, :rcs, :activity, :ape_code, :idcc, :status,
       :creation_date, :capital, :revenue, :employees_count,
       :address_line1, :address_line2, :postal_code, :city, :country,
       :website, :email, :phone, :notes
@@ -60,7 +60,8 @@ class Api::CompaniesController < ApplicationController
   def company_json(company)
     {
       id: company.id,
-      name: company.name,
+      trade_name: company.trade_name,
+      legal_representative_name: company.legal_representative_name,
       legal_form: company.legal_form,
       siren: company.siren,
       siret: company.siret,

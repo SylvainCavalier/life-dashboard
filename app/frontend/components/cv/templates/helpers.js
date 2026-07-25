@@ -12,7 +12,18 @@ const CATEGORY_LABELS = {
 
 const SKILL_ORDER = ['informatique', 'langue', 'permis', 'secourisme', 'autre']
 
+export const PRO_EXPERIENCE_CATEGORIES = [null, 'emploi', 'freelance', 'associatif']
+
 export const categoryLabel = (value) => CATEGORY_LABELS[value] || value
+
+export const groupExperiencesByCategory = (experiences) => {
+  const groups = [
+    { key: 'pro', label: 'Expériences professionnelles', items: experiences.filter(e => PRO_EXPERIENCE_CATEGORIES.includes(e.category)) },
+    { key: 'conf', label: 'Conférences & Interventions', items: experiences.filter(e => e.category === 'intervention') },
+    { key: 'pub', label: 'Publications & Médias', items: experiences.filter(e => e.category === 'media') },
+  ]
+  return groups.filter(g => g.items.length)
+}
 
 export const formatYearRange = (start, end) => {
   if (!start && !end) return ''

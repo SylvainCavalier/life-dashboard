@@ -15,7 +15,7 @@
           <div class="flex items-start justify-between mb-4">
             <div>
               <div class="flex items-center gap-2 mb-1">
-                <h1 class="text-2xl font-bold text-gray-900">{{ company.name }}</h1>
+                <h1 class="text-2xl font-bold text-gray-900">{{ company.trade_name }}</h1>
                 <span v-if="company.legal_form" class="text-xs px-2 py-0.5 rounded-full font-medium" :class="legalFormBadge(company.legal_form)">
                   {{ legalFormLabel(company.legal_form) }}
                 </span>
@@ -23,6 +23,7 @@
                   {{ statusLabel(company.status) }}
                 </span>
               </div>
+              <p v-if="company.legal_representative_name" class="text-sm text-gray-500">Representant legal : {{ company.legal_representative_name }}</p>
               <p v-if="company.activity" class="text-sm text-gray-500">{{ company.activity }}</p>
               <p v-if="company.address_line1" class="text-sm text-gray-400 mt-1">
                 {{ company.address_line1 }}{{ company.address_line2 ? ', ' + company.address_line2 : '' }},

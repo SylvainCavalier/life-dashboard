@@ -56,7 +56,7 @@ module Invoices
       pdf.bounding_box([0, y_position], width: 240) do
         pdf.text "EMETTEUR", size: FONT_SIZE_SMALL, style: :bold, color: COLOR_ACCENT
         pdf.move_down 4
-        pdf.text @company.name, size: FONT_SIZE_NORMAL, style: :bold
+        pdf.text @company.trade_name, size: FONT_SIZE_NORMAL, style: :bold
         pdf.text @company.legal_form.upcase, size: FONT_SIZE_SMALL, color: COLOR_MUTED if @company.legal_form.present?
         build_address(@company).each { |line| pdf.text line, size: FONT_SIZE_SMALL }
         pdf.text @company.email, size: FONT_SIZE_SMALL if @company.email.present?
@@ -211,7 +211,7 @@ module Invoices
     def render_footer(pdf)
       pdf.repeat(:all) do
         pdf.bounding_box([0, 25], width: pdf.bounds.width, height: 20) do
-          parts = [@company.name]
+          parts = [@company.trade_name]
           parts << @company.legal_form.upcase if @company.legal_form.present?
           parts << "Capital #{format_currency(@company.capital)}" if @company.capital.present? && @company.capital.positive?
           parts << "RCS #{@company.rcs}" if @company.rcs.present?

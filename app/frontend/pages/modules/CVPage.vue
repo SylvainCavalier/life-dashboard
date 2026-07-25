@@ -435,6 +435,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 import CVPreviewModal from '../../components/cv/CVPreviewModal.vue'
+import { PRO_EXPERIENCE_CATEGORIES } from '../../components/cv/templates/helpers.js'
 
 const { useCrud, get, patch } = useApi()
 const experienceCrud = useCrud('cv_experiences')
@@ -489,7 +490,7 @@ const categoryLabel = (value) => {
 const domainLabel = (value) => experienceDomains.find(d => d.value === value)?.label || value
 
 // ---- Experience filters ----
-const PRO_CATEGORIES = [null, 'emploi', 'freelance', 'associatif']
+const PRO_CATEGORIES = PRO_EXPERIENCE_CATEGORIES
 const experiencesProf = computed(() => experiences.value.filter(e => PRO_CATEGORIES.includes(e.category)))
 const experiencesConf = computed(() => experiences.value.filter(e => e.category === 'intervention'))
 const experiencesPub  = computed(() => experiences.value.filter(e => e.category === 'media'))

@@ -16,9 +16,9 @@
 
     <p v-if="pitch" class="cv-pitch">{{ pitch }}</p>
 
-    <section v-if="experiences.length">
-      <h2 class="cv-section-title">Expériences professionnelles</h2>
-      <div v-for="exp in experiences" :key="exp.id" class="cv-entry">
+    <section v-for="group in groupedExperiences" :key="group.key">
+      <h2 class="cv-section-title">{{ group.label }}</h2>
+      <div v-for="exp in group.items" :key="exp.id" class="cv-entry">
         <div class="cv-entry-title">{{ exp.title }} — {{ exp.company }}</div>
         <div class="cv-entry-meta" v-if="exp.location">{{ exp.location }}</div>
         <div class="cv-entry-dates">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
@@ -67,7 +67,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatYearRange, categoryLabel, groupSkillsByCategory } from './helpers.js'
+import { formatYearRange, categoryLabel, groupSkillsByCategory, groupExperiencesByCategory } from './helpers.js'
 
 const props = defineProps({
   profile: { type: Object, default: () => ({}) },
@@ -82,4 +82,5 @@ const props = defineProps({
 })
 
 const groupedSkills = computed(() => groupSkillsByCategory(props.skills))
+const groupedExperiences = computed(() => groupExperiencesByCategory(props.experiences))
 </script>

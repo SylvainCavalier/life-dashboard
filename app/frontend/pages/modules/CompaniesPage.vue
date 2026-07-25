@@ -33,8 +33,12 @@
             <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">Informations principales</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Nom de l'entreprise *</label>
-                <input v-model="form.name" type="text" required placeholder="ex: Ma Societe SAS" class="input-field" />
+                <label class="block text-xs text-gray-500 mb-1">Nom commercial *</label>
+                <input v-model="form.trade_name" type="text" required placeholder="ex: SBC Labs" class="input-field" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Nom du representant legal</label>
+                <input v-model="form.legal_representative_name" type="text" placeholder="ex: Sylvain Bertrand" class="input-field" />
               </div>
               <div>
                 <label class="block text-xs text-gray-500 mb-1">Forme juridique</label>
@@ -194,7 +198,7 @@
           <div class="flex items-start justify-between mb-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2 mb-1 flex-wrap">
-                <h2 class="text-lg font-bold text-gray-900">{{ company.name }}</h2>
+                <h2 class="text-lg font-bold text-gray-900">{{ company.trade_name }}</h2>
                 <span v-if="company.legal_form" class="text-xs px-2 py-0.5 rounded-full font-medium" :class="legalFormBadge(company.legal_form)">
                   {{ legalFormLabel(company.legal_form) }}
                 </span>
@@ -259,7 +263,7 @@ const showForm = ref(false)
 const editingId = ref(null)
 
 const defaultForm = {
-  name: '', legal_form: '', status: 'active', activity: '',
+  trade_name: '', legal_representative_name: '', legal_form: '', status: 'active', activity: '',
   creation_date: '', employees_count: null,
   siren: '', siret: '', vat_number: '', rcs: '', ape_code: '', idcc: '',
   capital: null, revenue: null,

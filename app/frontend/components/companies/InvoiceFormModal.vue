@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :title="`Nouvelle facture — ${company?.name}`" @close="$emit('close')">
+  <BaseModal :title="`Nouvelle facture — ${company?.trade_name}`" @close="$emit('close')">
     <form @submit.prevent="save" class="space-y-6">
       <!-- Client enregistre -->
       <section v-if="clients.length">

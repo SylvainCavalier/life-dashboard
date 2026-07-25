@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_06_163020) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -76,7 +76,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_06_163020) do
   end
 
   create_table "companies", force: :cascade do |t|
-    t.string "name", null: false
+    t.string "trade_name", null: false
     t.string "legal_form"
     t.string "siren"
     t.string "siret"
@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_06_163020) do
     t.string "rcs"
     t.string "ape_code"
     t.string "idcc"
+    t.string "legal_representative_name"
   end
 
   create_table "contacts", force: :cascade do |t|

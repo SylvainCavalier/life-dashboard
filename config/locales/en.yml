@@ -27,5 +27,26 @@
 #       "yes": yup
 #       enabled: "ON"
 
+# L'interface est en francais mais la locale de l'application reste :en.
+# Les quelques messages de validation visibles par l'utilisateur (formulaire de
+# changement de mot de passe) sont donc traduits ici.
 en:
   hello: "Hello world"
+
+  # Portee volontairement limitee au modele User : surcharger errors.messages
+  # globalement changerait aussi les messages d'erreur de l'API pour tous les
+  # autres modeles.
+  activerecord:
+    errors:
+      models:
+        user:
+          format: "%{message}"
+          attributes:
+            current_password:
+              blank: "Renseigne ton mot de passe actuel."
+              invalid: "Le mot de passe actuel est incorrect."
+            password:
+              blank: "Renseigne un nouveau mot de passe."
+              too_short: "Le nouveau mot de passe doit faire au moins %{count} caracteres."
+            password_confirmation:
+              confirmation: "La confirmation ne correspond pas au nouveau mot de passe."

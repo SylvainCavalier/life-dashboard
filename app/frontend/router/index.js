@@ -7,16 +7,9 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard for authenticated routes
-// Routes with meta.requiresAuth will redirect to sign_in if not authenticated
-router.beforeEach((to, _from, next) => {
-  if (to.meta.requiresAuth) {
-    const authToken = localStorage.getItem('authToken')
-    if (!authToken) {
-      return next({ path: '/users/sign_in', query: { redirect: to.fullPath } })
-    }
-  }
-  next()
-})
+// Pas de garde de navigation cote client : l'authentification est entierement
+// geree par Rails (session Devise). Un visiteur non connecte est redirige vers
+// /users/sign_in avant meme que ce bundle ne soit servi, et les appels API
+// repondent 401 (traite par l'intercepteur axios).
 
 export default router

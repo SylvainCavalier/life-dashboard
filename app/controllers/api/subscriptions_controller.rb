@@ -1,7 +1,5 @@
 module Api
   class SubscriptionsController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @subscriptions = Subscription.ordered
       render json: @subscriptions

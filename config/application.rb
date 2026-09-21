@@ -1,6 +1,7 @@
 require_relative "boot"
 
 require "rails/all"
+require_relative "../lib/middleware/robots_tag_middleware"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -14,10 +15,22 @@ module LifeDashboard
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w(assets tasks))
+    config.autoload_lib(ignore: %w(assets tasks middleware))
     
-    # Add Rack::Attack middleware for rate limiting
-    config.middleware.use Rack::Attack
+    # Rack::Attack s'insere lui-meme via son railtie : le declarer ici en plus
+    # le montait deux fois, chaque requete etait donc comptee double et tous les
+    # seuils de config/initializers/rack_attack.rb valaient la moitie de leur
+    # valeur affichee.
+
+    # Dashboard strictement prive : aucun contenu ne doit etre indexe.
+    # L'en-tete est pose par un middleware, et non par
+    # action_dispatch.default_headers, car ces derniers ne s'appliquent qu'aux
+    # reponses passant par ActionController. La redirection vers la page de
+    # connexion, elle, est produite par Warden en Rack pur -- or c'est
+    # precisement la reponse qu'un crawler recoit. En position 0, le middleware
+    # est le plus exterieur de la pile : aucune reponse ne lui echappe, pas meme
+    # le 403 de l'autorisation d'hote ni les fichiers statiques.
+    config.middleware.insert_before 0, RobotsTagMiddleware
 
     # Configuration for the application, engines, and railties goes here.
     #

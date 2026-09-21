@@ -26,13 +26,11 @@ apiClient.interceptors.request.use(
       config.headers['X-CSRF-Token'] = csrfToken
     }
 
-    // Add authentication token if available (when using Devise with token auth)
-    const authToken = localStorage.getItem('authToken')
-    if (authToken) {
-      config.headers['Authorization'] = `Bearer ${authToken}`
+    // Uniquement en dev : en production ces logs deverseraient le contenu des
+    // reponses (IBAN, profil sante, mots de passe reveles) dans la console.
+    if (import.meta.env.DEV) {
+      console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`, config.data || config.params)
     }
-
-    console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`, config.data || config.params)
     return config
   },
   (error) => {
@@ -44,18 +42,19 @@ apiClient.interceptors.request.use(
 // Response interceptor - handle common responses
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
+    if (import.meta.env.DEV) {
+      console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
+    }
     return response
   },
   (error) => {
-    console.error('❌ Response error:', error.response?.data || error.message)
+    console.error('❌ Response error:', import.meta.env.DEV ? (error.response?.data || error.message) : error.message)
     
     // Handle common HTTP errors
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          // Unauthorized - redirect to login or clear auth
-          localStorage.removeItem('authToken')
+          // Session Devise expiree ou absente : retour a la page de connexion.
           if (window.location.pathname !== '/users/sign_in') {
             window.location.href = '/users/sign_in'
           }

@@ -1,7 +1,5 @@
 module Api
   class LanguagesController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @languages = Language.ordered.includes(:language_sessions)
       existing_names = @languages.map(&:name)

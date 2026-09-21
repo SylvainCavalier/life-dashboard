@@ -1,12 +1,11 @@
 class Api::DocumentsController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/documents?domain=health
   def index
     @documents = Document.all
     @documents = @documents.for_domain(params[:domain]) if params[:domain].present?
     @documents = @documents.where(category: params[:category]) if params[:category].present?
     @documents = @documents.where(company_id: params[:company_id]) if params[:company_id].present?
+    @documents = @documents.where(project_id: params[:project_id]) if params[:project_id].present?
     @documents = @documents.order(document_date: :desc, created_at: :desc)
     render json: @documents.map { |doc| document_json(doc) }
   end
@@ -61,7 +60,7 @@ class Api::DocumentsController < ApplicationController
   private
 
   def document_params
-    params.permit(:domain, :name, :category, :document_date, :notes, :file, :company_id)
+    params.permit(:domain, :name, :category, :document_date, :notes, :file, :company_id, :project_id)
   end
 
   def document_json(doc)
@@ -69,6 +68,7 @@ class Api::DocumentsController < ApplicationController
       id: doc.id,
       domain: doc.domain,
       company_id: doc.company_id,
+      project_id: doc.project_id,
       name: doc.name,
       category: doc.category,
       document_date: doc.document_date,

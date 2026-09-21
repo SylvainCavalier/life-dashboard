@@ -1,9 +1,10 @@
 module Api
   class TasksController < ApplicationController
-    protect_from_forgery with: :null_session
-
+    # GET /api/tasks              -> to-do list generale (taches sans projet)
+    # GET /api/tasks?project_id=3 -> to-do list du projet
     def index
-      @tasks = Task.ordered
+      scope = params[:project_id].present? ? Task.where(project_id: params[:project_id]) : Task.general
+      @tasks = scope.ordered
       render json: @tasks
     end
 
@@ -34,7 +35,7 @@ module Api
     private
 
     def task_params
-      params.require(:task).permit(:description, :priority, :deadline, :completed)
+      params.require(:task).permit(:description, :priority, :deadline, :completed, :project_id)
     end
   end
 end

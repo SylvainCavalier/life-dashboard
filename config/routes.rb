@@ -1,13 +1,29 @@
 Rails.application.routes.draw do
+  # Connexion uniquement : pas d'inscription publique, pas de reinitialisation
+  # de mot de passe par mail (aucun mailer n'est configure en production).
+  # Le compte proprietaire se gere via `rails owner:create` / `owner:reset_password`.
+  devise_for :users, skip: [:registrations, :passwords], controllers: {
+    sessions: 'users/sessions'
+  }
 
-root to: 'spa#index'
+  # Changement de mot de passe par le proprietaire, une fois connecte.
+  get   "account/password", to: "users/password_changes#edit",   as: :account_password
+  patch "account/password", to: "users/password_changes#update"
+
+  # Sonde de disponibilite (Heroku, monitoring externe). Herite de
+  # ActionController::Base, donc hors du perimetre de authenticate_user!.
+  get "up", to: "rails/health#show", as: :rails_health_check
+
+  root to: 'spa#index'
 
   # Simple API test endpoint used by the dashboard demo
   namespace :api do
     get 'test', to: 'test#index'
     resources :contacts, only: [:index, :create, :update, :destroy]
     resources :crm_profiles, only: [:index, :create, :update, :destroy]
-    resources :password_entries, only: [:index, :create, :destroy]
+    resources :password_entries, only: [:index, :create, :destroy] do
+      member { get :reveal }
+    end
     resource :personal_profile, only: [:show, :create, :update]
     resource :health_profile, only: [:show, :create, :update]
     resources :companies do
@@ -43,12 +59,19 @@ root to: 'spa#index'
         get :upcoming
       end
     end
+    # Flux ICS : ?token=... pour les clients calendrier, session Devise sinon.
     get "calendar.ics", to: "calendars#feed"
     resources :tasks, only: [:index, :create, :update, :destroy]
     resources :notes, only: [:index, :create, :update, :destroy]
     resources :subscriptions, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
-    resources :projects, only: [:index, :create, :update, :destroy]
+    # Module Projets : competences a apprendre et liens imbriques ; la to-do list et les
+    # documents d'un projet passent par /tasks et /documents avec ?project_id=
+    resources :projects, only: [:index, :show, :create, :update, :destroy] do
+      collection { get :categories }
+      resources :project_skills, only: [:create, :update, :destroy]
+      resources :project_links, only: [:create, :update, :destroy]
+    end
     resources :budget_entries, only: [:index, :create, :update, :destroy] do
       collection do
         get :summary
@@ -78,6 +101,14 @@ root to: 'spa#index'
       end
     end
 
+    resources :file_transfers, only: [:index, :create, :destroy]
+
+    # Module Voyages : rapport IA (POST /plan, asynchrone) et planning jour par jour
+    resources :trips do
+      member { post :plan }
+      resources :trip_items, only: [:create, :update, :destroy]
+    end
+
     # CV module
     resources :cv_experiences, only: [:index, :create, :update, :destroy]
     resources :cv_formations, only: [:index, :create, :update, :destroy]
@@ -89,6 +120,10 @@ root to: 'spa#index'
     get  "cv/data",        to: "cvs#data"
     post "cv/export_pdf",  to: "cvs#export_pdf"
   end
+
+  # Liens publics de partage de fichiers (WeTransfer perso)
+  get 't/:token', to: 'transfers#show', as: :transfer
+  get 't/:token/download', to: 'transfers#download', as: :download_transfer
 
 get '*path', to: 'spa#index', constraints: ->(req) { !req.xhr? && req.format.html? }
 end

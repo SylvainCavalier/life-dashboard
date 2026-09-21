@@ -1,7 +1,5 @@
 module Api
   class UsefulSitesController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @useful_sites = UsefulSite.ordered
       render json: @useful_sites

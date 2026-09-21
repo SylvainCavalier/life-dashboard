@@ -16,6 +16,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Messagerie** — Centralisation des emails et messageries
 - **SMS/Textos** — Gestion des textos
 - **Agenda** — Organisation des rendez-vous et événements
+- **Transfert** — WeTransfer perso : upload direct vers le bucket OVH S3, lien de partage public temporaire, purge automatique après 3 jours
+- **Projets** — Projets personnels classés par catégorie (`Project::CATEGORIES` : développement, musique, vidéo, jeu vidéo, sport, jeu de rôle, business...). Chaque projet a sa page (`/projects/:id`) : jauge, importance, compétences à apprendre (`ProjectSkill`), liens (`ProjectLink`), notes libres (`projects.notes`), to-do list (`Task` avec `project_id` ; `project_id` nul = to-do list générale du dashboard) et documents (`Document` avec `project_id`, domaine `projects`)
+- **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
 Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère tout le UI, Rails sert d'API backend. Vite pour le build frontend.
 
@@ -31,12 +34,12 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem` et `TripPlan` (rapport IA en JSON dans `content`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
-- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task`, `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`.
-- **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
-- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`.
+- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`.
+- **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
+- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone).
 
 ### Implications pour toute évolution du code
 
@@ -58,6 +61,67 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 → Quand tu termines une feature, fais le tour de cette checklist avant de considérer le travail comme fini.
 
+## Authentification et exposition publique
+
+L'application est **mono-utilisateur** et destinee a etre hebergee sur un
+domaine prive, volontairement non reference. Voir `DEPLOY.md` pour la procedure.
+
+- **Tout est prive par defaut** : `ApplicationController` porte
+  `before_action :authenticate_user!`. Un nouveau controleur est donc protege
+  sans rien faire. Les seules exceptions, explicites, sont
+  `TransfersController` (liens de partage `/t/:token`) et `Api::CalendarsController#feed`
+  (flux ICS, authentifie par `CALENDAR_FEED_TOKEN`).
+- **Ne jamais remettre `protect_from_forgery with: :null_session`** dans un
+  controleur API : le SPA envoie deja le jeton CSRF via `plugins/axios.js`.
+- **Pas d'inscription, pas de mot de passe oublie.** Le compte se cree avec
+  `rails owner:bootstrap` (ou `db:seed` en dev) : identifiants de bootstrap
+  connus, definis dans `User::BOOTSTRAP_EMAIL` / `BOOTSTRAP_PASSWORD`, poses
+  **sans validation** puisque le mot de passe provisoire est plus court que le
+  minimum impose ensuite.
+- **Le mot de passe de bootstrap ne peut servir qu'une fois.** `User#must_change_password`
+  fait rediriger toute l'application vers `/account/password` (403 JSON pour
+  l'API) via `enforce_password_change!` dans `ApplicationController`. Deux
+  controleurs s'en excluent, et c'est indispensable :
+  `Users::PasswordChangesController` (sinon boucle de redirection) et
+  `Users::SessionsController` (sinon la deconnexion elle-meme est interceptee et
+  l'utilisateur est piege sur l'ecran). Ne pas retirer ces exclusions.
+- Le changement de mot de passe passe par `/account/password`, une page ERB
+  volontairement hors du SPA : un mot de passe n'a pas a transiter par axios ni
+  a exister dans l'etat du client. Depannage :
+  `owner:reset_password`, `owner:force_password_change`, `owner:unlock`.
+- **Active Storage** : la lecture reste ouverte (les URL signees protegent les
+  blobs, et les liens de partage en dependent), l'ecriture
+  (`/rails/active_storage/direct_uploads`) est fermee par
+  `config/initializers/active_storage_auth.rb`.
+- **Coffre-fort** : `GET /api/password_entries` ne renvoie jamais les mots de
+  passe. La revelation se fait entree par entree via
+  `GET /api/password_entries/:id/reveal`, tracee dans les logs et limitee par
+  Rack::Attack. Ne pas revenir en arriere.
+- **Anti-indexation** : en-tete `X-Robots-Tag` sur chaque reponse
+  (`config/application.rb`), `public/robots.txt` en `Disallow: /`, balises
+  `<meta name="robots">` dans les trois layouts, et surtout `config.hosts`
+  limite a `APP_HOST` en production — l'app renvoie 403 sur l'hote
+  `*.herokuapp.com`. Toute nouvelle page publique doit conserver ces garanties.
+- **`referrer_policy` doit rester `same-origin`**, jamais `no-referrer` : avec
+  cette derniere, le navigateur envoie `Origin: null` y compris sur les
+  formulaires same-origin et Rails rejette la connexion
+  (`InvalidAuthenticityToken`). La protection CSRF etant desactivee en test
+  (`config.action_controller.allow_forgery_protection = false`), aucun test
+  d'integration ne peut attraper ca : c'est l'assertion sur l'en-tete
+  `Referrer-Policy` dans `access_control_test.rb` qui sert de garde-fou.
+- **Anti-indexation** : l'en-tete est pose par `RobotsTagMiddleware`
+  (`lib/middleware/`), insere en position 0 de la pile. Ne pas le remplacer par
+  `action_dispatch.default_headers` : ceux-ci ne couvrent pas les reponses
+  generees par Warden (la redirection vers la connexion, c'est-a-dire
+  exactement ce qu'un crawler recoit).
+- **Export PDF du CV** : Grover a besoin d'un Chrome headless, absent d'Heroku
+  sans buildpack. En cas d'echec, `Api::CvsController#export_pdf` repond 503 avec
+  `{"fallback": "browser_print"}` et `CVPreviewModal.vue` bascule sur
+  l'impression navigateur avec le meme document. Garder ce repli fonctionnel.
+- `test/integration/access_control_test.rb` et `password_change_test.rb`
+  verrouillent tout ce qui precede : un controleur ajoute sans authentification
+  fait echouer la suite.
+
 ## Common Commands
 
 ### Development
@@ -78,6 +142,36 @@ npm install          # Node packages
 rails db:create db:migrate
 bundle exec annotaterb models  # Update model annotations after migrations
 ```
+
+### Stockage OVH (Object Storage S3)
+```bash
+rake ovh:cors:show                                   # Config CORS actuelle du bucket
+rake ovh:cors:setup ORIGINS=https://mon-dashboard.fr # Autorise le direct upload depuis ce domaine
+```
+Le module Transfert utilise le **direct upload** Active Storage : le navigateur envoie le
+fichier en PUT directement sur le bucket. Sans CORS configuré, l'upload échoue côté
+navigateur. L'origine du bucket est aussi ajoutée à `connect_src` dans la CSP
+(`config/initializers/secure_headers.rb`), via `OVH_S3_ENDPOINT`.
+
+### Voyages (rapport IA)
+```bash
+bin/rails trips:plan[ID]       # enfile la generation du rapport IA d'un voyage (GoodJob)
+bin/rails trips:plan_now[ID]   # genere immediatement, sans GoodJob (debogage, Alfred)
+```
+Le rapport est produit par `Trips::PlanGenerationService` (OpenAI Responses API, outil
+`web_search`, sortie structuree `Trips::TripPlanSchema`) dans `TripPlanJob`, et stocke
+en jsonb dans `trip_plans.content`. Variables : `OPENAI_API_KEY` (obligatoire),
+`OPENAI_TRIP_MODEL` (defaut `gpt-5.6-sol`). Un rapport coute environ 0,3 a 1 EUR.
+La carte du monde de l'index vient de `@svg-maps/world` (CC BY 4.0) ; les codes pays
+sont les ids de cette carte (ISO alpha-2 minuscule).
+
+### Deploiement (Heroku)
+```bash
+git push heroku master                    # migrations jouees par le `release:` du Procfile
+heroku run rails owner:create             # cree le compte unique (premiere mise en ligne)
+heroku logs --tail
+```
+Procedure complete, variables d'environnement et migration des donnees : `DEPLOY.md`.
 
 ### Testing (Minitest)
 ```bash

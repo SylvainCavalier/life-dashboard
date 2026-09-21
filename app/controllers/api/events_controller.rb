@@ -1,7 +1,5 @@
 module Api
   class EventsController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @events = Event.ordered
       render json: @events

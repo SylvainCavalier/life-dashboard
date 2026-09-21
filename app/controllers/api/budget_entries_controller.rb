@@ -1,7 +1,5 @@
 module Api
   class BudgetEntriesController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @entries = BudgetEntry.ordered
       render json: @entries

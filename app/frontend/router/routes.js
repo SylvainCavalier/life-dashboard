@@ -92,6 +92,11 @@ export default [
     component: () => import('../pages/modules/ProjectsPage.vue'),
   },
   {
+    path: '/projects/:id',
+    name: 'ProjectShow',
+    component: () => import('../pages/modules/ProjectShowPage.vue'),
+  },
+  {
     path: '/cv',
     name: 'CV',
     component: () => import('../pages/modules/CVPage.vue'),
@@ -100,6 +105,22 @@ export default [
     path: '/documents',
     name: 'Documents',
     component: () => import('../pages/modules/DocumentsPage.vue'),
+  },
+  {
+    path: '/transfer',
+    name: 'Transfer',
+    component: () => import('../pages/modules/TransferPage.vue'),
+  },
+  {
+    path: '/trips',
+    name: 'Trips',
+    component: () => import('../pages/modules/TripsPage.vue'),
+  },
+  {
+    path: '/trips/:id',
+    name: 'TripShow',
+    component: () => import('../pages/modules/TripShowPage.vue'),
+    props: true,
   },
   {
     path: '/:pathMatch(.*)*',

@@ -4,9 +4,16 @@ development:
 test:
   adapter: test
 
+# ActionCable n'est utilise par aucune fonctionnalite aujourd'hui (aucun channel
+# applicatif, aucun consumer cote Vue) et l'application tourne sur un seul dyno :
+# l'adaptateur en memoire suffit.
+#
+# L'ancienne configuration pointait vers `solid_cable` avec une base `cable` qui
+# n'existe dans aucun environnement de config/database.yml — l'application ne
+# demarrait pas en production.
+#
+# Le jour ou une fonctionnalite temps reel apparait ET qu'il y a plus d'un
+# process web, repasser sur solid_cable en declarant la base `cable` dans
+# config/database.yml et en jouant sa migration.
 production:
-  adapter: solid_cable
-  connects_to:
-    database:
-      writing: cable
-  polling_interval: 0.1.seconds
+  adapter: async

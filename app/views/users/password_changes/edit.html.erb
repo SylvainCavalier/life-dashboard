@@ -1,0 +1,39 @@
+<h1><%= @forced ? "Choisis ton mot de passe" : "Changer le mot de passe" %></h1>
+
+<% if @forced %>
+  <p class="intro">
+    Le compte a ete ouvert avec un mot de passe provisoire. Remplace-le pour
+    acceder au dashboard.
+  </p>
+<% end %>
+
+<% if @user.errors.any? %>
+  <p class="flash flash-alert">
+    <%= @user.errors.full_messages.to_sentence %>
+  </p>
+<% end %>
+
+<%= form_for(@user, url: account_password_path, html: { method: :patch }) do |f| %>
+  <div class="field">
+    <%= f.label :current_password, @forced ? "Mot de passe provisoire" : "Mot de passe actuel" %>
+    <%= f.password_field :current_password, autofocus: true, autocomplete: "current-password", required: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label :password, "Nouveau mot de passe" %>
+    <%= f.password_field :password, autocomplete: "new-password", required: true,
+          minlength: Devise.password_length.min %>
+    <p class="hint"><%= Devise.password_length.min %> caracteres minimum.</p>
+  </div>
+
+  <div class="field">
+    <%= f.label :password_confirmation, "Confirmation" %>
+    <%= f.password_field :password_confirmation, autocomplete: "new-password", required: true %>
+  </div>
+
+  <%= f.submit "Enregistrer", class: "btn" %>
+<% end %>
+
+<% unless @forced %>
+  <p class="back"><%= link_to "Retour au dashboard", root_path %></p>
+<% end %>

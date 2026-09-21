@@ -80,14 +80,14 @@
               <td class="py-3 text-sm text-gray-900 font-medium">{{ entry.name }}</td>
               <td class="py-3 text-sm text-gray-700">{{ entry.login }}</td>
               <td class="py-3 text-sm text-gray-700 font-mono">
-                <span v-if="visiblePasswords.has(entry.id)">{{ entry.password }}</span>
+                <span v-if="revealed[entry.id]">{{ revealed[entry.id] }}</span>
                 <span v-else class="tracking-widest">••••••••</span>
                 <button
                   @click="togglePassword(entry.id)"
                   class="ml-2 text-gray-400 hover:text-gray-600"
-                  :title="visiblePasswords.has(entry.id) ? 'Masquer' : 'Afficher'"
+                  :title="revealed[entry.id] ? 'Masquer' : 'Afficher'"
                 >
-                  <svg v-if="visiblePasswords.has(entry.id)" class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg v-if="revealed[entry.id]" class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                   </svg>
                   <svg v-else class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,15 +116,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 
-const { useCrud } = useApi()
+const { get, useCrud } = useApi()
 const { list, create, destroy } = useCrud('password_entries')
+
+// L'API ne renvoie plus les mots de passe dans la liste : ils sont recuperes
+// un par un a la demande, et ne restent en memoire que le temps de l'affichage.
+const AUTO_HIDE_MS = 30_000
 
 const entries = ref([])
 const showForm = ref(false)
-const visiblePasswords = ref(new Set())
+const revealed = ref({})
+const hideTimers = new Map()
 
 const form = reactive({
   name: '',
@@ -147,19 +152,31 @@ const addEntry = async () => {
 
 const deleteEntry = async (id) => {
   await destroy(id)
-  visiblePasswords.value.delete(id)
+  hide(id)
   await fetchEntries()
 }
 
-const togglePassword = (id) => {
-  if (visiblePasswords.value.has(id)) {
-    visiblePasswords.value.delete(id)
-  } else {
-    visiblePasswords.value.add(id)
+const hide = (id) => {
+  clearTimeout(hideTimers.get(id))
+  hideTimers.delete(id)
+  delete revealed.value[id]
+}
+
+const togglePassword = async (id) => {
+  if (revealed.value[id]) {
+    hide(id)
+    return
   }
-  // Force reactivity
-  visiblePasswords.value = new Set(visiblePasswords.value)
+
+  const { password } = await get(`/password_entries/${id}/reveal`)
+  revealed.value[id] = password
+  hideTimers.set(id, setTimeout(() => hide(id), AUTO_HIDE_MS))
 }
 
 onMounted(fetchEntries)
+onUnmounted(() => {
+  hideTimers.forEach(clearTimeout)
+  hideTimers.clear()
+  revealed.value = {}
+})
 </script>

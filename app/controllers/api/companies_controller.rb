@@ -1,6 +1,4 @@
 class Api::CompaniesController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/companies
   def index
     @companies = Company.ordered

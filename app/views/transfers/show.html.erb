@@ -1,0 +1,18 @@
+<% content_for :title, @transfer.file.filename.to_s %>
+
+<div class="icon">&#128230;</div>
+
+<h1><%= @transfer.file.filename %></h1>
+
+<p class="meta">
+  <%= number_to_human_size(@transfer.file.byte_size) %>
+  <% if @transfer.label.present? %>
+    &middot; <%= @transfer.label %>
+  <% end %>
+</p>
+
+<a class="btn" href="<%= download_transfer_path(@transfer.token) %>">Telecharger</a>
+
+<p class="footer">
+  Ce lien expire le <%= @transfer.expires_at.in_time_zone("Europe/Paris").strftime("%d/%m/%Y à %Hh%M") %>.
+</p>

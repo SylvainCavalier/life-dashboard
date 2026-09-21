@@ -15,7 +15,21 @@ export default [
         console: 'readonly',
         localStorage: 'readonly',
         process: 'readonly',
-        fetch: 'readonly'
+        fetch: 'readonly',
+        // Globales navigateur utilisees dans les composants (minuteurs
+        // d'auto-masquage, URL.createObjectURL pour les telechargements).
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        URL: 'readonly',
+        Blob: 'readonly',
+        FormData: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        prompt: 'readonly',
+        navigator: 'readonly',
+        FileReader: 'readonly'
       }
     },
     rules: {

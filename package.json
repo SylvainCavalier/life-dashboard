@@ -24,6 +24,8 @@
     "vite-plugin-ruby": "5.1.1"
   },
   "dependencies": {
+    "@rails/activestorage": "^7.2.302",
+    "@svg-maps/world": "^2.0.0",
     "axios": "^1.12.2",
     "pinia": "3.0.4",
     "puppeteer": "^24.42.0",

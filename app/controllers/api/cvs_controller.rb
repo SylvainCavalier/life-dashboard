@@ -1,7 +1,5 @@
 module Api
   class CvsController < ApplicationController
-    protect_from_forgery with: :null_session
-
     # Fields from PersonalProfile exposed to the CV (safe, non-sensitive)
     PROFILE_FIELDS = %i[
       first_name last_name birth_date email phone mobile_phone
@@ -39,8 +37,16 @@ module Api
         type: "application/pdf",
         disposition: "attachment"
     rescue => e
+      # Le rendu serveur depend d'un Chrome headless, qui peut manquer (pas de
+      # buildpack) ou se faire tuer par la limite memoire d'un petit dyno. Ce
+      # n'est pas une raison pour priver l'utilisateur de son CV : on le dit au
+      # client, qui bascule sur l'impression PDF du navigateur avec exactement
+      # le meme HTML et la meme feuille de style.
       Rails.logger.error("CV PDF export failed: #{e.class} — #{e.message}")
-      render json: { error: "PDF generation failed: #{e.message}" }, status: :internal_server_error
+      render json: {
+        error: "La generation PDF cote serveur a echoue (#{e.class}).",
+        fallback: "browser_print"
+      }, status: :service_unavailable
     end
 
     private

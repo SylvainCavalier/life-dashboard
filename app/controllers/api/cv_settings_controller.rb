@@ -1,7 +1,5 @@
 module Api
   class CvSettingsController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def show
       render json: setting_payload(CvSetting.singleton)
     end

@@ -51,6 +51,23 @@ Rails.application.configure do
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   config.force_ssl = true
 
+  # Heroku n'a pas de serveur web devant Puma : c'est Rails qui sert le bundle
+  # Vite compile (public/vite) et les fichiers de public/.
+  config.public_file_server.enabled = true
+
+  # Le dashboard ne repond QUE sur son domaine. Une requete arrivant par le
+  # hostname *.herokuapp.com (enumerable, et activement crawle) recoit un 403
+  # sans jamais toucher a l'application. C'est la barriere anti-indexation la
+  # plus efficace, avant meme robots.txt et X-Robots-Tag.
+  if ENV["APP_HOST"].present?
+    config.hosts = [ENV["APP_HOST"], ".#{ENV['APP_HOST']}"]
+    config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  end
+
+  # Aucun mailer n'est configure : les modules Devise :recoverable et
+  # :confirmable sont volontairement absents (voir app/models/user.rb).
+  config.action_mailer.perform_deliveries = false
+
   # Log to STDOUT by default
   config.logger = ActiveSupport::Logger.new(STDOUT)
     .tap  { |logger| logger.formatter = ::Logger::Formatter.new }

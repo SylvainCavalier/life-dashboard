@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white rounded-xl shadow-sm p-5">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">To-do list</h2>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ title }}</h2>
 
     <!-- Formulaire d'ajout -->
     <form @submit.prevent="addTask" class="mb-4 space-y-2">
@@ -49,10 +49,63 @@
         <input
           type="checkbox"
           :checked="task.completed"
+          :disabled="editingId === task.id"
           @change="toggleTask(task)"
-          class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-40"
         />
-        <div class="flex-1 min-w-0">
+
+        <!-- Mode edition -->
+        <form
+          v-if="editingId === task.id"
+          @submit.prevent="saveTask(task)"
+          class="flex-1 min-w-0 space-y-2"
+        >
+          <input
+            ref="editInput"
+            v-model="editForm.description"
+            type="text"
+            class="w-full border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+            @keyup.esc="cancelEdit"
+          />
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-0.5 flex-1">
+              <button
+                v-for="star in 5"
+                :key="star"
+                type="button"
+                @click="editForm.priority = star"
+                class="text-base leading-none"
+                :class="star <= editForm.priority ? 'text-yellow-400' : 'text-gray-300'"
+              >
+                ★
+              </button>
+            </div>
+            <input
+              v-model="editForm.deadline"
+              type="date"
+              class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="submit"
+              class="text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-1 transition-colors"
+            >
+              Enregistrer
+            </button>
+            <button
+              type="button"
+              @click="cancelEdit"
+              class="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Annuler
+            </button>
+          </div>
+        </form>
+
+        <!-- Mode lecture -->
+        <div v-else class="flex-1 min-w-0">
           <p
             class="text-sm leading-tight"
             :class="task.completed ? 'line-through text-gray-400' : 'text-gray-900'"
@@ -68,8 +121,19 @@
             </span>
           </div>
         </div>
+
         <button
-          v-if="task.completed"
+          v-if="editingId !== task.id"
+          @click="startEdit(task)"
+          class="text-gray-400 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
+          title="Modifier"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+        <button
+          v-if="task.completed && editingId !== task.id"
           @click="deleteTask(task)"
           class="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
           title="Supprimer"
@@ -105,14 +169,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useApi } from '../composables/useApi'
+
+// Sans projectId : to-do list generale du dashboard. Avec : to-do list du projet.
+const props = defineProps({
+  projectId: { type: [Number, String], default: null },
+  title: { type: String, default: 'To-do list' },
+})
+const emit = defineEmits(['changed'])
 
 const { useCrud } = useApi()
 const tasksCrud = useCrud('tasks')
 
 const tasks = ref([])
 const showAll = ref(false)
+const editingId = ref(null)
+const editInput = ref(null)
+const editForm = ref({
+  description: '',
+  priority: 3,
+  deadline: '',
+})
 const newTask = ref({
   description: '',
   priority: 3,
@@ -125,8 +203,11 @@ const visibleTasks = computed(() => {
 
 const fetchTasks = async () => {
   try {
-    const data = await tasksCrud.list()
-    if (Array.isArray(data)) tasks.value = data
+    const data = await tasksCrud.list(props.projectId ? { project_id: props.projectId } : {})
+    if (Array.isArray(data)) {
+      tasks.value = data
+      emit('changed', data)
+    }
   } catch (e) {
     console.error('Erreur chargement taches:', e)
   }
@@ -140,6 +221,7 @@ const addTask = async () => {
         description: newTask.value.description.trim(),
         priority: newTask.value.priority,
         deadline: newTask.value.deadline || null,
+        project_id: props.projectId || null,
       }
     }
     await tasksCrud.create(payload)
@@ -147,6 +229,39 @@ const addTask = async () => {
     await fetchTasks()
   } catch (e) {
     console.error('Erreur ajout tache:', e)
+  }
+}
+
+const startEdit = async (task) => {
+  editingId.value = task.id
+  editForm.value = {
+    description: task.description,
+    priority: task.priority,
+    deadline: task.deadline || '',
+  }
+  await nextTick()
+  const input = Array.isArray(editInput.value) ? editInput.value[0] : editInput.value
+  input?.focus()
+}
+
+const cancelEdit = () => {
+  editingId.value = null
+}
+
+const saveTask = async (task) => {
+  if (!editForm.value.description.trim()) return
+  try {
+    await tasksCrud.update(task.id, {
+      task: {
+        description: editForm.value.description.trim(),
+        priority: editForm.value.priority,
+        deadline: editForm.value.deadline || null,
+      }
+    })
+    editingId.value = null
+    await fetchTasks()
+  } catch (e) {
+    console.error('Erreur mise a jour tache:', e)
   }
 }
 
@@ -163,6 +278,7 @@ const deleteTask = async (task) => {
   try {
     await tasksCrud.destroy(task.id)
     tasks.value = tasks.value.filter(t => t.id !== task.id)
+    emit('changed', tasks.value)
   } catch (e) {
     console.error('Erreur suppression tache:', e)
   }

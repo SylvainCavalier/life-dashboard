@@ -1,6 +1,4 @@
 class Api::PropertiesController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/properties
   def index
     @properties = Property.ordered.with_attached_photos

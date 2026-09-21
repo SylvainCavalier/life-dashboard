@@ -1,6 +1,4 @@
 class Api::PersonalProfilesController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/personal_profile
   def show
     @profile = PersonalProfile.first

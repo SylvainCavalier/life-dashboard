@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_20_214824) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -217,9 +217,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "company_id"
+    t.bigint "project_id"
     t.index ["company_id"], name: "index_documents_on_company_id"
     t.index ["domain", "category"], name: "index_documents_on_domain_and_category"
     t.index ["domain"], name: "index_documents_on_domain"
+    t.index ["project_id"], name: "index_documents_on_project_id"
   end
 
   create_table "events", force: :cascade do |t|
@@ -236,6 +238,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
     t.datetime "updated_at", null: false
     t.index ["event_type"], name: "index_events_on_event_type"
     t.index ["start_time"], name: "index_events_on_start_time"
+  end
+
+  create_table "file_transfers", force: :cascade do |t|
+    t.string "token", null: false
+    t.string "label"
+    t.datetime "expires_at", null: false
+    t.integer "download_count", default: 0, null: false
+    t.datetime "last_downloaded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_file_transfers_on_expires_at"
+    t.index ["token"], name: "index_file_transfers_on_token", unique: true
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -495,6 +509,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "project_links", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "title", null: false
+    t.string "url", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_project_links_on_project_id"
+  end
+
+  create_table "project_skills", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "name", null: false
+    t.string "status", default: "a_apprendre", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_project_skills_on_project_id"
+  end
+
   create_table "projects", force: :cascade do |t|
     t.string "name"
     t.text "description"
@@ -506,6 +540,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "category", default: "developpement", null: false
+    t.index ["category"], name: "index_projects_on_category"
   end
 
   create_table "properties", force: :cascade do |t|
@@ -604,8 +640,58 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
     t.boolean "completed", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "project_id"
     t.index ["completed"], name: "index_tasks_on_completed"
     t.index ["priority"], name: "index_tasks_on_priority"
+    t.index ["project_id"], name: "index_tasks_on_project_id"
+  end
+
+  create_table "trip_items", force: :cascade do |t|
+    t.bigint "trip_id", null: false
+    t.date "day", null: false
+    t.string "kind", default: "autre", null: false
+    t.string "title", null: false
+    t.string "url"
+    t.time "start_time"
+    t.decimal "cost", precision: 10, scale: 2
+    t.text "notes"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["trip_id", "day"], name: "index_trip_items_on_trip_id_and_day"
+    t.index ["trip_id"], name: "index_trip_items_on_trip_id"
+  end
+
+  create_table "trip_plans", force: :cascade do |t|
+    t.bigint "trip_id", null: false
+    t.string "status", default: "pending", null: false
+    t.jsonb "content", default: {}, null: false
+    t.string "model"
+    t.text "error"
+    t.datetime "requested_at"
+    t.datetime "started_at"
+    t.datetime "generated_at"
+    t.decimal "estimated_total_eur", precision: 10, scale: 2
+    t.string "input_fingerprint"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["trip_id"], name: "index_trip_plans_on_trip_id", unique: true
+  end
+
+  create_table "trips", force: :cascade do |t|
+    t.string "destination", null: false
+    t.string "country_code", limit: 2, null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.integer "travelers", default: 1, null: false
+    t.string "departure_city", default: "Paris"
+    t.string "status", default: "envisage", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["country_code"], name: "index_trips_on_country_code"
+    t.index ["start_date"], name: "index_trips_on_start_date"
+    t.index ["status"], name: "index_trips_on_status"
   end
 
   create_table "useful_sites", force: :cascade do |t|
@@ -618,17 +704,40 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_25_122318) do
     t.index ["category"], name: "index_useful_sites_on_category"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.datetime "remember_created_at"
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.string "current_sign_in_ip"
+    t.string "last_sign_in_ip"
+    t.integer "failed_attempts", default: 0, null: false
+    t.datetime "locked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "must_change_password", default: false, null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "clients", "companies"
   add_foreign_key "crm_profiles", "contacts"
   add_foreign_key "documents", "companies"
+  add_foreign_key "documents", "projects"
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "companies"
   add_foreign_key "invoices", "quotes"
   add_foreign_key "language_sessions", "languages"
+  add_foreign_key "project_links", "projects"
+  add_foreign_key "project_skills", "projects"
   add_foreign_key "quote_items", "quotes"
   add_foreign_key "quotes", "clients"
   add_foreign_key "quotes", "companies"
+  add_foreign_key "tasks", "projects"
+  add_foreign_key "trip_items", "trips"
+  add_foreign_key "trip_plans", "trips"
 end

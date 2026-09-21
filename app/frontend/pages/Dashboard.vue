@@ -2,9 +2,30 @@
   <div class="min-h-screen bg-gray-50 p-6">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Life Dashboard</h1>
-        <p class="text-gray-500 mt-1">{{ formattedDate }}</p>
+      <div class="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Life Dashboard</h1>
+          <p class="text-gray-500 mt-1">{{ formattedDate }}</p>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <a
+            href="/account/password"
+            class="text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-300 rounded-lg px-3 py-2 bg-white transition-colors"
+          >
+            Mot de passe
+          </a>
+        <!-- Deconnexion : formulaire Rails classique (session Devise, DELETE + CSRF) -->
+        <form action="/users/sign_out" method="post">
+          <input type="hidden" name="_method" value="delete" />
+          <input type="hidden" name="authenticity_token" :value="csrfToken" />
+          <button
+            type="submit"
+            class="text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-300 rounded-lg px-3 py-2 bg-white transition-colors"
+          >
+            Se deconnecter
+          </button>
+        </form>
+        </div>
       </div>
 
       <div class="flex gap-6">
@@ -52,6 +73,10 @@ import TodoList from '../components/TodoList.vue'
 
 const { useCrud } = useApi()
 
+// Jeton CSRF pose par Rails dans le layout : necessaire au formulaire de
+// deconnexion, qui est un POST Rails classique et non un appel axios.
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+
 const counts = ref({
   contacts: 0,
   properties: 0,
@@ -64,6 +89,8 @@ const counts = ref({
   useful_sites: 0,
   projects: 0,
   events: 0,
+  file_transfers: 0,
+  trips: 0,
 })
 
 const fetchCounts = async () => {
@@ -79,6 +106,8 @@ const fetchCounts = async () => {
     { key: 'useful_sites', resource: 'useful_sites' },
     { key: 'projects', resource: 'projects' },
     { key: 'events', resource: 'events' },
+    { key: 'file_transfers', resource: 'file_transfers' },
+    { key: 'trips', resource: 'trips' },
   ]
 
   const results = await Promise.allSettled(
@@ -119,6 +148,8 @@ const modules = computed(() => [
   { name: 'Mon profil', icon: '👤', subtitle: 'Donnees personnelles', to: '/profile' },
   { name: 'CV', icon: '📄', subtitle: 'Experiences, formations, competences', to: '/cv' },
   { name: 'Documents', icon: '📁', subtitle: `${counts.value.documents} document${counts.value.documents > 1 ? 's' : ''}`, to: '/documents' },
+  { name: 'Transfert', icon: '📤', subtitle: `${counts.value.file_transfers} fichier${counts.value.file_transfers > 1 ? 's' : ''} partage${counts.value.file_transfers > 1 ? 's' : ''}`, to: '/transfer' },
+  { name: 'Voyages', icon: '✈️', subtitle: `${counts.value.trips} voyage${counts.value.trips > 1 ? 's' : ''}`, to: '/trips' },
 ])
 
 const summaryPanels = [

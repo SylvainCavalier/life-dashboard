@@ -16,8 +16,12 @@
 #  index_tasks_on_priority   (priority)
 #
 class Task < ApplicationRecord
+  # Sans projet : to-do list generale du dashboard. Avec : to-do list du projet.
+  belongs_to :project, optional: true
+
   validates :description, presence: true
   validates :priority, presence: true, inclusion: { in: 1..5 }
 
+  scope :general, -> { where(project_id: nil) }
   scope :ordered, -> { order(completed: :asc, priority: :desc, created_at: :desc) }
 end

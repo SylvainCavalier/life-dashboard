@@ -1,6 +1,15 @@
 # SecureHeaders configuration
 # This gem provides security headers to protect against XSS, clickjacking, and other attacks
 
+# Host du bucket OVH : necessaire en connect_src pour que le direct upload
+# Active Storage (PUT XHR vers l'URL pre-signee) ne soit pas bloque par la CSP.
+OVH_S3_CSP_ORIGIN = begin
+  endpoint = ENV["OVH_S3_ENDPOINT"].presence
+  endpoint ? URI.parse(endpoint).then { |uri| "#{uri.scheme}://#{uri.host}" } : nil
+rescue URI::InvalidURIError
+  nil
+end
+
 SecureHeaders::Configuration.default do |config|
   # Content Security Policy
   config.csp = {
@@ -8,10 +17,10 @@ SecureHeaders::Configuration.default do |config|
     default_src: %w('self'),
     base_uri: %w('self'),
     child_src: %w('self'),
-    connect_src: %w('self' ws: wss:),
+    connect_src: %w('self' ws: wss:) + [ OVH_S3_CSP_ORIGIN ].compact,
     font_src: %w('self' https: data:),
     # Allow form submissions to self and external providers (for OAuth)
-    form_action: %w('self' https:),
+    form_action: %w('self'),
     frame_ancestors: %w('none'),
     frame_src: %w('self'),
     img_src: %w('self' https: data:),
@@ -23,8 +32,10 @@ SecureHeaders::Configuration.default do |config|
     worker_src: %w('self'),
     
     # Development-specific rules for Vite
-    upgrade_insecure_requests: Rails.env.production?, # Only force HTTPS in production
-    report_uri: %w(/csp-violation-report-endpoint)
+    upgrade_insecure_requests: Rails.env.production? # Only force HTTPS in production
+    # Pas de report_uri : aucune route ne collectait ces rapports, chaque
+    # violation generait donc une RoutingError et une trace complete dans les
+    # logs. Les violations restent visibles dans la console du navigateur.
   }
 
   # Add Vite development server support
@@ -60,15 +71,15 @@ SecureHeaders::Configuration.default do |config|
   config.x_xss_protection = '1; mode=block'
 
   # Referrer Policy
-  config.referrer_policy = 'strict-origin-when-cross-origin'
-end
-
-# Configuration spécifique pour Devise
-# Permet les redirections et formulaires nécessaires pour l'authentification
-SecureHeaders::Configuration.override(:devise_forms) do |config|
-  config.csp[:form_action] = %w('self' https:)
-  # Permet les scripts inline si nécessaire pour certaines fonctionnalités Devise
-  # config.csp[:script_src] += ["'unsafe-inline'"] if Rails.env.development?
+  # Dashboard prive sur un domaine volontairement non reference : on ne veut pas
+  # que ce domaine fuite dans les logs des sites tiers via le Referer.
+  #
+  # 'same-origin' et non 'no-referrer' : avec no-referrer, le navigateur envoie
+  # `Origin: null` y compris sur les formulaires same-origin, ce qui fait echouer
+  # la verification d'origine du CSRF de Rails (InvalidAuthenticityToken a la
+  # connexion). same-origin ne transmet rien aux destinations externes, ce qui
+  # est le but recherche, tout en preservant l'en-tete Origin en interne.
+  config.referrer_policy = 'same-origin'
 end
 
 # Configuration pour les pages d'erreur et de maintenance

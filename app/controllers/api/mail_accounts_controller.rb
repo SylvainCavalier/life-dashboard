@@ -1,6 +1,4 @@
 class Api::MailAccountsController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/mail_accounts
   def index
     @mail_accounts = MailAccount.ordered

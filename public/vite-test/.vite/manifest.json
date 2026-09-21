@@ -1,0 +1,318 @@
+{
+  "_ContactsCrmTabs-CefGZbx1.js": {
+    "file": "assets/ContactsCrmTabs-CefGZbx1.js",
+    "name": "ContactsCrmTabs",
+    "imports": [
+      "entrypoints/application.js"
+    ]
+  },
+  "_TripForm-C3AF7sUb.js": {
+    "file": "assets/TripForm-C3AF7sUb.js",
+    "name": "TripForm",
+    "imports": [
+      "entrypoints/application.js"
+    ]
+  },
+  "_useApi-BtBvQPQw.js": {
+    "file": "assets/useApi-BtBvQPQw.js",
+    "name": "useApi",
+    "imports": [
+      "entrypoints/application.js"
+    ]
+  },
+  "_useFormat-_n4bdgRB.js": {
+    "file": "assets/useFormat-_n4bdgRB.js",
+    "name": "useFormat"
+  },
+  "entrypoints/application.js": {
+    "file": "assets/application-BwF0SVny.js",
+    "name": "entrypoints/application.js",
+    "src": "entrypoints/application.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "pages/Dashboard.vue",
+      "pages/modules/ContactsPage.vue",
+      "pages/modules/CrmPage.vue",
+      "pages/modules/PropertiesPage.vue",
+      "pages/modules/CompaniesPage.vue",
+      "pages/modules/CompanyShowPage.vue",
+      "pages/modules/BudgetPage.vue",
+      "pages/modules/ActivitiesPage.vue",
+      "pages/modules/LanguagesPage.vue",
+      "pages/modules/AgendaPage.vue",
+      "pages/modules/PasswordsPage.vue",
+      "pages/modules/ProfilePage.vue",
+      "pages/modules/HealthPage.vue",
+      "pages/modules/SubscriptionsPage.vue",
+      "pages/modules/MailsPage.vue",
+      "pages/modules/NotesPage.vue",
+      "pages/modules/UsefulSitesPage.vue",
+      "pages/modules/ProjectsPage.vue",
+      "pages/modules/CVPage.vue",
+      "pages/modules/DocumentsPage.vue",
+      "pages/modules/TransferPage.vue",
+      "pages/modules/TripsPage.vue",
+      "pages/modules/TripShowPage.vue",
+      "pages/NotFound.vue"
+    ],
+    "css": [
+      "assets/application-Bst2BU4P.css"
+    ]
+  },
+  "pages/Dashboard.vue": {
+    "file": "assets/Dashboard-BSSQ_Pyp.js",
+    "name": "Dashboard",
+    "src": "pages/Dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_useApi-BtBvQPQw.js",
+      "entrypoints/application.js"
+    ]
+  },
+  "pages/NotFound.vue": {
+    "file": "assets/NotFound-Czou4At0.js",
+    "name": "NotFound",
+    "src": "pages/NotFound.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js"
+    ]
+  },
+  "pages/modules/ActivitiesPage.vue": {
+    "file": "assets/ActivitiesPage-C7VYx2D_.js",
+    "name": "ActivitiesPage",
+    "src": "pages/modules/ActivitiesPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js"
+    ]
+  },
+  "pages/modules/AgendaPage.vue": {
+    "file": "assets/AgendaPage-CLPS7mxc.js",
+    "name": "AgendaPage",
+    "src": "pages/modules/AgendaPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/BudgetPage.vue": {
+    "file": "assets/BudgetPage-B8m7C1cv.js",
+    "name": "BudgetPage",
+    "src": "pages/modules/BudgetPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/CVPage.vue": {
+    "file": "assets/CVPage-1LKCsh5G.js",
+    "name": "CVPage",
+    "src": "pages/modules/CVPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ],
+    "css": [
+      "assets/CVPage-vixqqOEv.css"
+    ]
+  },
+  "pages/modules/CompaniesPage.vue": {
+    "file": "assets/CompaniesPage-Dx-llbrG.js",
+    "name": "CompaniesPage",
+    "src": "pages/modules/CompaniesPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js",
+      "_useFormat-_n4bdgRB.js"
+    ],
+    "css": [
+      "assets/CompaniesPage-D6Jsr5E9.css"
+    ]
+  },
+  "pages/modules/CompanyShowPage.vue": {
+    "file": "assets/CompanyShowPage-gAVyIIAs.js",
+    "name": "CompanyShowPage",
+    "src": "pages/modules/CompanyShowPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js",
+      "_useFormat-_n4bdgRB.js"
+    ],
+    "css": [
+      "assets/CompanyShowPage-CF4V-Fs8.css"
+    ]
+  },
+  "pages/modules/ContactsPage.vue": {
+    "file": "assets/ContactsPage-BT2MYPTK.js",
+    "name": "ContactsPage",
+    "src": "pages/modules/ContactsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js",
+      "_ContactsCrmTabs-CefGZbx1.js"
+    ]
+  },
+  "pages/modules/CrmPage.vue": {
+    "file": "assets/CrmPage-CzgbduJ0.js",
+    "name": "CrmPage",
+    "src": "pages/modules/CrmPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js",
+      "_ContactsCrmTabs-CefGZbx1.js"
+    ]
+  },
+  "pages/modules/DocumentsPage.vue": {
+    "file": "assets/DocumentsPage-B0d3VLRx.js",
+    "name": "DocumentsPage",
+    "src": "pages/modules/DocumentsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/HealthPage.vue": {
+    "file": "assets/HealthPage-DTmpvIs9.js",
+    "name": "HealthPage",
+    "src": "pages/modules/HealthPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/LanguagesPage.vue": {
+    "file": "assets/LanguagesPage-DeTJiX2O.js",
+    "name": "LanguagesPage",
+    "src": "pages/modules/LanguagesPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/MailsPage.vue": {
+    "file": "assets/MailsPage-BFK-HqCy.js",
+    "name": "MailsPage",
+    "src": "pages/modules/MailsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/NotesPage.vue": {
+    "file": "assets/NotesPage-BeKU3Vbx.js",
+    "name": "NotesPage",
+    "src": "pages/modules/NotesPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/PasswordsPage.vue": {
+    "file": "assets/PasswordsPage-DjZkDj-o.js",
+    "name": "PasswordsPage",
+    "src": "pages/modules/PasswordsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/ProfilePage.vue": {
+    "file": "assets/ProfilePage-CLhXcOQ9.js",
+    "name": "ProfilePage",
+    "src": "pages/modules/ProfilePage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/ProjectsPage.vue": {
+    "file": "assets/ProjectsPage-D8lnnsKQ.js",
+    "name": "ProjectsPage",
+    "src": "pages/modules/ProjectsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/PropertiesPage.vue": {
+    "file": "assets/PropertiesPage-Bhyw5MvJ.js",
+    "name": "PropertiesPage",
+    "src": "pages/modules/PropertiesPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/SubscriptionsPage.vue": {
+    "file": "assets/SubscriptionsPage-BN_scx0k.js",
+    "name": "SubscriptionsPage",
+    "src": "pages/modules/SubscriptionsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/TransferPage.vue": {
+    "file": "assets/TransferPage-Dz3vP8gF.js",
+    "name": "TransferPage",
+    "src": "pages/modules/TransferPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  },
+  "pages/modules/TripShowPage.vue": {
+    "file": "assets/TripShowPage-DEnVQ5wu.js",
+    "name": "TripShowPage",
+    "src": "pages/modules/TripShowPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js",
+      "_TripForm-C3AF7sUb.js"
+    ],
+    "css": [
+      "assets/TripShowPage-BmS122Rh.css"
+    ]
+  },
+  "pages/modules/TripsPage.vue": {
+    "file": "assets/TripsPage-XQ-OqmTx.js",
+    "name": "TripsPage",
+    "src": "pages/modules/TripsPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js",
+      "_TripForm-C3AF7sUb.js"
+    ]
+  },
+  "pages/modules/UsefulSitesPage.vue": {
+    "file": "assets/UsefulSitesPage-BQwB_sHt.js",
+    "name": "UsefulSitesPage",
+    "src": "pages/modules/UsefulSitesPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entrypoints/application.js",
+      "_useApi-BtBvQPQw.js"
+    ]
+  }
+}

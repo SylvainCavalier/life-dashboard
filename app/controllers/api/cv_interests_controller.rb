@@ -1,7 +1,5 @@
 module Api
   class CvInterestsController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       render json: CvInterest.ordered
     end

@@ -1,7 +1,5 @@
 module Api
   class NotesController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @notes = Note.ordered
       render json: @notes

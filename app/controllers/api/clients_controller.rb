@@ -1,6 +1,4 @@
 class Api::ClientsController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/companies/:company_id/clients
   def index
     @company = Company.find(params[:company_id])

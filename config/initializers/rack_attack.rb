@@ -52,6 +52,30 @@ class Rack::Attack
     req.ip unless req.path.start_with?('/assets')
   end
 
+  # Coffre-fort : une session compromise ne doit pas pouvoir aspirer les entrees
+  # une par une via /api/password_entries/:id/reveal.
+  Rack::Attack.throttle('vault reveal', limit: 20, period: 5.minutes) do |req|
+    req.ip if req.get? && req.path.match?(%r{^/api/password_entries/\d+/reveal$})
+  end
+
+  # Scanners de vulnerabilites : le dashboard n'a aucune de ces routes, toute
+  # requete vers l'une d'elles est hostile. On coupe court pour garder des logs
+  # lisibles et economiser les dynos.
+  SCANNER_PATHS = %r{
+    ^/(
+      wp-(admin|login|content|includes) |
+      wordpress | xmlrpc\.php | phpmyadmin | pma |
+      \.env | \.git | \.aws | \.ssh |
+      config\.json | credentials |
+      vendor/phpunit | cgi-bin | solr | actuator | telescope |
+      admin\.php | shell | eval-stdin\.php
+    )
+  }xi
+
+  Rack::Attack.blocklist('scanners') do |req|
+    SCANNER_PATHS.match?(req.path)
+  end
+
   # Response when throttled
   self.throttled_responder = lambda do |_request|
     [429, {'Content-Type' => 'application/json'}, [{error: "Rate limit exceeded. Try again later."}.to_json]]

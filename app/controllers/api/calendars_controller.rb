@@ -1,6 +1,11 @@
 module Api
   class CalendarsController < ApplicationController
-    protect_from_forgery with: :null_session
+    # Un client calendrier abonne (Apple Calendar, Google Agenda...) ne sait pas
+    # ouvrir de session Devise : le flux s'authentifie donc par un token secret
+    # passe dans l'URL. Une session valide fonctionne aussi, pour tester depuis
+    # le navigateur.
+    skip_before_action :authenticate_user!, only: :feed
+    before_action :authenticate_feed!, only: :feed
 
     def feed
       calendar = Icalendar::Calendar.new
@@ -31,6 +36,23 @@ module Api
 
       calendar.publish
       render plain: calendar.to_ical, content_type: "text/calendar"
+    end
+
+    private
+
+    def authenticate_feed!
+      return if user_signed_in?
+      return if valid_feed_token?
+
+      head :unauthorized
+    end
+
+    def valid_feed_token?
+      expected = ENV["CALENDAR_FEED_TOKEN"].presence
+      given = params[:token].presence
+      return false if expected.nil? || given.nil?
+
+      ActiveSupport::SecurityUtils.secure_compare(given, expected)
     end
   end
 end

@@ -1,6 +1,4 @@
 class Api::InvoicesController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/companies/:company_id/invoices
   def index
     @company = Company.find(params[:company_id])

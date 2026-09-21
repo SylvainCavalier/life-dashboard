@@ -1,7 +1,5 @@
 module Api
   class CrmProfilesController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       @crm_profiles = CrmProfile.includes(:contact).ordered
       render json: @crm_profiles.as_json(include: :contact)

@@ -54,6 +54,9 @@ gem "grover", "~> 1.1" # HTML → PDF via Puppeteer (for styled CV export)
 # ICS calendar feed
 gem "icalendar", "~> 2.10"
 
+# OpenAI official SDK (Responses API + web search) for the Voyages AI planner
+gem "openai", "~> 0.90"
+
 # Content / SEO / Search / Media
 gem "friendly_id", "~> 5.5" # Friendly URLs formatting
 gem "meta-tags" # SEO tags
@@ -91,6 +94,8 @@ group :development do
 end
 
 group :test do
+  # Minitest 6 casse le line filtering de railties 8.0 (rails test leve une ArgumentError)
+  gem "minitest", "~> 5.25"
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara" # System testing
   gem "selenium-webdriver" # System testing

@@ -1,7 +1,5 @@
 module Api
   class CvSkillsController < ApplicationController
-    protect_from_forgery with: :null_session
-
     def index
       render json: CvSkill.ordered
     end

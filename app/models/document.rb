@@ -24,11 +24,12 @@
 #
 class Document < ApplicationRecord
   belongs_to :company, optional: true
+  belongs_to :project, optional: true
   has_one_attached :file
 
   DOMAINS = %w[
     health real_estate taxes companies general
-    education invoices banking civil_status work leisure
+    education invoices banking civil_status work leisure projects
   ].freeze
 
   CATEGORIES = {
@@ -42,7 +43,8 @@ class Document < ApplicationRecord
     "banking" => %w[statement contract card_info loan other],
     "civil_status" => %w[id_card passport birth_certificate family_book marriage_certificate other],
     "work" => %w[contract payslip certificate evaluation other],
-    "leisure" => %w[ticket booking membership manual other]
+    "leisure" => %w[ticket booking membership manual other],
+    "projects" => %w[reference brief asset tutorial contract other]
   }.freeze
 
   validates :name, presence: true

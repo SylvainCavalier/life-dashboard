@@ -100,6 +100,7 @@
             <span v-else>💾 Exporter en PDF</span>
           </button>
           <div v-if="exportError" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">{{ exportError }}</div>
+          <div v-if="exportNotice" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">{{ exportNotice }}</div>
         </div>
       </aside>
 
@@ -260,11 +261,13 @@ watch([template, accentColor], async ([newTemplate, newColor]) => {
 // ---- PDF export ----
 const exporting = ref(false)
 const exportError = ref(null)
+const exportNotice = ref(null)
 
 const exportPdf = async () => {
   if (!previewWrap.value) return
   exporting.value = true
   exportError.value = null
+  exportNotice.value = null
   try {
     const cvHtml = previewWrap.value.innerHTML
     const fullHtml = `<!DOCTYPE html>
@@ -289,8 +292,14 @@ const exportPdf = async () => {
     })
 
     if (!response.ok) {
-      const text = await response.text()
-      throw new Error(text || `Erreur ${response.status}`)
+      // Chrome headless indisponible cote serveur : on imprime depuis le
+      // navigateur, avec le meme document que celui qu'on allait envoyer.
+      const payload = await response.json().catch(() => null)
+      if (payload?.fallback === 'browser_print') {
+        printInBrowser(fullHtml)
+        return
+      }
+      throw new Error(payload?.error || `Erreur ${response.status}`)
     }
 
     const blob = await response.blob()
@@ -307,5 +316,30 @@ const exportPdf = async () => {
   } finally {
     exporting.value = false
   }
+}
+
+// Repli : un iframe hors ecran porte le document complet (HTML + feuille de
+// style d'impression), et on declenche la boite d'impression du navigateur.
+// L'utilisateur choisit « Enregistrer au format PDF » et obtient le meme
+// rendu, sans dependre d'un navigateur cote serveur.
+const printInBrowser = (fullHtml) => {
+  const frame = document.createElement('iframe')
+  frame.setAttribute('aria-hidden', 'true')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  frame.srcdoc = fullHtml
+
+  frame.onload = () => {
+    try {
+      frame.contentWindow.focus()
+      frame.contentWindow.print()
+    } catch (_e) {
+      exportError.value = 'Impression impossible : autorise les fenetres pour ce site.'
+    }
+    // Laisse le temps a la boite d'impression de s'ouvrir avant de nettoyer.
+    setTimeout(() => frame.remove(), 60_000)
+  }
+
+  document.body.appendChild(frame)
+  exportNotice.value = "Generation cote serveur indisponible : utilise « Enregistrer au format PDF » dans la boite d'impression."
 }
 </script>

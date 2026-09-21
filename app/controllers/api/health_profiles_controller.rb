@@ -1,6 +1,4 @@
 class Api::HealthProfilesController < ApplicationController
-  protect_from_forgery with: :null_session
-
   # GET /api/health_profile
   def show
     @profile = HealthProfile.first

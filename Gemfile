@@ -57,6 +57,9 @@ gem "icalendar", "~> 2.10"
 # OpenAI official SDK (Responses API + web search) for the Voyages AI planner
 gem "openai", "~> 0.90"
 
+# Sentinelle : lecture des flux RSS/Atom et scraping (deja present en dependance transitive de Rails)
+gem "nokogiri"
+
 # Content / SEO / Search / Media
 gem "friendly_id", "~> 5.5" # Friendly URLs formatting
 gem "meta-tags" # SEO tags

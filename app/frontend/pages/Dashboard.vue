@@ -153,6 +153,7 @@ const modules = computed(() => [
   { name: 'Transfert', icon: '📤', subtitle: `${counts.value.file_transfers} fichier${counts.value.file_transfers > 1 ? 's' : ''} partage${counts.value.file_transfers > 1 ? 's' : ''}`, to: '/transfer' },
   { name: 'Voyages', icon: '✈️', subtitle: `${counts.value.trips} voyage${counts.value.trips > 1 ? 's' : ''}`, to: '/trips' },
   { name: 'Downloader', icon: '🎬', subtitle: `${counts.value.video_downloads} telechargement${counts.value.video_downloads > 1 ? 's' : ''}`, to: '/downloader' },
+  { name: 'Sentinelle', icon: '🛰️', subtitle: 'Veille désinformation et droit du travail', to: '/sentinelle' },
 ])
 
 const summaryPanels = [

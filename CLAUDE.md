@@ -19,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Transfert** — WeTransfer perso : upload direct vers le bucket OVH S3, lien de partage public temporaire, purge automatique après 3 jours
 - **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
 - **Projets** — Projets personnels classés par catégorie (`Project::CATEGORIES` : développement, musique, vidéo, jeu vidéo, sport, jeu de rôle, business...). Chaque projet a sa page (`/projects/:id`) : jauge, importance, compétences à apprendre (`ProjectSkill`), liens (`ProjectLink`), notes libres (`projects.notes`), to-do list (`Task` avec `project_id` ; `project_id` nul = to-do list générale du dashboard) et documents (`Document` avec `project_id`, domaine `projects`)
+- **Sentinelle** — Veille hebdomadaire personnalisée, un onglet par domaine (`/sentinelle/:domaine`) : **Droit du travail** (Judilibre, Légifrance, Village de la Justice) et **Désinformation** (flux RSS + recherche web Tavily sur une liste blanche de sites). Chaque semaine (lundi → dimanche) se lance à la main : collecte, tri déterministe, résumé IA par document puis synthèse de la semaine (`/sentinelle/:domaine/:lundi`). Les domaines sont isolés (registre `Sentinel::Domains`) : en ajouter un ne touche pas aux autres
 - **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
 Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère tout le UI, Rails sert d'API backend. Vite pour le build frontend.
@@ -35,12 +36,12 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload` et `VideoFolder`. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`) et `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
-- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`.
+- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code).
 - **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
-- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
+- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). `SentinelWeek` et `SentinelDocument` sont en lecture seule : une veille se lance via `bin/rails sentinel:run DOMAIN=... MONDAY=...` (asynchrone) ou `sentinel:run_now` (synchrone, celui qu'utilise Alfred, pour la même raison que `fetch_now`). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
 
 ### Implications pour toute évolution du code
 
@@ -183,6 +184,50 @@ recompile llvm/rust/deno depuis les sources pendant des heures. Ne pas lancer `b
 (Heroku sans buildpack), `GET /api/video_downloads/availability` le signale et la page affiche un
 bandeau ; voir `DEPLOY.md`. Ne pas nommer une action de controleur `status` : cela ecrase
 `ActionController::Metal#status`. Le bucket OVH est en `media_src` dans la CSP pour le lecteur.
+
+### Sentinelle (veille hebdomadaire)
+```bash
+bin/rails sentinel:check                                          # cles API presentes ? sources en panne ?
+bin/rails sentinel:seed_sources DOMAIN=all                        # installe les sources par defaut manquantes
+bin/rails sentinel:run DOMAIN=droit_travail MONDAY=2026-09-14     # enfile la veille d'une semaine (GoodJob)
+bin/rails sentinel:run_now DOMAIN=all                             # traite immediatement (debogage, Alfred)
+```
+`DOMAIN` : `droit_travail`, `desinformation` ou `all`. `MONDAY` : lundi de la semaine, par defaut la derniere
+semaine ecoulee. Aucun cron : le declenchement est volontairement manuel (bouton de la page ou rake task).
+
+**Un domaine = une classe** de `app/services/sentinel/domains/` (sous-classe de `Sentinel::Domains::Base`), inscrite
+dans `Sentinel::Domains::REGISTRY`. Elle porte tout ce qui est propre au domaine : sources par defaut, types de
+documents, categories, classifieur deterministe, role et echelle d'importance des prompts, requetes de recherche web.
+Le pipeline est generique et ne connait aucun domaine. Pour **ajouter un domaine** : ecrire la classe, l'inscrire
+au registre, c'est tout (l'onglet, les sources par defaut et la rake task suivent). Les tables
+(`sentinel_sources`, `sentinel_weeks`, `sentinel_documents`) sont communes mais toute lecture est bornee par
+`domain` : deux domaines ne se melangent jamais, ni a la collecte ni dans les syntheses.
+
+`SentinelWeek.run!` est le point d'entree unique (API et rake) ; `SentinelWeekJob` enchaine trois etapes, chacune
+**reprenable** (relancer une semaine ne repaie que ce qui manque) :
+1. `Sentinel::Collector` : chaque source active est interrogee par tous ses canaux (`adapter` = API ou scraper
+   dedie, `feed_url` = RSS/Atom, `web_search` = Tavily restreint a son nom de domaine), dedoublonnage sur
+   `[source, external_id]` (URL normalisee par `Sentinel::UrlNormalizer` pour les articles), puis tri par
+   `domain.classify` AVANT tout appel au modele. Un document hors champ est conserve sans son texte (tri auditable).
+   Une source en panne ne fait pas echouer la semaine : erreur notee sur la source (`last_error`) et remontee dans
+   `sentinel_weeks.warnings`.
+2. `Sentinel::DocumentSummarizer` (sortie structuree `Sentinel::DocumentSummarySchema`), 4 appels en parallele,
+   plafond de 80 resumes par lancement. Service pur : c'est le job qui ecrit en base.
+3. `Sentinel::DigestGenerator` (`Sentinel::DigestSchema`) : la synthese ne recoit QUE les resumes, jamais les textes
+   bruts, et tout `document_id` absent de la liste envoyee est ecarte (garde anti-hallucination). Ne pas revenir la-dessus.
+
+Une semaine va toujours du lundi au dimanche, heure de Paris (`SentinelWeek.window`). La table `sentinel_weeks`
+fait foi pour l'etat du job (`status`, `step`, `progress_*`) : l'interface la sonde toutes les 3 s.
+Variables : `OPENAI_API_KEY` (obligatoire), `OPENAI_SENTINEL_MODEL` (synthese, defaut `gpt-5.6-sol`),
+`OPENAI_SENTINEL_SUMMARY_MODEL` (resumes, le gros du volume : y mettre un modele moins cher ; defaut = le precedent),
+`PISTE_CLIENT_ID` / `PISTE_CLIENT_SECRET` (Judilibre et Legifrance, compte piste.gouv.fr abonne aux deux API),
+`TAVILY_API_KEY` (recherche web, facultative : sans elle seuls les flux RSS sont collectes).
+Pieges connus : Legifrance n'a aucun filtre thematique (on ramene tout le JO de la semaine, un appel `/consult` par
+texte, c'est le classifieur NOR + motifs qui trie) ; Judilibre se lit par `/export` et non `/search` ; le scraper
+Village de la Justice depend des classes CSS du site et leve `LayoutChanged` s'il ne trouve plus rien (l'URL de la
+rubrique se regle sur la source) ; Tavily ne sait ni filtrer par dates avec `include_domains` ni dater ses resultats
+hors grands medias, d'ou la datation par les balises meta de la page (`Sentinel::ArticleText`) et l'abandon de la
+recherche web pour une semaine de plus d'un mois (details en tete de `Sentinel::TavilySearch`).
 
 ### Voyages (rapport IA)
 ```bash

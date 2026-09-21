@@ -117,6 +117,19 @@ Rails.application.routes.draw do
       resources :trip_items, only: [:create, :update, :destroy]
     end
 
+    # Module Sentinelle : veille hebdomadaire par domaine (POST /run, asynchrone).
+    # Une semaine est identifiee par son lundi : /api/sentinel_domains/droit_travail/weeks/2026-09-14
+    resources :sentinel_domains, only: [:index], param: :key do
+      resources :sentinel_weeks, path: "weeks", only: [:index, :show, :destroy], param: :monday do
+        member { post :run }
+      end
+      resources :sentinel_sources, path: "sources", only: [:index, :create] do
+        collection { post :restore_defaults }
+      end
+    end
+    resources :sentinel_sources, only: [:update, :destroy]
+    resources :sentinel_documents, only: [:show]
+
     # CV module
     resources :cv_experiences, only: [:index, :create, :update, :destroy]
     resources :cv_formations, only: [:index, :create, :update, :destroy]

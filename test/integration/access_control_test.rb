@@ -30,6 +30,9 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/video_downloads
       /api/video_downloads/availability
       /api/video_folders
+      /api/sentinel_domains
+      /api/sentinel_domains/droit_travail/weeks
+      /api/sentinel_domains/droit_travail/sources
     ].each do |path|
       get path, headers: { "Accept" => "application/json" }
       assert_response :unauthorized, "#{path} devrait repondre 401"
@@ -49,6 +52,13 @@ class AccessControlTest < ActionDispatch::IntegrationTest
     trip = create(:trip)
     assert_no_enqueued_jobs do
       post "/api/trips/#{trip.id}/plan", headers: { "Accept" => "application/json" }
+    end
+    assert_response :unauthorized
+  end
+
+  test "le lancement d'une veille Sentinelle est refuse sans session" do
+    assert_no_enqueued_jobs do
+      post "/api/sentinel_domains/droit_travail/weeks/2026-09-14/run", headers: { "Accept" => "application/json" }
     end
     assert_response :unauthorized
   end

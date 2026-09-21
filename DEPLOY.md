@@ -59,6 +59,22 @@ heroku config:set --app life-dashboard-prive \
 `OPENAI_API_KEY` sert au module Voyages (rapport IA via l'API Responses et la
 recherche web). `OPENAI_TRIP_MODEL` est optionnel (defaut `gpt-5.6-sol`).
 
+Le module Sentinelle (veille hebdomadaire) utilise aussi `OPENAI_API_KEY`, et en option
+`OPENAI_SENTINEL_MODEL` / `OPENAI_SENTINEL_SUMMARY_MODEL`. Il lui faut en plus :
+
+```bash
+heroku config:set \
+  PISTE_CLIENT_ID=... \
+  PISTE_CLIENT_SECRET=... \
+  TAVILY_API_KEY=...
+```
+
+`PISTE_*` : identifiants OAuth de piste.gouv.fr (application abonnee aux API Judilibre et
+Legifrance), sans lesquels l'onglet Droit du travail ne collecte que la doctrine.
+`TAVILY_API_KEY` est facultative (recherche web de l'onglet Desinformation, en complement des flux RSS).
+`bin/rails sentinel:check` affiche ce qui manque. Une veille tourne dans le dyno web (GoodJob async) et
+dure quelques minutes : un redemarrage du dyno l'interrompt, la relancer reprend ou elle s'est arretee.
+
 | Variable | Role |
 |---|---|
 | `RAILS_MASTER_KEY` | Dechiffre `credentials.yml.enc` (secret_key_base **et** cles Active Record Encryption) |

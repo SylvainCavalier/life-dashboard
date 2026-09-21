@@ -474,6 +474,7 @@ DEPENDENCIES
   lograge
   meta-tags
   minitest (~> 5.25)
+  nokogiri
   openai (~> 0.90)
   ostruct
   pagy (~> 43.0)

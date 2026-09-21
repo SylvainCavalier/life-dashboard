@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_21_102450) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_21_110231) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -621,6 +621,73 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_102450) do
     t.index ["number"], name: "index_quotes_on_number", unique: true
   end
 
+  create_table "sentinel_documents", force: :cascade do |t|
+    t.bigint "sentinel_source_id", null: false
+    t.string "domain", null: false
+    t.date "monday", null: false
+    t.string "external_id", null: false
+    t.string "kind", null: false
+    t.string "title", null: false
+    t.string "url"
+    t.string "author"
+    t.datetime "published_at"
+    t.text "raw_content"
+    t.jsonb "raw_metadata", default: {}, null: false
+    t.boolean "relevant"
+    t.string "relevance_reason"
+    t.string "display_title"
+    t.text "tldr"
+    t.jsonb "key_points", default: [], null: false
+    t.string "importance"
+    t.jsonb "categories", default: [], null: false
+    t.string "summary_model"
+    t.datetime "summarized_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["domain", "monday"], name: "index_sentinel_documents_on_domain_and_monday"
+    t.index ["sentinel_source_id", "external_id"], name: "index_sentinel_documents_on_sentinel_source_id_and_external_id", unique: true
+    t.index ["sentinel_source_id"], name: "index_sentinel_documents_on_sentinel_source_id"
+  end
+
+  create_table "sentinel_sources", force: :cascade do |t|
+    t.string "domain", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "url"
+    t.string "adapter"
+    t.string "feed_url"
+    t.boolean "web_search", default: false, null: false
+    t.boolean "on_topic", default: false, null: false
+    t.string "language", default: "fr", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "last_collected_at"
+    t.integer "last_documents_count"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["domain", "slug"], name: "index_sentinel_sources_on_domain_and_slug", unique: true
+  end
+
+  create_table "sentinel_weeks", force: :cascade do |t|
+    t.string "domain", null: false
+    t.date "monday", null: false
+    t.string "status", default: "pending", null: false
+    t.string "step"
+    t.integer "progress_done", default: 0, null: false
+    t.integer "progress_total", default: 0, null: false
+    t.text "error"
+    t.jsonb "warnings", default: [], null: false
+    t.datetime "requested_at"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.jsonb "digest", default: {}, null: false
+    t.string "digest_model"
+    t.datetime "digest_generated_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["domain", "monday"], name: "index_sentinel_weeks_on_domain_and_monday", unique: true
+  end
+
   create_table "subscriptions", force: :cascade do |t|
     t.string "name", null: false
     t.decimal "cost", precision: 8, scale: 2, null: false
@@ -773,6 +840,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_102450) do
   add_foreign_key "quote_items", "quotes"
   add_foreign_key "quotes", "clients"
   add_foreign_key "quotes", "companies"
+  add_foreign_key "sentinel_documents", "sentinel_sources"
   add_foreign_key "tasks", "projects"
   add_foreign_key "trip_items", "trips"
   add_foreign_key "trip_plans", "trips"

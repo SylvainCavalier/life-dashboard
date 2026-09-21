@@ -133,6 +133,18 @@ export default [
     props: true,
   },
   {
+    path: '/sentinelle/:domainKey?',
+    name: 'Sentinelle',
+    component: () => import('../pages/modules/SentinellePage.vue'),
+    props: true,
+  },
+  {
+    path: '/sentinelle/:domainKey/:monday',
+    name: 'SentinelleWeek',
+    component: () => import('../pages/modules/SentinelleWeekPage.vue'),
+    props: true,
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),

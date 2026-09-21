@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_20_214824) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_21_102450) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -721,6 +721,42 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_20_214824) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  create_table "video_downloads", force: :cascade do |t|
+    t.bigint "video_folder_id"
+    t.string "url", null: false
+    t.string "format", null: false
+    t.string "quality"
+    t.string "storage", null: false
+    t.string "status", default: "pending", null: false
+    t.string "title"
+    t.string "filename"
+    t.bigint "file_size"
+    t.string "thumbnail_url"
+    t.text "description"
+    t.integer "duration"
+    t.text "error_message"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "platform"
+    t.string "canonical_url"
+    t.string "uploader"
+    t.string "uploader_handle"
+    t.string "uploader_url"
+    t.datetime "published_at"
+    t.bigint "view_count"
+    t.index ["created_at"], name: "index_video_downloads_on_created_at"
+    t.index ["status"], name: "index_video_downloads_on_status"
+    t.index ["video_folder_id"], name: "index_video_downloads_on_video_folder_id"
+  end
+
+  create_table "video_folders", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_video_folders_on_lower_name", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "clients", "companies"
@@ -740,4 +776,5 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_20_214824) do
   add_foreign_key "tasks", "projects"
   add_foreign_key "trip_items", "trips"
   add_foreign_key "trip_plans", "trips"
+  add_foreign_key "video_downloads", "video_folders"
 end

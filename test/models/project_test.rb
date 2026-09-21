@@ -1,3 +1,24 @@
+# == Schema Information
+#
+# Table name: projects
+#
+#  id          :bigint           not null, primary key
+#  category    :string           default("developpement"), not null
+#  description :text
+#  github_url  :string
+#  name        :string
+#  notes       :text
+#  priority    :integer          default(0)
+#  progress    :integer          default(0)
+#  site_url    :string
+#  status      :string           default("en_cours")
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#
+# Indexes
+#
+#  index_projects_on_category  (category)
+#
 require "test_helper"
 
 class ProjectTest < ActiveSupport::TestCase

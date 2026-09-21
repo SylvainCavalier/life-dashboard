@@ -27,6 +27,9 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/trips
       /api/projects
       /api/tasks
+      /api/video_downloads
+      /api/video_downloads/availability
+      /api/video_folders
     ].each do |path|
       get path, headers: { "Accept" => "application/json" }
       assert_response :unauthorized, "#{path} devrait repondre 401"
@@ -48,6 +51,16 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       post "/api/trips/#{trip.id}/plan", headers: { "Accept" => "application/json" }
     end
     assert_response :unauthorized
+  end
+
+  test "un telechargement video est refuse sans session" do
+    assert_no_enqueued_jobs do
+      post "/api/video_downloads",
+        params: { video_download: { url: "https://youtu.be/abc", format: "mp3", storage: "local" } }.to_json,
+        headers: { "Content-Type" => "application/json", "Accept" => "application/json" }
+    end
+    assert_response :unauthorized
+    assert_equal 0, VideoDownload.count
   end
 
   test "le direct upload Active Storage est refuse sans session" do

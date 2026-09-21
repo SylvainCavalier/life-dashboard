@@ -99,6 +99,30 @@ Si l'export serveur s'avere trop juste en memoire, l'option la plus simple est
 de retirer le buildpack Chrome : le repli navigateur devient le comportement
 permanent, sans rien casser.
 
+### Module Downloader
+
+Le module a besoin des binaires `yt-dlp` et `ffmpeg`, absents d'Heroku par
+defaut. Sans eux rien ne casse : la page affiche un bandeau « Module
+indisponible sur ce serveur » (`GET /api/video_downloads/availability`) et les
+telechargements lances passent en echec. Pour l'activer, ajouter un buildpack
+ffmpeg et un buildpack (ou un `bin/` embarque) fournissant `yt-dlp`, puis
+verifier avec `heroku run rails downloader:check`.
+
+Limites a connaitre avant de s'y fier en production :
+
+- **YouTube bloque souvent les IP de datacenter** (« Sign in to confirm you're
+  not a bot »). En local, `YT_DLP_COOKIES_FROM_BROWSER=chrome` contourne le
+  probleme en empruntant les cookies du navigateur ; sur un dyno il n'y a pas de
+  navigateur, la variable reste vide.
+- **Le stockage « local » n'a de sens qu'en local** : le disque d'un dyno est
+  ephemere, le fichier disparait au redemarrage (l'interface l'indique alors
+  comme supprime). En production, utiliser le stockage cloud.
+- GoodJob tourne dans le process web (dyno Basic, 512 Mo) : un long
+  telechargement plus le remux ffmpeg occupent ce process pendant ce temps.
+
+L'usage nominal reste donc la machine locale, comme pour l'ancien projet
+`video-downloader`.
+
 ## 5. Premier deploiement
 
 ```bash

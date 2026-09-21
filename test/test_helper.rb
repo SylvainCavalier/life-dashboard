@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "tmpdir"
 
 module ActiveSupport
   class TestCase
@@ -12,6 +13,23 @@ module ActiveSupport
 
     # Add more helper methods to be used by all tests here...
     include FactoryBot::Syntax::Methods
+  end
+end
+
+# Module Downloader : les fichiers locaux vivent sous VideoDownload.local_root,
+# indexes par id. Les workers paralleles ayant chacun leur base, leurs ids se
+# recoupent : chaque test travaille donc dans son propre repertoire temporaire.
+module VideoDownloadStorageHelper
+  def self.included(base)
+    base.setup do
+      @previous_video_root = VideoDownload.local_root
+      VideoDownload.local_root = Pathname.new(Dir.mktmpdir("video_downloads"))
+    end
+
+    base.teardown do
+      FileUtils.rm_rf(VideoDownload.local_root)
+      VideoDownload.local_root = @previous_video_root
+    end
   end
 end
 

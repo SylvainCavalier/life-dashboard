@@ -17,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **SMS/Textos** — Gestion des textos
 - **Agenda** — Organisation des rendez-vous et événements
 - **Transfert** — WeTransfer perso : upload direct vers le bucket OVH S3, lien de partage public temporaire, purge automatique après 3 jours
+- **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
 - **Projets** — Projets personnels classés par catégorie (`Project::CATEGORIES` : développement, musique, vidéo, jeu vidéo, sport, jeu de rôle, business...). Chaque projet a sa page (`/projects/:id`) : jauge, importance, compétences à apprendre (`ProjectSkill`), liens (`ProjectLink`), notes libres (`projects.notes`), to-do list (`Task` avec `project_id` ; `project_id` nul = to-do list générale du dashboard) et documents (`Document` avec `project_id`, domaine `projects`)
 - **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
@@ -34,12 +35,12 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem` et `TripPlan` (rapport IA en JSON dans `content`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload` et `VideoFolder`. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
-- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`.
+- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`.
 - **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
-- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone).
+- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
 
 ### Implications pour toute évolution du code
 
@@ -152,6 +153,36 @@ Le module Transfert utilise le **direct upload** Active Storage : le navigateur 
 fichier en PUT directement sur le bucket. Sans CORS configuré, l'upload échoue côté
 navigateur. L'origine du bucket est aussi ajoutée à `connect_src` dans la CSP
 (`config/initializers/secure_headers.rb`), via `OVH_S3_ENDPOINT`.
+
+### Downloader (yt-dlp)
+```bash
+bin/rails downloader:check                                   # yt-dlp et ffmpeg operationnels ?
+bin/rails downloader:update                                  # met a jour yt-dlp (a faire quand YouTube casse)
+bin/rails downloader:fetch URL="https://..." FORMAT=mp3      # enfile un telechargement (GoodJob)
+bin/rails downloader:fetch_now URL="https://..." STORAGE=cloud FOLDER=nom  # telecharge immediatement (debogage, Alfred)
+```
+Options : `FORMAT` (mp4 | mp3), `QUALITY` (original | 720p), `STORAGE` (local par defaut | cloud), `FOLDER`.
+`VideoDownload.enqueue!` est le point d'entree unique (API et rake) ; `VideoDownloadJob` appelle
+`VideoDownloads::YtDlpService` puis, en cloud, attache le fichier via Active Storage avec une cle
+lisible (`video_downloads/<dossier>/<id>-<nom>`). La table `video_downloads` fait foi pour l'etat
+du job : l'interface la sonde toutes les 3 s tant qu'un telechargement est actif.
+Sites : rien n'est specifique a YouTube ; YouTube, Dailymotion, X/Twitter et Crowdbunker (extracteur natif
+de yt-dlp) sont valides de bout en bout. Les champs de source varient selon les sites (Crowdbunker : ni
+heure de publication ni URL d'auteur) : tous sont optionnels, `published_at` retombe sur `upload_date`.
+Les erreurs yt-dlp courantes sont completees d'une piste en francais (`YtDlpService::HINTS`).
+Le choix du format passe par un **tri** (`-S vcodec:h264,res:1080,acodec:aac`) et non par un filtre
+`height<=` : le filtre degradait les videos verticales (1080x1920 -> 480x854). `--playlist-items 1`
+garantit une seule video (un tweet peut en contenir plusieurs ; `/video/2` en fin d'URL vise la 2e).
+X/Twitter exige souvent d'etre connecte : ce sont les cookies Chrome (`YT_DLP_COOKIES_FROM_BROWSER`)
+qui le permettent. Le badge de plateforme de l'historique est deduit de l'URL cote front (`sourceOf`).
+Binaires requis : `yt-dlp` (plus un runtime JS, `deno`, indispensable pour YouTube) et `ffmpeg`. Sur la
+machine de Sylvain ils vivent dans `~/.local/bin` (binaire officiel autonome de yt-dlp, build statique
+evermeet.cx de ffmpeg/ffprobe) et non dans Homebrew : sous macOS 14, Homebrew n'a plus de bottles et
+recompile llvm/rust/deno depuis les sources pendant des heures. Ne pas lancer `brew upgrade yt-dlp`. Variables : `YT_DLP_BIN`,
+`YT_DLP_COOKIES_FROM_BROWSER` (defaut `chrome` en developpement, vide ailleurs). Sans ces binaires
+(Heroku sans buildpack), `GET /api/video_downloads/availability` le signale et la page affiche un
+bandeau ; voir `DEPLOY.md`. Ne pas nommer une action de controleur `status` : cela ecrase
+`ActionController::Metal#status`. Le bucket OVH est en `media_src` dans la CSP pour le lecteur.
 
 ### Voyages (rapport IA)
 ```bash

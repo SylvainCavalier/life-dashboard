@@ -1,3 +1,23 @@
+# == Schema Information
+#
+# Table name: project_links
+#
+#  id         :bigint           not null, primary key
+#  position   :integer          default(0), not null
+#  title      :string           not null
+#  url        :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  project_id :bigint           not null
+#
+# Indexes
+#
+#  index_project_links_on_project_id  (project_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (project_id => projects.id)
+#
 class ProjectLink < ApplicationRecord
   belongs_to :project
 

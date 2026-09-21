@@ -112,6 +112,16 @@ export default [
     component: () => import('../pages/modules/TransferPage.vue'),
   },
   {
+    path: '/downloader',
+    name: 'Downloader',
+    component: () => import('../pages/modules/DownloaderPage.vue'),
+  },
+  {
+    path: '/downloader/folders/:id',
+    name: 'DownloaderFolder',
+    component: () => import('../pages/modules/DownloaderFolderPage.vue'),
+  },
+  {
     path: '/trips',
     name: 'Trips',
     component: () => import('../pages/modules/TripsPage.vue'),

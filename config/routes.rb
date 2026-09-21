@@ -103,6 +103,14 @@ Rails.application.routes.draw do
 
     resources :file_transfers, only: [:index, :create, :destroy]
 
+    # Module Downloader : telechargements yt-dlp (GET /availability = binaires presents ?,
+    # GET /:id/file = fichier local ou redirection vers l'URL pre-signee OVH)
+    resources :video_folders, only: [:index, :show, :create, :update, :destroy]
+    resources :video_downloads, only: [:index, :show, :create, :destroy] do
+      collection { get :availability }
+      member { get :file }
+    end
+
     # Module Voyages : rapport IA (POST /plan, asynchrone) et planning jour par jour
     resources :trips do
       member { post :plan }

@@ -9,11 +9,17 @@
 #  priority    :integer          default(3), not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
+#  project_id  :bigint
 #
 # Indexes
 #
-#  index_tasks_on_completed  (completed)
-#  index_tasks_on_priority   (priority)
+#  index_tasks_on_completed   (completed)
+#  index_tasks_on_priority    (priority)
+#  index_tasks_on_project_id  (project_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (project_id => projects.id)
 #
 class Task < ApplicationRecord
   # Sans projet : to-do list generale du dashboard. Avec : to-do list du projet.

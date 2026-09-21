@@ -91,6 +91,7 @@ const counts = ref({
   events: 0,
   file_transfers: 0,
   trips: 0,
+  video_downloads: 0,
 })
 
 const fetchCounts = async () => {
@@ -108,6 +109,7 @@ const fetchCounts = async () => {
     { key: 'events', resource: 'events' },
     { key: 'file_transfers', resource: 'file_transfers' },
     { key: 'trips', resource: 'trips' },
+    { key: 'video_downloads', resource: 'video_downloads' },
   ]
 
   const results = await Promise.allSettled(
@@ -150,6 +152,7 @@ const modules = computed(() => [
   { name: 'Documents', icon: '📁', subtitle: `${counts.value.documents} document${counts.value.documents > 1 ? 's' : ''}`, to: '/documents' },
   { name: 'Transfert', icon: '📤', subtitle: `${counts.value.file_transfers} fichier${counts.value.file_transfers > 1 ? 's' : ''} partage${counts.value.file_transfers > 1 ? 's' : ''}`, to: '/transfer' },
   { name: 'Voyages', icon: '✈️', subtitle: `${counts.value.trips} voyage${counts.value.trips > 1 ? 's' : ''}`, to: '/trips' },
+  { name: 'Downloader', icon: '🎬', subtitle: `${counts.value.video_downloads} telechargement${counts.value.video_downloads > 1 ? 's' : ''}`, to: '/downloader' },
 ])
 
 const summaryPanels = [

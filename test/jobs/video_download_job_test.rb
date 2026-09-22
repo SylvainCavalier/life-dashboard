@@ -29,7 +29,10 @@ class VideoDownloadJobTest < ActiveJob::TestCase
   end
 
   def with_service(error: nil, &)
-    factory = ->(output_dir:, **) { FakeService.new(output_dir: output_dir, error: error) }
+    factory = lambda do |output_dir:, **options|
+      @service_options = options
+      FakeService.new(output_dir: output_dir, error: error)
+    end
     VideoDownloads::YtDlpService.stub(:new, factory, &)
   end
 
@@ -69,6 +72,14 @@ class VideoDownloadJobTest < ActiveJob::TestCase
     assert_not File.exist?(download.local_dir)
   ensure
     download&.file&.purge
+  end
+
+  test "les bornes de l'extrait sont transmises au service" do
+    download = create(:video_download, clip_start: "0:34", clip_end: "0:47")
+
+    with_service { VideoDownloadJob.perform_now(download.id) }
+
+    assert_equal [ 34, 47 ], @service_options.values_at(:clip_start, :clip_end)
   end
 
   test "un echec passe le telechargement en failed et nettoie le disque" do

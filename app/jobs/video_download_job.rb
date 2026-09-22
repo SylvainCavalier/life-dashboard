@@ -19,7 +19,9 @@ class VideoDownloadJob < ApplicationJob
       url: download.url,
       format: download.format,
       quality: download.quality,
-      output_dir: download.local_dir
+      output_dir: download.local_dir,
+      clip_start: download.clip_start,
+      clip_end: download.clip_end
     ).call
 
     download.assign_attributes(

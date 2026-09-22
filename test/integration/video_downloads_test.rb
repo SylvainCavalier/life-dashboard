@@ -27,6 +27,28 @@ class VideoDownloadsTest < ActionDispatch::IntegrationTest
     assert_nil body["file_url"]
   end
 
+  test "la creation accepte un extrait en timecodes" do
+    post api_video_downloads_path,
+         params: { video_download: { url: "https://youtu.be/abc", format: "mp4", quality: "720p", storage: "local",
+                                     clip_start: "0:34", clip_end: "0:47" } }.to_json,
+         headers: JSON_HEADERS
+    assert_response :created
+
+    body = JSON.parse(response.body)
+    assert_equal [ 34, 47, "0:34 - 0:47" ], body.values_at("clip_start", "clip_end", "clip_label")
+  end
+
+  test "un extrait incoherent repond 422" do
+    assert_no_enqueued_jobs do
+      post api_video_downloads_path,
+           params: { video_download: { url: "https://youtu.be/abc", format: "mp3", storage: "local",
+                                       clip_start: "0:47", clip_end: "0:34" } }.to_json,
+           headers: JSON_HEADERS
+    end
+    assert_response :unprocessable_content
+    assert_includes JSON.parse(response.body)["errors"].join, "apres son debut"
+  end
+
   test "un statut envoye par le client est ignore" do
     post api_video_downloads_path,
          params: { video_download: { url: "https://youtu.be/abc", format: "mp3", storage: "local",

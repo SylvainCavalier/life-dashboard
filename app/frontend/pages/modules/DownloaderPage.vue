@@ -64,6 +64,40 @@
           </select>
         </div>
 
+        <!-- Extrait : seul le passage demande est telecharge -->
+        <div class="mt-4">
+          <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input v-model="form.clip" type="checkbox" class="rounded border-gray-300" />
+            Extrait seulement
+          </label>
+
+          <div v-if="form.clip" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">De</label>
+              <input
+                v-model.trim="form.clip_start"
+                type="text"
+                inputmode="numeric"
+                placeholder="0:34"
+                class="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">A</label>
+              <input
+                v-model.trim="form.clip_end"
+                type="text"
+                inputmode="numeric"
+                placeholder="0:47"
+                class="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+              />
+            </div>
+            <p class="col-span-2 md:col-span-1 text-xs text-gray-400 md:self-end md:pb-2">
+              Format m:ss ou h:mm:ss. Coupe a l'image pres (les bords sont reencodes).
+            </p>
+          </div>
+        </div>
+
         <p v-if="submitError" class="text-sm text-red-500 mt-3">{{ submitError }}</p>
 
         <div class="flex justify-end mt-4">
@@ -102,6 +136,7 @@
                 >{{ sourceOf(download.url).label }}</span>
                 {{ download.format.toUpperCase() }}<span v-if="download.quality"> &middot; {{ download.quality }}</span>
                 &middot; {{ download.storage === 'cloud' ? 'Cloud OVH' : 'Local' }}
+                <span v-if="download.clip_label" class="text-gray-600 font-medium"> &middot; Extrait {{ download.clip_label }}</span>
                 <span v-if="folderName(download)"> &middot; {{ folderName(download) }}</span>
                 <span v-if="download.duration"> &middot; {{ formatDuration(download.duration) }}</span>
                 <span v-if="download.file_size"> &middot; {{ formatSize(download.file_size) }}</span>
@@ -248,6 +283,9 @@ const form = ref({
   quality: 'original',
   storage: 'local',
   video_folder_id: null,
+  clip: false,
+  clip_start: '',
+  clip_end: '',
 })
 
 const newFolderName = ref('')
@@ -289,8 +327,15 @@ const submit = async () => {
       payload.video_folder_id = form.value.video_folder_id
     }
 
+    if (form.value.clip) {
+      payload.clip_start = form.value.clip_start
+      payload.clip_end = form.value.clip_end
+    }
+
     await createDownload(payload)
     form.value.url = ''
+    form.value.clip_start = ''
+    form.value.clip_end = ''
     if (payload.video_folder_id) await fetchFolders()
   } catch (error) {
     submitError.value = errorMessage(error)

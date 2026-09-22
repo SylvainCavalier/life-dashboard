@@ -60,16 +60,20 @@ module VideoDownloads
       false
     end
 
-    def initialize(url:, format:, output_dir:, quality: nil)
+    # clip_start / clip_end (secondes) : ne telecharger que cet extrait.
+    def initialize(url:, format:, output_dir:, quality: nil, clip_start: nil, clip_end: nil)
       @url = url
       @format = format
       @quality = quality
       @output_dir = output_dir.to_s
+      @clip_start = clip_start
+      @clip_end = clip_end
     end
 
     def call
       FileUtils.mkdir_p(@output_dir)
       metadata = fetch_metadata
+      check_clip_within!(metadata["duration"])
       filepath = run_download
       filepath = remux_mp4(filepath) if @format == "mp4"
       Result.new(
@@ -79,7 +83,7 @@ module VideoDownloads
         file_size: File.size(filepath),
         thumbnail_url: metadata["thumbnail"],
         description: metadata["description"],
-        duration: metadata["duration"]&.to_i,
+        duration: result_duration(metadata["duration"]),
         **source_attributes(metadata)
       )
     end
@@ -125,8 +129,8 @@ module VideoDownloads
     end
 
     def run_download
-      output_template = File.join(@output_dir, "%(title).150B [%(id)s].%(ext)s")
-      args = cookies_args + base_args + format_args + [ "-o", output_template, "--", @url ]
+      output_template = File.join(@output_dir, "%(title).150B [%(id)s]#{clip_suffix}.%(ext)s")
+      args = cookies_args + base_args + format_args + clip_args + [ "-o", output_template, "--", @url ]
       stdout, stderr, status = capture(self.class.binary, *args)
       raise Error, "yt-dlp a echoue : #{with_hint(stderr.presence || stdout)}" unless status.success?
 
@@ -172,6 +176,44 @@ module VideoDownloads
       else
         raise Error, "Format non gere : #{@format}"
       end
+    end
+
+    def clip?
+      @clip_start && @clip_end
+    end
+
+    # Seul l'extrait est telecharge. `--force-keyframes-at-cuts` reencode les
+    # bords : sans lui la coupe tombe sur l'image cle precedente et le debut de
+    # l'extrait n'est pas decodable (mesure : 1re image cle a 5,7 s sur un
+    # extrait de 13 s), pour un gain de temps nul.
+    def clip_args
+      return [] unless clip?
+
+      [ "--download-sections", "*#{@clip_start}-#{@clip_end}", "--force-keyframes-at-cuts" ]
+    end
+
+    # Distingue l'extrait de la video entiere (et deux extraits entre eux) dans
+    # le nom du fichier. Pas de ":" : interdit dans un nom de fichier sous macOS.
+    def clip_suffix
+      return "" unless clip?
+
+      stamp = ->(seconds) { Kernel.format("%dm%02ds", *seconds.divmod(60)) }
+      " (#{stamp.call(@clip_start)}-#{stamp.call(@clip_end)})"
+    end
+
+    def check_clip_within!(duration)
+      return unless clip? && duration.present?
+      return if @clip_start < duration.to_i
+
+      raise Error, "L'extrait commence apres la fin de la video (duree : #{duration.to_i} s)"
+    end
+
+    # Duree du fichier produit : celle de l'extrait, borne par la fin de la video.
+    def result_duration(video_duration)
+      return video_duration&.to_i unless clip?
+
+      clip_end = video_duration.present? ? [ @clip_end, video_duration.to_i ].min : @clip_end
+      clip_end - @clip_start
     end
 
     def extract_final_path(stdout)

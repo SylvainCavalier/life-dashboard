@@ -4,6 +4,8 @@
 #
 #  id              :bigint           not null, primary key
 #  canonical_url   :string
+#  clip_end        :integer
+#  clip_start      :integer
 #  completed_at    :datetime
 #  description     :text
 #  duration        :integer
@@ -139,6 +141,37 @@ class VideoDownloadTest < ActiveSupport::TestCase
                                                 completed_at: Time.utc(2026, 9, 21))
     assert_equal "« https://crowdbunker.com/v/abc », https://crowdbunker.com/v/abc (consulté le 21/09/2026)",
                  sparse.citation
+  end
+
+  test "les bornes d'un extrait acceptent timecodes et secondes" do
+    download = build(:video_download, clip_start: "0:34", clip_end: "1:02:03")
+    assert download.valid?
+    assert_equal 34, download.clip_start
+    assert_equal 3723, download.clip_end
+    assert_equal "0:34 - 1:02:03", download.clip_label
+
+    assert_equal 47, build(:video_download, clip_start: 34, clip_end: "47").clip_end
+    assert_nil build(:video_download).clip_label
+  end
+
+  test "un extrait demande deux bornes lisibles et ordonnees" do
+    assert_includes build(:video_download, clip_start: "0:34").tap(&:valid?).errors.full_messages.join, "un debut et une fin"
+    assert_includes build(:video_download, clip_start: "0:47", clip_end: "0:34").tap(&:valid?).errors.full_messages.join,
+                    "apres son debut"
+    assert_includes build(:video_download, clip_start: "abc", clip_end: "0:34").tap(&:valid?).errors.full_messages.join,
+                    "illisible"
+    assert_not build(:video_download, clip_start: "0:75", clip_end: "2:00").valid?, "75 secondes n'est pas un timecode"
+  end
+
+  test "la citation d'un extrait precise le passage et, sur YouTube, pointe sur son debut" do
+    download = build(:video_download, :completed, title: "Une video", uploader: "Une chaine", platform: "Youtube",
+                                                  canonical_url: "https://www.youtube.com/watch?v=abc",
+                                                  clip_start: 34, clip_end: 47, completed_at: Time.utc(2026, 9, 21))
+    assert_includes download.citation, "extrait de 0:34 à 0:47, https://www.youtube.com/watch?v=abc&t=34s"
+
+    download.platform = "Dailymotion"
+    download.canonical_url = "https://www.dailymotion.com/video/x1"
+    assert_includes download.citation, "extrait de 0:34 à 0:47, https://www.dailymotion.com/video/x1 ("
   end
 
   test "supprimer un dossier conserve ses telechargements" do

@@ -4,6 +4,8 @@
 #
 #  id              :bigint           not null, primary key
 #  canonical_url   :string
+#  clip_end        :integer
+#  clip_start      :integer
 #  completed_at    :datetime
 #  description     :text
 #  duration        :integer
@@ -64,6 +66,7 @@ class VideoDownload < ApplicationRecord
   validates :storage, inclusion: { in: STORAGES }
   validates :status, inclusion: { in: STATUSES }
   validate :quality_required_for_mp4
+  validate :clip_bounds_consistent
   validate :folder_only_for_cloud
 
   before_validation :drop_quality_for_audio
@@ -81,6 +84,43 @@ class VideoDownload < ApplicationRecord
     create!(attributes.to_h.merge(status: "pending")).tap do |download|
       VideoDownloadJob.perform_later(download.id)
     end
+  end
+
+  # "0:34", "1:02:03", "34" ou 34 -> secondes. nil si vide, :invalid si illisible
+  # (la valeur est alors conservee telle quelle pour que la validation la refuse).
+  def self.parse_timecode(value)
+    return nil if value.blank?
+    return value if value.is_a?(Integer)
+
+    text = value.to_s.strip
+    return :invalid unless text.match?(/\A\d+(:[0-5]?\d){0,2}\z/)
+
+    text.split(":").map(&:to_i).reduce(0) { |total, part| total * 60 + part }
+  end
+
+  def self.format_timecode(seconds)
+    return nil if seconds.nil?
+
+    hours, rest = seconds.divmod(3600)
+    minutes, secs = rest.divmod(60)
+    hours.positive? ? Kernel.format("%d:%02d:%02d", hours, minutes, secs) : Kernel.format("%d:%02d", minutes, secs)
+  end
+
+  # Bornes de l'extrait : acceptent un timecode ("0:34") comme des secondes.
+  %i[clip_start clip_end].each do |attribute|
+    define_method("#{attribute}=") do |value|
+      parsed = self.class.parse_timecode(value)
+      super(parsed == :invalid ? value : parsed)
+    end
+  end
+
+  # Extrait (clip_start..clip_end) plutot que la video entiere ?
+  def clip?
+    clip_start.present? && clip_end.present?
+  end
+
+  def clip_label
+    "#{self.class.format_timecode(clip_start)} - #{self.class.format_timecode(clip_end)}" if clip?
   end
 
   def video?
@@ -136,10 +176,19 @@ class VideoDownload < ApplicationRecord
       "« #{title.presence || url} »",
       author.presence,
       (published_at ? "publié le #{published_at.strftime('%d/%m/%Y')}" : nil),
-      canonical_url.presence || url
+      (clip? ? "extrait de #{self.class.format_timecode(clip_start)} à #{self.class.format_timecode(clip_end)}" : nil),
+      citation_url
     ].compact
     consulted = completed_at ? " (consulté le #{completed_at.strftime('%d/%m/%Y')})" : ""
     parts.join(", ") + consulted
+  end
+
+  # Pour un extrait YouTube, l'URL citee ouvre la video au debut du passage.
+  def citation_url
+    link = canonical_url.presence || url
+    return link unless clip? && platform.to_s.casecmp?("youtube") && link.include?("watch?v=")
+
+    "#{link}&t=#{clip_start}s"
   end
 
   # Cle lisible dans le bucket plutot que la cle aleatoire d'Active Storage.
@@ -162,6 +211,20 @@ class VideoDownload < ApplicationRecord
     return unless video?
 
     errors.add(:quality, "est obligatoire pour un telechargement mp4") if quality.blank?
+  end
+
+  # Messages sur :base : sans fichier de locale, "Clip start ..." serait illisible.
+  def clip_bounds_consistent
+    raw = [ clip_start_before_type_cast, clip_end_before_type_cast ]
+    return if raw.all?(&:blank?)
+
+    if raw.any? { |value| value.present? && !value.is_a?(Integer) && !value.to_s.match?(/\A\d+\z/) }
+      errors.add(:base, "Timecode d'extrait illisible (formats acceptes : 0:34, 1:02:03 ou un nombre de secondes)")
+    elsif clip_start.nil? || clip_end.nil?
+      errors.add(:base, "Un extrait demande un debut et une fin")
+    elsif clip_end <= clip_start
+      errors.add(:base, "La fin de l'extrait doit etre apres son debut")
+    end
   end
 
   def folder_only_for_cloud

@@ -75,6 +75,21 @@ Legifrance), sans lesquels l'onglet Droit du travail ne collecte que la doctrine
 `bin/rails sentinel:check` affiche ce qui manque. Une veille tourne dans le dyno web (GoodJob async) et
 dure quelques minutes : un redemarrage du dyno l'interrompt, la relancer reprend ou elle s'est arretee.
 
+Alfred (agent IA du dashboard, chat en bas a droite) a besoin de deux cles :
+
+```bash
+heroku config:set ANTHROPIC_API_KEY=...   # l'agent (Claude). MISTRAL_API_KEY, deja posee, sert aux embeddings et a l'OCR
+```
+
+Optionnels : `ALFRED_MODEL` (defaut `claude-sonnet-5`), `ALFRED_EFFORT` (defaut `medium`), `ALFRED_OCR=0` pour couper
+l'OCR des scans, `ALFRED_INDEXING=0` pour suspendre la synchronisation du corpus pendant un import massif.
+Le corpus repose sur l'extension Postgres `vector` (pgvector) : elle est disponible sur tous les plans Heroku
+Postgres et la migration `EnablePgvectorExtension` l'active toute seule. Apres la migration des donnees (§6), lancer
+**une fois** `heroku run rails alfred:index` : les passages et le cache d'embeddings voyagent dans le dump, donc rien
+n'est repaye si l'indexation a deja ete faite en local ; sinon compter l'OCR des scans (environ 1 a 2 USD les 1000 pages).
+`heroku run rails alfred:check` affiche l'etat des cles, de pgvector et du corpus. Une reponse d'Alfred tourne dans le
+dyno web (GoodJob async) : un redemarrage du dyno l'interrompt, le chat le signale et il suffit de reposer la question.
+
 | Variable | Role |
 |---|---|
 | `RAILS_MASTER_KEY` | Dechiffre `credentials.yml.enc` (secret_key_base **et** cles Active Record Encryption) |

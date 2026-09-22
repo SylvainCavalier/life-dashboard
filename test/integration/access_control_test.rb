@@ -33,6 +33,8 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/sentinel_domains
       /api/sentinel_domains/droit_travail/weeks
       /api/sentinel_domains/droit_travail/sources
+      /api/alfred
+      /api/alfred_conversations
     ].each do |path|
       get path, headers: { "Accept" => "application/json" }
       assert_response :unauthorized, "#{path} devrait repondre 401"

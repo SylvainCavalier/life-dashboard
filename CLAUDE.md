@@ -17,9 +17,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **SMS/Textos** — Gestion des textos
 - **Agenda** — Organisation des rendez-vous et événements
 - **Transfert** — WeTransfer perso : upload direct vers le bucket OVH S3, lien de partage public temporaire, purge automatique après 3 jours
-- **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
+- **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, en entier ou sur un extrait (de 0:34 à 0:47), avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
 - **Projets** — Projets personnels classés par catégorie (`Project::CATEGORIES` : développement, musique, vidéo, jeu vidéo, sport, jeu de rôle, business...). Chaque projet a sa page (`/projects/:id`) : jauge, importance, compétences à apprendre (`ProjectSkill`), liens (`ProjectLink`), notes libres (`projects.notes`), to-do list (`Task` avec `project_id` ; `project_id` nul = to-do list générale du dashboard) et documents (`Document` avec `project_id`, domaine `projects`)
 - **Sentinelle** — Veille hebdomadaire personnalisée, un onglet par domaine (`/sentinelle/:domaine`) : **Droit du travail** (Judilibre, Légifrance, Village de la Justice) et **Désinformation** (flux RSS + recherche web Tavily sur une liste blanche de sites). Chaque semaine (lundi → dimanche) se lance à la main : collecte, tri déterministe, résumé IA par document puis synthèse de la semaine (`/sentinelle/:domaine/:lundi`). Les domaines sont isolés (registre `Sentinel::Domains`) : en ajouter un ne touche pas aux autres
+- **Alfred (chat)** — L'intendant installe dans le dashboard : icone de chat en bas a droite de toutes les pages (`AlfredWidget.vue`, monte dans `App.vue`). Agent a outils (Claude) adosse a un corpus RAG (pgvector + mistral-embed) qui couvre les donnees du dashboard ET le texte des documents (OCR Mistral pour les scans). Lit tout sauf les mots de passe, n'ecrit que sur confirmation explicite dans le chat. Voir « Alfred dans le dashboard »
 - **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
 Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère tout le UI, Rails sert d'API backend. Vite pour le build frontend.
@@ -57,7 +58,7 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 3. **Champ sensible ajouté ?** Pense à l'exclure côté skill lecture (`scripts/query.rb`, clé `exclude:` dans `ALLOWED`).
 
-4. **Renommage d'un modèle ou d'un champ ?** Met à jour les deux skills, sinon Alfred plantera silencieusement.
+4. **Renommage d'un modèle ou d'un champ ?** Met à jour les deux skills, sinon Alfred plantera silencieusement. Même chose pour l'Alfred du dashboard : `Alfred::DataAccess` (`READABLE` / `WRITABLE`) et `Alfred::Corpus::REGISTRY`.
 
 5. **Nouvelle fonctionnalité métier scriptable** (génération PDF, envoi mail, génération automatique d'événement…) : pense à exposer un point d'entrée utilisable par Alfred (rake task, méthode de modèle, ou extension du script write).
 
@@ -162,7 +163,8 @@ bin/rails downloader:update                                  # met a jour yt-dlp
 bin/rails downloader:fetch URL="https://..." FORMAT=mp3      # enfile un telechargement (GoodJob)
 bin/rails downloader:fetch_now URL="https://..." STORAGE=cloud FOLDER=nom  # telecharge immediatement (debogage, Alfred)
 ```
-Options : `FORMAT` (mp4 | mp3), `QUALITY` (original | 720p), `STORAGE` (local par defaut | cloud), `FOLDER`.
+Options : `FORMAT` (mp4 | mp3), `QUALITY` (original | 720p), `STORAGE` (local par defaut | cloud), `FOLDER`,
+`CLIP_START` / `CLIP_END` (extrait ; timecodes `0:34`, `1:02:03` ou secondes ; les deux ou aucun).
 `VideoDownload.enqueue!` est le point d'entree unique (API et rake) ; `VideoDownloadJob` appelle
 `VideoDownloads::YtDlpService` puis, en cloud, attache le fichier via Active Storage avec une cle
 lisible (`video_downloads/<dossier>/<id>-<nom>`). La table `video_downloads` fait foi pour l'etat
@@ -176,6 +178,12 @@ Le choix du format passe par un **tri** (`-S vcodec:h264,res:1080,acodec:aac`) e
 garantit une seule video (un tweet peut en contenir plusieurs ; `/video/2` en fin d'URL vise la 2e).
 X/Twitter exige souvent d'etre connecte : ce sont les cookies Chrome (`YT_DLP_COOKIES_FROM_BROWSER`)
 qui le permettent. Le badge de plateforme de l'historique est deduit de l'URL cote front (`sourceOf`).
+Extraits : `clip_start` / `clip_end` (secondes en base, timecodes acceptes par les setters du modele) passent
+par `--download-sections` : seul le passage est telecharge. `--force-keyframes-at-cuts` est **obligatoire** :
+sans lui la coupe tombe sur l'image cle precedente et le debut de l'extrait n'est pas decodable (mesure :
+1re image cle a 5,7 s sur 13 s), pour un gain de temps nul. `duration` devient celle de l'extrait, le nom du
+fichier porte `(0m34s-0m47s)`, la citation ajoute « extrait de 0:34 a 0:47 » et, sur YouTube, `&t=34s`.
+Dans le modele et le service, ecrire `Kernel.format` : `format` y est l'attribut mp4/mp3.
 Binaires requis : `yt-dlp` (plus un runtime JS, `deno`, indispensable pour YouTube) et `ffmpeg`. Sur la
 machine de Sylvain ils vivent dans `~/.local/bin` (binaire officiel autonome de yt-dlp, build statique
 evermeet.cx de ffmpeg/ffprobe) et non dans Homebrew : sous macOS 14, Homebrew n'a plus de bottles et
@@ -228,6 +236,76 @@ Village de la Justice depend des classes CSS du site et leve `LayoutChanged` s'i
 rubrique se regle sur la source) ; Tavily ne sait ni filtrer par dates avec `include_domains` ni dater ses resultats
 hors grands medias, d'ou la datation par les balises meta de la page (`Sentinel::ArticleText`) et l'abandon de la
 recherche web pour une semaine de plus d'un mois (details en tete de `Sentinel::TavilySearch`).
+
+### Alfred dans le dashboard (agent IA + corpus RAG)
+```bash
+bin/rails alfred:check                          # cles API, pgvector, etat du corpus, indexations en echec
+bin/rails alfred:index                          # indexe tout le corpus (MODEL=Document,Note ; FORCE=1 = tout recalculer, OCR compris)
+bin/rails alfred:search Q="bail appartement"    # teste la recherche seule (scores, cosine brut)
+bin/rails alfred:ask Q="Mes rendez-vous ?"      # pose une question sans l'interface (outils appeles, tokens, latence)
+```
+A ne pas confondre avec le **subagent Alfred local** (section precedente), qui tourne dans Claude Code sur le Mac avec ses
+MCP (Gmail, Agenda...). Celui-ci vit DANS l'application et n'a que les outils de `Alfred::Tools`. Meme personnage, meme
+perimetre de donnees ; `Alfred::Prompt` est la transposition de `~/.claude/agents/alfred.md`.
+
+**Deux fournisseurs, deux roles.** Embeddings et OCR : Mistral (`Embeddings.default`, interchangeable par
+`EMBEDDING_PROVIDER`, cache `embedding_caches` par `(provider, model, SHA256)`). Agent : Claude via le SDK `anthropic`
+(`Alfred::Agent`, specifique a l'API Anthropic par construction : blocs tool_use, reflexion adaptative). Anthropic n'a
+pas d'API d'embeddings, le duo est donc structurel. Variables : `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY` (obligatoires),
+`ALFRED_MODEL` (defaut `claude-sonnet-5`), `ALFRED_EFFORT` (`medium`), `ALFRED_HYBRID` (`1`), `ALFRED_MIN_COSINE` (`0.30`),
+`ALFRED_OCR` (`1`), `ALFRED_INDEXING` (`1`, `0` en test), `ALFRED_HISTORY_MESSAGES` (`16`). Ne pas envoyer `temperature`
+ni `budget_tokens` a Sonnet 5 : l'API repond 400.
+
+**Corpus** (`Alfred::Corpus`). `REGISTRY` liste les modeles indexes et comment les presenter ; `install_hooks!`
+(initializer `alfred.rb`, dans un `to_prepare`) leur pose des `after_commit` qui enfilent `AlfredIndexJob`. Un modele
+enfant (`InvoiceItem`, `ProjectSkill`...) declare `parent:` : il n'a pas de fiche, il fait reindexer son parent, qui
+l'inclut via `children:`. **Ajouter un modele au corpus = une entree dans `REGISTRY`**, puis `rails alfred:index MODEL=...`.
+`Indexer` produit deux sortes de passages (`alfred_chunks.kind`) : `record` (la fiche, rendue par `RecordRenderer`) et
+`file` (texte du fichier joint de `Document`). Chaque moitie a son empreinte sur `alfred_index_entries` : modifier les
+notes d'un document ne repaie pas son OCR. `TextExtractor` : pdf-reader d'abord, OCR Mistral si le PDF ramene moins de
+80 caracteres par page (scan) ou si c'est une image.
+- Les attributs `encrypts` (IBAN, numero de securite sociale, passeport...) sont **ecartes du corpus** automatiquement
+  (`klass.encrypted_attributes`) pour ne pas les recopier en clair dans `alfred_chunks` ; Alfred les lit a la demande
+  par `query_records`. En revanche le texte OCR d'un document (un scan de passeport) est bien en clair dans
+  `alfred_chunks.content` : c'est voulu (decision de Sylvain), et c'est le meme niveau d'exposition que le fichier sur le bucket.
+- `alfred_messages.content` et `alfred_actions.payload` sont chiffres (`encrypts`) : une reponse peut citer un IBAN.
+  Consequence : `update_columns` ne chiffre pas, d'ou `Agent#encrypted` pour le texte diffuse au fil de l'eau.
+- **Jamais dans le corpus ni dans `DataAccess`** : `PasswordEntry`, les identifiants de `MailAccount`, `User`. C'est la seule
+  limite de lecture voulue par Sylvain (les champs sensibles masques pour l'Alfred local sont lisibles ici).
+  `indexer_test.rb` et `tools_test.rb` verrouillent ce point.
+
+**Recherche** (`Alfred::Corpus::Search`), hybride par defaut (vectoriel 0.7 + lexical 0.3 : les noms propres comptent
+dans des donnees personnelles). Trois invariants a ne pas defaire, couverts par `search_test.rb` : (1) le plancher
+`MIN_COSINE_SIMILARITY` porte sur le **cosine brut** et rien en dessous n'atteint le modele ; (2) le bras lexical
+(tsvector `french` sur `content_fold`, accents plies en Ruby des deux cotes par `Alfred::AccentFolding`) **reclasse sans
+jamais elargir** l'ensemble eligible ; (3) la fraicheur (`Recency`, plancher 0.9) ne fait qu'ordonner et `ensure_anchor`
+garantit que le meilleur cosine brut survit a la coupe. S'y ajoutent un plafond de 3 passages par enregistrement et une
+place garantie par type de source (`diversify`). L'index HNSW est en `vector_cosine_ops` : il DOIT correspondre a la
+distance des requetes, sinon il est ignore en silence. `vector(1024)` = `Embeddings::DIMENSIONS` = mistral-embed :
+changer de modele d'embedding impose une migration de la colonne et un `alfred:index FORCE=1`.
+
+**Agent et outils.** `POST /api/alfred_conversations/:id/message` cree le message et une reponse `pending`, puis
+`AlfredReplyJob` fait tourner `Alfred::Agent` : boucle d'outils (12 tours max), texte diffuse dans
+`alfred_messages.content` toutes les 350 ms. La table fait foi, l'interface la sonde toutes les secondes (pas de SSE ni
+d'ActionCable : meme patron que Downloader et Sentinelle, et une reponse survit a un rechargement de page). Outils :
+`search_corpus`, `query_records` (lecture structuree, `DataAccess::READABLE`), `describe_models`, `propose_write`.
+L'historique rejoue ne contient que du texte (questions, reponses, notes `[Systeme]`), jamais les resultats d'outils
+des tours passes : Alfred relit la base. Le prompt stable est mis en cache cote API ; la date et les consignes
+particulieres (`AlfredSetting`, editables dans le chat) vont dans un second bloc APRES le point de cache : ne rien
+mettre de variable dans `Prompt.stable_text`.
+
+**Ecritures : le modele ne peut que proposer.** `propose_write` valide (liste blanche `DataAccess::WRITABLE`, memes
+tiers que la skill write, `record.valid?`) et cree une `AlfredAction` `proposed`, rien d'autre. Le chat affiche une carte
+avant/apres ; seul `POST /api/alfred_actions/:id/confirm` (`Alfred::ActionExecutor`) ecrit, apres avoir tout reverifie
+et refuse si l'enregistrement a change depuis la proposition. Pas de suppression. Une note `event` consigne le
+resultat dans la conversation, c'est par elle que le modele sait au tour suivant que l'ecriture a eu lieu. Ne jamais
+donner au modele un outil qui ecrit directement. `DataAccess` double les listes blanches des skills locales
+(`query.rb` / `write.rb`) : **un modele ajoute ou renomme se met a jour aux trois endroits** (voir la checklist plus haut).
+Les tables d'Alfred (`alfred_*`, `embedding_caches`) ne sont volontairement exposees a aucune des deux skills.
+
+Pas encore dans l'Alfred du dashboard : mails, Google Agenda, Downloader, Sentinelle, Voyages (les points d'entree
+existent : `VideoDownload.enqueue!`, `SentinelWeek.run!`, `Trip#generate_plan!` ; les brancher = un outil de plus dans
+`Alfred::Tools::ALL`, avec confirmation pour ce qui coute).
 
 ### Voyages (rapport IA)
 ```bash
@@ -296,6 +374,6 @@ bundle exec rubocop -a    # RuboCop with auto-fix
 
 ## Key Dependencies
 
-**Backend:** Rails 8.0, PostgreSQL, Devise, Pundit, GoodJob, Pagy 43, PaperTrail
+**Backend:** Rails 8.0, PostgreSQL (+ pgvector), anthropic, neighbor, Devise, Pundit, GoodJob, Pagy 43, PaperTrail
 **Frontend:** Vue 3.5, Vite 5, Pinia, Vue Router, Axios, Tailwind CSS 3.4
 **Requires:** Ruby 3.3.5, Node 20.x

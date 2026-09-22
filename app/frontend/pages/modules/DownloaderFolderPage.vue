@@ -36,6 +36,7 @@
             <div class="font-medium text-gray-900 line-clamp-2">{{ download.title || download.url }}</div>
             <div class="text-xs text-gray-400 mt-1">
               {{ download.format.toUpperCase() }}
+              <span v-if="download.clip_label"> &middot; Extrait {{ download.clip_label }}</span>
               <span v-if="download.duration"> &middot; {{ formatDuration(download.duration) }}</span>
               <span v-if="download.file_size"> &middot; {{ formatSize(download.file_size) }}</span>
             </div>

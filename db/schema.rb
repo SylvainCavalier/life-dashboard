@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_21_110231) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_21_124837) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "vector"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -40,6 +41,92 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_110231) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "alfred_actions", force: :cascade do |t|
+    t.bigint "alfred_conversation_id", null: false
+    t.bigint "alfred_message_id"
+    t.string "operation", null: false
+    t.string "target_model", null: false
+    t.bigint "record_id"
+    t.text "payload", null: false
+    t.string "summary"
+    t.string "status", default: "proposed", null: false
+    t.text "error"
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["alfred_conversation_id"], name: "index_alfred_actions_on_alfred_conversation_id"
+    t.index ["alfred_message_id"], name: "index_alfred_actions_on_alfred_message_id"
+    t.index ["status"], name: "index_alfred_actions_on_status"
+  end
+
+  create_table "alfred_chunks", force: :cascade do |t|
+    t.string "source_type", null: false
+    t.bigint "source_id", null: false
+    t.string "kind", default: "record", null: false
+    t.integer "position", default: 0, null: false
+    t.string "label", null: false
+    t.date "source_date"
+    t.text "content", null: false
+    t.text "content_fold"
+    t.virtual "content_tsv", type: :tsvector, as: "to_tsvector('french'::regconfig, COALESCE(content_fold, ''::text))", stored: true
+    t.integer "token_count"
+    t.vector "embedding", limit: 1024
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["content_tsv"], name: "index_alfred_chunks_on_content_tsv", using: :gin
+    t.index ["embedding"], name: "index_alfred_chunks_on_embedding_hnsw", opclass: :vector_cosine_ops, using: :hnsw
+    t.index ["source_type", "source_id", "kind", "position"], name: "index_alfred_chunks_on_source_kind_position", unique: true
+    t.index ["source_type", "source_id"], name: "index_alfred_chunks_on_source"
+  end
+
+  create_table "alfred_conversations", force: :cascade do |t|
+    t.string "title"
+    t.datetime "last_message_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_message_at"], name: "index_alfred_conversations_on_last_message_at"
+  end
+
+  create_table "alfred_index_entries", force: :cascade do |t|
+    t.string "source_type", null: false
+    t.bigint "source_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "record_digest"
+    t.string "file_digest"
+    t.string "file_extractor"
+    t.integer "chunks_count", default: 0, null: false
+    t.text "error"
+    t.datetime "indexed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_type", "source_id"], name: "index_alfred_index_entries_on_source", unique: true
+    t.index ["status"], name: "index_alfred_index_entries_on_status"
+  end
+
+  create_table "alfred_messages", force: :cascade do |t|
+    t.bigint "alfred_conversation_id", null: false
+    t.string "role", null: false
+    t.string "status", default: "done", null: false
+    t.text "content"
+    t.jsonb "steps", default: [], null: false
+    t.jsonb "sources", default: [], null: false
+    t.text "error"
+    t.string "model"
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.integer "cached_tokens"
+    t.integer "latency_ms"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["alfred_conversation_id"], name: "index_alfred_messages_on_alfred_conversation_id"
+  end
+
+  create_table "alfred_settings", force: :cascade do |t|
+    t.text "custom_instructions"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "budget_entries", force: :cascade do |t|
@@ -222,6 +309,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_110231) do
     t.index ["domain", "category"], name: "index_documents_on_domain_and_category"
     t.index ["domain"], name: "index_documents_on_domain"
     t.index ["project_id"], name: "index_documents_on_project_id"
+  end
+
+  create_table "embedding_caches", force: :cascade do |t|
+    t.string "provider", null: false
+    t.string "model", null: false
+    t.string "content_hash", null: false
+    t.vector "embedding", limit: 1024, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "model", "content_hash"], name: "index_embedding_caches_on_provider_model_hash", unique: true
   end
 
   create_table "events", force: :cascade do |t|
@@ -812,6 +909,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_110231) do
     t.string "uploader_url"
     t.datetime "published_at"
     t.bigint "view_count"
+    t.integer "clip_start"
+    t.integer "clip_end"
     t.index ["created_at"], name: "index_video_downloads_on_created_at"
     t.index ["status"], name: "index_video_downloads_on_status"
     t.index ["video_folder_id"], name: "index_video_downloads_on_video_folder_id"
@@ -826,6 +925,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_110231) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "alfred_actions", "alfred_conversations"
+  add_foreign_key "alfred_actions", "alfred_messages"
+  add_foreign_key "alfred_messages", "alfred_conversations"
   add_foreign_key "clients", "companies"
   add_foreign_key "crm_profiles", "contacts"
   add_foreign_key "documents", "companies"

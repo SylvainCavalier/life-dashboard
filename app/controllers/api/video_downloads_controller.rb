@@ -68,7 +68,8 @@ module Api
     end
 
     def download_params
-      params.require(:video_download).permit(:url, :format, :quality, :storage, :video_folder_id)
+      params.require(:video_download).permit(:url, :format, :quality, :storage, :video_folder_id,
+                                             :clip_start, :clip_end)
     end
 
     def download_json(download)
@@ -86,6 +87,9 @@ module Api
         thumbnail_url: download.thumbnail_url,
         description: download.description,
         duration: download.duration,
+        clip_start: download.clip_start,
+        clip_end: download.clip_end,
+        clip_label: download.clip_label,
         platform: download.platform,
         canonical_url: download.canonical_url,
         uploader: download.uploader,

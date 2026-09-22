@@ -57,6 +57,13 @@ gem "icalendar", "~> 2.10"
 # OpenAI official SDK (Responses API + web search) for the Voyages AI planner
 gem "openai", "~> 0.90"
 
+# Alfred (agent IA du dashboard) : SDK officiel Anthropic pour la boucle d'outils,
+# pgvector via ActiveRecord, extraction du texte des PDF, client HTTP Mistral (embeddings + OCR)
+gem "anthropic"
+gem "neighbor"
+gem "pdf-reader"
+gem "faraday"
+
 # Sentinelle : lecture des flux RSS/Atom et scraping (deja present en dependance transitive de Rails)
 gem "nokogiri"
 

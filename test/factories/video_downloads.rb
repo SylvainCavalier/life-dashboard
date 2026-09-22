@@ -4,6 +4,8 @@
 #
 #  id              :bigint           not null, primary key
 #  canonical_url   :string
+#  clip_end        :integer
+#  clip_start      :integer
 #  completed_at    :datetime
 #  description     :text
 #  duration        :integer

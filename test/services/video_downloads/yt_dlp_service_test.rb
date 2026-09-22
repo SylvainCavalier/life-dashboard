@@ -123,6 +123,50 @@ class VideoDownloads::YtDlpServiceTest < ActiveSupport::TestCase
     assert_match "Piste : aucun flux video", error.message
   end
 
+  test "un extrait ne telecharge que le passage, coupe a l'image pres, et le nomme dans le fichier" do
+    result = with_fake_binaries(metadata_stdout: { title: "Une video", duration: 300 }.to_json, extension: "mp4") do
+      VideoDownloads::YtDlpService.new(url: "https://youtu.be/abc", format: "mp4", quality: "720p",
+                                       output_dir: @dir, clip_start: 34, clip_end: 47).call
+    end
+
+    args = download_call
+    assert_equal "*34-47", args[args.index("--download-sections") + 1]
+    assert_includes args, "--force-keyframes-at-cuts"
+    assert_includes args[args.index("-o") + 1], "(0m34s-0m47s)"
+    assert_equal 13, result.duration
+  end
+
+  test "sans extrait, aucune option de decoupe n'est passee" do
+    with_fake_binaries(metadata_stdout: { title: "Une video", duration: 300 }.to_json, extension: "mp4") do
+      VideoDownloads::YtDlpService.new(url: "https://youtu.be/abc", format: "mp4",
+                                       quality: "720p", output_dir: @dir).call
+    end
+
+    assert_not_includes download_call, "--download-sections"
+    assert_not_includes download_call, "--force-keyframes-at-cuts"
+  end
+
+  test "la duree d'un extrait est bornee par la fin de la video" do
+    result = with_fake_binaries(metadata_stdout: { title: "Une video", duration: 40 }.to_json, extension: "mp4") do
+      VideoDownloads::YtDlpService.new(url: "https://youtu.be/abc", format: "mp4", quality: "720p",
+                                       output_dir: @dir, clip_start: 34, clip_end: 47).call
+    end
+
+    assert_equal 6, result.duration
+  end
+
+  test "un extrait qui commence apres la fin de la video est refuse avant tout telechargement" do
+    error = assert_raises(VideoDownloads::YtDlpService::Error) do
+      with_fake_binaries(metadata_stdout: { title: "Une video", duration: 30 }.to_json, extension: "mp4") do
+        VideoDownloads::YtDlpService.new(url: "https://youtu.be/abc", format: "mp4", quality: "720p",
+                                         output_dir: @dir, clip_start: 34, clip_end: 47).call
+      end
+    end
+
+    assert_match "apres la fin de la video", error.message
+    assert_nil download_call
+  end
+
   test "le mp3 extrait l'audio sans remux" do
     result = with_fake_binaries(metadata_stdout: { title: "Une video" }.to_json, extension: "mp3") do
       VideoDownloads::YtDlpService.new(url: "https://www.dailymotion.com/video/x1", format: "mp3",

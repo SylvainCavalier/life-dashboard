@@ -130,6 +130,21 @@ Rails.application.routes.draw do
     resources :sentinel_sources, only: [:update, :destroy]
     resources :sentinel_documents, only: [:show]
 
+    # Alfred : agent IA du dashboard (chat + corpus RAG). Une ecriture proposee par
+    # Alfred ne s'execute que par POST /alfred_actions/:id/confirm.
+    resource :alfred, only: [:show, :update], controller: "alfred" do
+      post :reindex
+    end
+    resources :alfred_conversations, only: [:index, :show, :create, :destroy] do
+      member { post :message }
+    end
+    resources :alfred_actions, only: [] do
+      member do
+        post :confirm
+        post :cancel
+      end
+    end
+
     # CV module
     resources :cv_experiences, only: [:index, :create, :update, :destroy]
     resources :cv_formations, only: [:index, :create, :update, :destroy]

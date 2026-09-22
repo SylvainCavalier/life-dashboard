@@ -14,7 +14,7 @@ module Alfred
           input_schema: {
             type: "object",
             properties: {
-              operation: { type: "string", enum: AlfredAction::OPERATIONS },
+              operation: { type: "string", enum: AlfredAction::WRITE_OPERATIONS },
               model: { type: "string", enum: DataAccess::WRITABLE.keys },
               id: { type: "integer", description: "Identifiant de l'enregistrement (update uniquement)." },
               attributes: { type: "object", description: "Champs et valeurs a ecrire." },
@@ -31,7 +31,7 @@ module Alfred
         operation = input["operation"].to_s
         name = input["model"].to_s
         klass = DataAccess.writable_class(name)
-        raise ArgumentError, "Operation inconnue '#{operation}'" unless AlfredAction::OPERATIONS.include?(operation)
+        raise ArgumentError, "Operation inconnue '#{operation}'" unless AlfredAction::WRITE_OPERATIONS.include?(operation)
 
         attributes = input["attributes"]
         raise ArgumentError, "`attributes` doit etre un objet non vide" unless attributes.is_a?(Hash) && attributes.any?

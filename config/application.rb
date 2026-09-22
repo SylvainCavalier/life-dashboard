@@ -37,7 +37,10 @@ module LifeDashboard
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Heure de Paris : les heures saisies dans l'agenda ("2026-09-22T09:00", sans
+    # fuseau) sont interpretees et renvoyees en heure francaise, et les journees
+    # entieres (Google Calendar) commencent a minuit heure de Paris.
+    config.time_zone = "Europe/Paris"
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end

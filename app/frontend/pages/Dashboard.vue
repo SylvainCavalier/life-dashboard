@@ -137,7 +137,6 @@ const modules = computed(() => [
   { name: 'Immobilier', icon: '🏠', subtitle: `${counts.value.properties} bien${counts.value.properties > 1 ? 's' : ''}`, to: '/properties' },
   { name: 'Entreprises', icon: '🏢', subtitle: `${counts.value.companies} entreprise${counts.value.companies > 1 ? 's' : ''}`, to: '/companies' },
   { name: 'Budget', icon: '💰', subtitle: 'Non configure', to: '/budget' },
-  { name: 'Activites', icon: '🏃', subtitle: '0 activites', to: '/activities' },
   { name: 'Langues', icon: '🌍', subtitle: '0 langues', to: '/languages' },
   { name: 'Agenda', icon: '📅', subtitle: `${counts.value.events} événement${counts.value.events > 1 ? 's' : ''}`, to: '/agenda' },
   { name: 'Mots de passe', icon: '🔐', subtitle: `${counts.value.passwords} entree${counts.value.passwords > 1 ? 's' : ''}`, to: '/passwords' },
@@ -160,7 +159,6 @@ const summaryPanels = [
   { title: 'Prochains RDV', content: 'Aucune donnee' },
   { title: 'Budget du mois', content: 'Aucune donnee' },
   { title: 'Factures en attente', content: 'Aucune donnee' },
-  { title: 'Activites de la semaine', content: 'Aucune donnee' },
 ]
 
 onMounted(fetchCounts)

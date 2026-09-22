@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 # Verrouillage de l'application. Ces tests sont la pour qu'un futur controleur
 # ajoute par distraction sans authentification fasse echouer la suite.
@@ -35,6 +36,7 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/sentinel_domains/droit_travail/sources
       /api/alfred
       /api/alfred_conversations
+      /api/calendar_sync
     ].each do |path|
       get path, headers: { "Accept" => "application/json" }
       assert_response :unauthorized, "#{path} devrait repondre 401"
@@ -61,6 +63,15 @@ class AccessControlTest < ActionDispatch::IntegrationTest
   test "le lancement d'une veille Sentinelle est refuse sans session" do
     assert_no_enqueued_jobs do
       post "/api/sentinel_domains/droit_travail/weeks/2026-09-14/run", headers: { "Accept" => "application/json" }
+    end
+    assert_response :unauthorized
+  end
+
+  test "le declenchement de la synchronisation Google Calendar est refuse sans session" do
+    GoogleCalendar.stub(:enabled?, true) do
+      assert_no_enqueued_jobs do
+        post "/api/calendar_sync", headers: { "Accept" => "application/json" }
+      end
     end
     assert_response :unauthorized
   end

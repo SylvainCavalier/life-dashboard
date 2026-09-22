@@ -20,7 +20,8 @@ module Api
           e.location = event.location if event.location.present?
           e.dtstart = event.all_day ? Icalendar::Values::Date.new(event.start_time.to_date) : event.start_time.utc
           if event.end_time.present?
-            e.dtend = event.all_day ? Icalendar::Values::Date.new(event.end_time.to_date) : event.end_time.utc
+            # DTEND est exclusif en ICS ; `end_time` d'une journee entiere est le dernier jour (inclusif).
+            e.dtend = event.all_day ? Icalendar::Values::Date.new(event.end_time.to_date + 1) : event.end_time.utc
           end
           if event.reminder_minutes.present? && event.reminder_minutes > 0
             alarm = Icalendar::Alarm.new

@@ -90,11 +90,62 @@ n'est repaye si l'indexation a deja ete faite en local ; sinon compter l'OCR des
 `heroku run rails alfred:check` affiche l'etat des cles, de pgvector et du corpus. Une reponse d'Alfred tourne dans le
 dyno web (GoodJob async) : un redemarrage du dyno l'interrompt, le chat le signale et il suffit de reposer la question.
 
+La synchronisation de l'agenda avec Google Calendar passe par un **compte de service** Google Cloud
+(aucun flux OAuth, aucun jeton qui expire) :
+
+1. Sur [console.cloud.google.com](https://console.cloud.google.com), creer un projet (ou en reutiliser un),
+   activer l'**API Google Calendar** (APIs & Services > Library).
+2. IAM & Admin > Service Accounts > Create : n'importe quel nom, aucun role. Puis onglet Keys > Add key > JSON :
+   le fichier telecharge est la cle.
+3. Dans Google Agenda (web), parametres de l'agenda a synchroniser > « Partager avec des personnes » : ajouter
+   l'adresse `client_email` du fichier JSON avec le droit **« Modifier les evenements »**.
+4. L'identifiant de l'agenda est dans les memes parametres (« ID de l'agenda » ; pour l'agenda principal
+   c'est l'adresse Gmail).
+
+Pieges rencontres avec un compte **Google Workspace** (projet rattache a une organisation) :
+- la creation de cle est bloquee par la regle d'organisation `iam.managed.disableServiceAccountKeyCreation`
+  (securite par defaut). Avec le role *Administrateur des regles d'administration* sur l'organisation :
+  projet > IAM et administration > Regles d'administration > « Disable service account key creation » >
+  Gerer la regle > Ignorer la regle parente > Ajouter une regle > Application : Desactivee > Definir la regle.
+  Un projet cree depuis un compte @gmail.com sans organisation n'a pas cette contrainte ;
+- le partage externe des agendas principaux est limite aux disponibilites par defaut : l'invitation du compte de
+  service est alors rabaissee en silence et l'API repond 404 sur l'agenda (`google_calendar:check` le dit).
+  Sur admin.google.com : Applications > Google Workspace > Agenda > Parametres de partage > Partage externe des
+  agendas principaux > « Partager toutes les informations, et les utilisateurs externes peuvent modifier les
+  agendas », puis refaire le partage de l'etape 3.
+
+```bash
+heroku config:set --app life-dashboard-prive \
+  GOOGLE_CALENDAR_ID=sylvain@gmail.com \
+  GOOGLE_CALENDAR_CREDENTIALS="$(cat ~/Downloads/service-account.json)"
+heroku run rails google_calendar:check --app life-dashboard-prive   # nom de l'agenda = la connexion marche
+heroku run rails google_calendar:sync_now --app life-dashboard-prive # premiere synchronisation
+```
+
+Sans ces deux variables le module est simplement inactif (cron sans effet, bouton absent de la page Agenda).
+Une fois la synchronisation en place, **retirer l'abonnement au flux ICS** dans Google Agenda s'il existait, sinon
+chaque evenement y apparait deux fois.
+
+**Gmail pour Alfred** (le chat du dashboard lit, trie et redige les mails de la boite, envoi sur confirmation
+uniquement). Le meme compte de service incarne la boite grace a la **delegation au niveau du domaine**, ce qui
+suppose un compte Google Workspace dont on est administrateur :
+
+1. `bin/rails gmail:check` affiche l'identifiant client du compte de service (aussi `client_id` dans le JSON).
+2. Sur admin.google.com : Securite > Controle des acces et des donnees > Commandes des API > **Gerer la delegation
+   au niveau du domaine** > Ajouter : identifiant client = celui du compte de service, champ d'application =
+   `https://www.googleapis.com/auth/gmail.modify` (tout sauf la suppression definitive).
+3. `heroku config:set GMAIL_USER=admin@sbclabs.fr` (la boite incarnee), puis `heroku run rails gmail:check`.
+
+Un compte @gmail.com sans Workspace ne permet pas la delegation : il faudrait un flux OAuth, non implemente.
+
 | Variable | Role |
 |---|---|
 | `RAILS_MASTER_KEY` | Dechiffre `credentials.yml.enc` (secret_key_base **et** cles Active Record Encryption) |
 | `APP_HOST` | Domaine autorise. **Tant qu'il n'est pas pose, l'app repond aussi sur `*.herokuapp.com`** (voir §6) |
 | `CALENDAR_FEED_TOKEN` | Secret du flux ICS `/api/calendar.ics?token=...` |
+| `GOOGLE_CALENDAR_ID` | Agenda Google synchronise (adresse Gmail pour l'agenda principal) |
+| `GOOGLE_CALENDAR_CREDENTIALS` | Contenu JSON de la cle du compte de service (alias accepte : `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`) |
+| `GMAIL_USER` | Boite Gmail que gere Alfred (delegation au niveau du domaine, voir ci-dessous) |
 | `GOOD_JOB_EXECUTION_MODE` | Optionnel. `async` par defaut (jobs dans le process web) ; `external` si un dyno worker est ajoute |
 
 ## 4. Domaine et dyno

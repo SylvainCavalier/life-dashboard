@@ -54,6 +54,11 @@ gem "grover", "~> 1.1" # HTML → PDF via Puppeteer (for styled CV export)
 # ICS calendar feed
 gem "icalendar", "~> 2.10"
 
+# Compte de service Google : synchronisation de l'agenda (Calendar) et gestion des
+# mails par Alfred (Gmail, delegation au niveau du domaine)
+gem "google-apis-calendar_v3", "~> 0.40"
+gem "google-apis-gmail_v1", "~> 0.40"
+
 # OpenAI official SDK (Responses API + web search) for the Voyages AI planner
 gem "openai", "~> 0.90"
 

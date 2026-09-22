@@ -11,7 +11,7 @@ module Alfred
     class Denied < StandardError; end
 
     READABLE = {
-      "BudgetEntry" => :all, "Client" => :all, "Company" => :all, "Contact" => :all, "CrmProfile" => :all,
+      "BudgetEntry" => :all, "CalendarSync" => :all, "Client" => :all, "Company" => :all, "Contact" => :all, "CrmProfile" => :all,
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all,

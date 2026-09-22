@@ -19,6 +19,11 @@ Rails.application.configure do
       cron: "15 * * * *",
       class: "PurgeExpiredFileTransfersJob",
       description: "Supprime les fichiers partages expires (bucket OVH + base) toutes les heures"
+    },
+    google_calendar_pull: {
+      cron: "*/10 * * * *",
+      class: "GoogleCalendarPullJob",
+      description: "Recopie l'agenda Google dans la table events toutes les 10 minutes (sans effet si non configure)"
     }
   }
 

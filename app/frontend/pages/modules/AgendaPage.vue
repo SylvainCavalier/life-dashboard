@@ -98,15 +98,35 @@
         </div>
       </div>
 
-      <!-- Lien ICS -->
-      <div class="mb-6 flex items-center gap-2">
-        <button @click="copyIcsLink" class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          Copier le lien ICS (pour synchroniser avec iPhone)
-        </button>
-        <span v-if="icsCopied" class="text-xs text-green-600">Copié !</span>
+      <!-- Lien ICS + synchronisation Google -->
+      <div class="mb-6 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+          <button @click="copyIcsLink" class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Copier le lien ICS (pour synchroniser avec iPhone)
+          </button>
+          <span v-if="icsCopied" class="text-xs text-green-600">Copié !</span>
+        </div>
+
+        <div v-if="sync && sync.enabled" class="flex items-center gap-2 text-xs">
+          <button
+            @click="runSync"
+            :disabled="sync.active"
+            class="text-indigo-500 hover:text-indigo-700 flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait"
+          >
+            <svg :class="['w-3.5 h-3.5', sync.active ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ sync.active ? 'Synchronisation avec Google…' : 'Synchroniser avec Google Calendar' }}
+          </button>
+          <span v-if="sync.status === 'failed'" class="text-red-500" :title="sync.last_error">Échec : {{ sync.last_error }}</span>
+          <span v-else-if="sync.last_synced_at" class="text-gray-400">
+            Dernière synchro {{ formatSyncTime(sync.last_synced_at) }}
+            <span v-if="sync.last_error" class="text-amber-600" :title="sync.last_error">(avec avertissements)</span>
+          </span>
+        </div>
       </div>
 
       <!-- === VUE CALENDRIER === -->
@@ -240,7 +260,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 
-const { useCrud, get } = useApi()
+const { useCrud, get, post } = useApi()
 const { list, create, update, destroy } = useCrud('events')
 
 const events = ref([])
@@ -497,14 +517,59 @@ const copyIcsLink = async () => {
   }
 }
 
+// === Synchronisation Google Calendar ===
+// La table calendar_syncs fait foi : on la sonde toutes les 3 s tant qu'une
+// synchronisation est active, puis on recharge les événements.
+const sync = ref(null)
+let syncInterval = null
+
+const fetchSync = async () => {
+  try {
+    sync.value = await get('/calendar_sync')
+  } catch {
+    sync.value = null
+  }
+}
+
+const stopSyncPolling = () => {
+  if (syncInterval) clearInterval(syncInterval)
+  syncInterval = null
+}
+
+const pollSync = async () => {
+  await fetchSync()
+  if (sync.value && sync.value.active) return
+  stopSyncPolling()
+  await fetchEvents()
+  await fetchAlerts()
+}
+
+const runSync = async () => {
+  if (sync.value?.active) return
+  sync.value = await post('/calendar_sync')
+  stopSyncPolling()
+  syncInterval = setInterval(pollSync, 3000)
+}
+
+const formatSyncTime = (dateStr) => {
+  const date = new Date(dateStr)
+  const today = formatDateKey(new Date())
+  const time = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  if (formatDateKey(date) === today) return `à ${time}`
+  return `le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à ${time}`
+}
+
 // === Lifecycle ===
 onMounted(async () => {
   await fetchEvents()
   await fetchAlerts()
+  await fetchSync()
+  if (sync.value?.active) syncInterval = setInterval(pollSync, 3000)
   alertInterval = setInterval(fetchAlerts, 60000)
 })
 
 onUnmounted(() => {
   if (alertInterval) clearInterval(alertInterval)
+  stopSyncPolling()
 })
 </script>

@@ -37,11 +37,6 @@ export default [
     component: () => import('../pages/modules/BudgetPage.vue'),
   },
   {
-    path: '/activities',
-    name: 'Activities',
-    component: () => import('../pages/modules/ActivitiesPage.vue'),
-  },
-  {
     path: '/languages',
     name: 'Languages',
     component: () => import('../pages/modules/LanguagesPage.vue'),

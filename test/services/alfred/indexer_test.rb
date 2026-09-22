@@ -14,7 +14,8 @@ class AlfredIndexerTest < ActiveSupport::TestCase
   end
 
   test "les attributs chiffres ne sont jamais recopies en clair dans le corpus" do
-    profile = PersonalProfile.new(iban: "FR7612345678901234567890123", social_security_number: "1850775123456")
+    profile = PersonalProfile.new(first_name: "Test", last_name: "Corpus",
+                                  iban: "FR7612345678901234567890123", social_security_number: "1850775123456")
     profile.save!(validate: false)
 
     text = Alfred::Corpus::RecordRenderer.new(profile).text

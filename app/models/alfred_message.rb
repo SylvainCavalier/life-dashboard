@@ -1,6 +1,34 @@
 # Un message d'une conversation avec Alfred. `event` est une note systeme visible
 # (ecriture confirmee ou annulee) que le modele relit au tour suivant.
 # La table fait foi pour l'etat d'une reponse en cours : l'interface la sonde.
+# == Schema Information
+#
+# Table name: alfred_messages
+#
+#  id                     :bigint           not null, primary key
+#  cached_tokens          :integer
+#  content                :text
+#  error                  :text
+#  input_tokens           :integer
+#  latency_ms             :integer
+#  model                  :string
+#  output_tokens          :integer
+#  role                   :string           not null
+#  sources                :jsonb            not null
+#  status                 :string           default("done"), not null
+#  steps                  :jsonb            not null
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  alfred_conversation_id :bigint           not null
+#
+# Indexes
+#
+#  index_alfred_messages_on_alfred_conversation_id  (alfred_conversation_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (alfred_conversation_id => alfred_conversations.id)
+#
 class AlfredMessage < ApplicationRecord
   ROLES = %w[user assistant event].freeze
   STATUSES = %w[pending processing done failed].freeze

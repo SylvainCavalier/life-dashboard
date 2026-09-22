@@ -13,15 +13,16 @@ module Alfred
       @action.with_lock do
         raise ArgumentError, "Cette proposition a deja ete traitee (#{@action.status})" unless @action.proposed?
 
-        record = perform!
-        @action.update!(status: "executed", record_id: record.id, resolved_at: Time.current)
-        Rails.logger.info "[Alfred::ActionExecutor] action ##{@action.id} executee : #{@action.operation} #{@action.target_model}##{record.id} (#{@action.new_attributes.keys.join(', ')})"
-        note("Ecriture confirmee par Sylvain et executee : #{@action.operation} #{@action.target_model} ##{record.id} (#{@action.summary}).")
+        text, record_id = perform!
+        @action.update!(status: "executed", record_id: record_id, resolved_at: Time.current)
+        Rails.logger.info "[Alfred::ActionExecutor] action ##{@action.id} executee : #{@action.operation} #{@action.target_model}##{record_id} (#{@action.new_attributes.keys.join(', ')})"
+        note(text)
       end
       @action
-    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Stale, DataAccess::Denied => e
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Stale, DataAccess::Denied,
+           Gmail::Client::Error => e
       @action.update!(status: "failed", error: e.message.truncate(500), resolved_at: Time.current)
-      note("Echec de l'ecriture proposee (#{@action.operation} #{@action.target_model}) : #{e.message.truncate(300)}")
+      note("Echec de l'action proposee (#{@action.operation} #{@action.target_model}) : #{e.message.truncate(300)}")
       @action
     end
 
@@ -37,7 +38,16 @@ module Alfred
 
     private
 
+    # Renvoie [note systeme, record_id].
     def perform!
+      return [MailActions.execute!(@action), nil] if @action.mail?
+
+      record = write!
+      ["Ecriture confirmee par Sylvain et executee : #{@action.operation} #{@action.target_model} ##{record.id} (#{@action.summary}).",
+       record.id]
+    end
+
+    def write!
       klass = DataAccess.writable_class(@action.target_model)
       attributes = @action.new_attributes
       forbidden = attributes.keys - DataAccess.writable_fields(@action.target_model, @action.operation)

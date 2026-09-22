@@ -115,14 +115,14 @@
                 <div v-for="action in message.actions" :key="action.id" class="mt-2 rounded-xl border bg-white text-sm overflow-hidden" :class="actionBorder(action)">
                   <div class="px-3 py-2 border-b border-gray-100">
                     <p class="text-xs uppercase tracking-wide text-gray-400">
-                      {{ action.operation === 'create' ? 'Creation' : 'Modification' }} · {{ action.target_model }}<span v-if="action.record_id"> #{{ action.record_id }}</span>
+                      {{ operationLabel(action) }} · {{ action.target_model }}<span v-if="action.record_id"> #{{ action.record_id }}</span>
                     </p>
                     <p class="text-gray-800">{{ action.summary }}</p>
                   </div>
                   <dl class="px-3 py-2 space-y-1 text-xs">
                     <div v-for="(value, field) in action.attributes" :key="field" class="flex gap-2">
                       <dt class="w-28 flex-shrink-0 text-gray-400 truncate">{{ field }}</dt>
-                      <dd class="min-w-0 break-words">
+                      <dd class="min-w-0 break-words whitespace-pre-line">
                         <span v-if="action.operation === 'update'" class="text-gray-400 line-through mr-1">{{ display(action.before[field]) }}</span>
                         <span class="text-gray-900">{{ display(value) }}</span>
                       </dd>
@@ -298,8 +298,18 @@ const onContentClick = (event) => {
 const display = (value) => {
   if (value === null || value === undefined || value === '') return '(vide)'
   if (typeof value === 'boolean') return value ? 'oui' : 'non'
+  if (Array.isArray(value)) return value.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join('\n')
   return typeof value === 'object' ? JSON.stringify(value) : String(value)
 }
+
+// Ecritures en base (create / update) et actions Gmail, confirmees par la meme carte.
+const operationLabel = (action) => ({
+  create: 'Creation',
+  update: 'Modification',
+  send_email: 'Envoi d\'un mail',
+  draft_email: 'Brouillon Gmail',
+  triage_email: 'Tri de mails',
+}[action.operation] || action.operation)
 
 const actionBorder = (action) => ({
   proposed: 'border-indigo-200',
@@ -315,8 +325,8 @@ const actionStatusClass = (action) => ({
 }[action.status])
 
 const actionStatusLabel = (action) => ({
-  executed: 'Confirme et enregistre.',
-  cancelled: 'Annule, rien n\'a ete ecrit.',
+  executed: action.operation === 'send_email' ? 'Confirme et envoye.' : 'Confirme et execute.',
+  cancelled: 'Annule, rien n\'a ete fait.',
   failed: `Echec : ${action.error || 'erreur inconnue'}`,
 }[action.status])
 

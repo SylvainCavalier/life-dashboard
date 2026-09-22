@@ -3,7 +3,9 @@ module Alfred
   # envoye a Claude) et `#call(input)` qui renvoie un Hash serialisable. Une erreur
   # previsible est renvoyee AU MODELE ({ error: }) pour qu'il corrige son appel.
   module Tools
-    ALL = [Tools::SearchCorpus, Tools::DescribeModels, Tools::QueryRecords, Tools::ProposeWrite].freeze
+    ALL = [Tools::SearchCorpus, Tools::DescribeModels, Tools::QueryRecords, Tools::ProposeWrite,
+           Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
+           Tools::ProposeMailTriage].freeze
 
     Context = Struct.new(:conversation, :message, keyword_init: true)
 
@@ -24,7 +26,8 @@ module Alfred
 
       input = input.respond_to?(:to_h) ? input.to_h.deep_stringify_keys : {}
       [tool.new(context).call(input), false]
-    rescue DataAccess::Denied, ArgumentError, ActiveRecord::RecordNotFound, ActiveRecord::StatementInvalid => e
+    rescue DataAccess::Denied, ArgumentError, ActiveRecord::RecordNotFound, ActiveRecord::StatementInvalid,
+           Gmail::Client::Error => e
       [{ error: e.message.truncate(500) }, true]
     rescue StandardError => e
       # Panne d'un service (embeddings, base...) : Alfred l'apprend et le dit, la reponse n'est pas perdue.

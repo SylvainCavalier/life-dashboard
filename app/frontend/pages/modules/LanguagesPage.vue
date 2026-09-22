@@ -215,7 +215,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 
-const { useCrud, post, del, get } = useApi()
+const { useCrud, post, delete: del, get } = useApi()
 const { list, create, update, destroy } = useCrud('languages')
 
 const languages = ref([])

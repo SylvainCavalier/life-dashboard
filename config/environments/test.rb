@@ -5,6 +5,15 @@ require "active_support/core_ext/integer/time"
 # your test database is "scratch space" for the test suite and is wiped
 # and recreated between test runs. Don't rely on the data there!
 
+# dotenv charge aussi le .env de developpement ici : sans ce garde-fou, la suite
+# de tests ferait de vrais appels a Google Calendar (et un vrai passage de
+# synchronisation). Les tests qui ont besoin du module stubbent
+# GoogleCalendar.enabled? et le client.
+ENV["GOOGLE_CALENDAR_ID"] = nil
+ENV["GOOGLE_CALENDAR_CREDENTIALS"] = nil
+ENV["GOOGLE_SERVICE_ACCOUNT_CREDENTIALS"] = nil
+ENV["GMAIL_USER"] = nil
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 

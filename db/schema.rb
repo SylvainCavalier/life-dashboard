@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_21_124837) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_22_174605) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -142,6 +142,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_124837) do
     t.text "notes"
     t.index ["entry_type", "recurrence"], name: "index_budget_entries_on_entry_type_and_recurrence"
     t.index ["year", "month"], name: "index_budget_entries_on_year_and_month"
+  end
+
+  create_table "calendar_syncs", force: :cascade do |t|
+    t.string "status", default: "idle", null: false
+    t.datetime "last_synced_at"
+    t.datetime "started_at"
+    t.text "last_error"
+    t.integer "pulled_count", default: 0, null: false
+    t.integer "pushed_count", default: 0, null: false
+    t.integer "deleted_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "clients", force: :cascade do |t|
@@ -333,7 +345,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_21_124837) do
     t.integer "reminder_minutes", default: 60
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "google_event_id"
+    t.datetime "google_updated_at"
     t.index ["event_type"], name: "index_events_on_event_type"
+    t.index ["google_event_id"], name: "index_events_on_google_event_id", unique: true
     t.index ["start_time"], name: "index_events_on_start_time"
   end
 

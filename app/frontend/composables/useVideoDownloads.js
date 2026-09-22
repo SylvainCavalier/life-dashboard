@@ -78,7 +78,8 @@ export const formatDuration = (seconds) => {
 }
 
 export function useVideoDownloads(params = {}) {
-  const { get, post, del } = useApi()
+  // useApi expose la suppression sous `delete` (mot reserve : on la renomme ici)
+  const { get, post, delete: del } = useApi()
 
   const downloads = ref([])
   const loading = ref(false)

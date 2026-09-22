@@ -61,6 +61,8 @@ Rails.application.routes.draw do
     end
     # Flux ICS : ?token=... pour les clients calendrier, session Devise sinon.
     get "calendar.ics", to: "calendars#feed"
+    # Synchronisation Google Calendar : etat (GET) et declenchement (POST)
+    resource :calendar_sync, only: [:show, :create]
     resources :tasks, only: [:index, :create, :update, :destroy]
     resources :notes, only: [:index, :create, :update, :destroy]
     resources :subscriptions, only: [:index, :create, :update, :destroy]

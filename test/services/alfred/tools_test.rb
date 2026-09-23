@@ -4,7 +4,7 @@ class AlfredToolsTest < ActiveSupport::TestCase
   setup do
     @conversation = AlfredConversation.create!
     @message = @conversation.messages.create!(role: "assistant", status: "processing", content: "")
-    @context = Alfred::Tools::Context.new(conversation: @conversation, message: @message)
+    @context = Alfred::Tools::Context.new(conversation: @conversation, message: @message, seen: Set.new)
   end
 
   def run_tool(name, input)
@@ -108,5 +108,54 @@ class AlfredToolsTest < ActiveSupport::TestCase
 
     assert_no_match(/FR76/, raw)
     assert_equal "IBAN FR7612345678901234567890123", @message.reload.content
+  end
+
+  def document!(text, name: "Analyses")
+    Document.create!(name: name, domain: "health", category: "analysis",
+                     file: { io: StringIO.new(text), filename: "analyses.txt", content_type: "text/plain" })
+  end
+
+  test "read_document rend le texte integral, par tranches" do
+    text = "Hemoglobine 15,6 g/dL. " * 1500
+    document = document!(text)
+
+    first, error = run_tool("read_document", { "id" => document.id })
+    assert_not error
+    assert_equal text.strip.length, first[:total_chars]
+    assert_equal Alfred::Tools::ReadDocument::PAGE_CHARS, first[:text].length
+    assert_equal "/api/documents/#{document.id}/download", first[:download]
+
+    rest, = run_tool("read_document", { "id" => document.id, "offset" => first[:next_offset] })
+    assert_nil rest[:next_offset]
+    assert_equal text.strip, first[:text] + rest[:text]
+  end
+
+  test "read_document recolle le texte indexe sans en-tetes ni recouvrements" do
+    document = document!("x")
+    text = (1..900).map { |i| "Ligne #{i} du compte rendu." }.join("\n")
+    chunks = Alfred::Corpus::Chunker.new.call(text)
+    chunks.each_with_index do |chunk, position|
+      AlfredChunk.create!(source: document, kind: "file", position: position, label: document.name,
+                          content: "Document : Analyses (16/04/2025)\n#{chunk}", embedding: Array.new(Embeddings::DIMENSIONS, 0.1))
+    end
+
+    result, = run_tool("read_document", { "id" => document.id, "offset" => 0 })
+
+    assert_operator chunks.size, :>, 1
+    assert_equal "index", result[:origin]
+    assert_equal text, Alfred::Corpus::Indexer.file_text(document)
+  end
+
+  test "seuls les enregistrements cites ET renvoyes par les outils deviennent des sources" do
+    document = document!("Hemoglobine 15,6")
+    other = document!("Autre", name: "Bail")
+    run_tool("read_document", { "id" => document.id })
+
+    reply = "Tout est normal [[Document##{document.id}]]. Voir aussi [[Document##{other.id}]]."
+    text, sources = Alfred::Citations.extract(reply, seen: @context.seen)
+
+    assert_equal "Tout est normal. Voir aussi.", text
+    assert_equal [document.id], sources.map { |source| source["id"] }
+    assert_equal "/api/documents/#{document.id}/download", sources.first["download"]
   end
 end

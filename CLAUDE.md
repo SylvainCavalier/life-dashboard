@@ -307,7 +307,7 @@ perimetre de donnees ; `Alfred::Prompt` est la transposition de `~/.claude/agent
 `EMBEDDING_PROVIDER`, cache `embedding_caches` par `(provider, model, SHA256)`). Agent : Claude via le SDK `anthropic`
 (`Alfred::Agent`, specifique a l'API Anthropic par construction : blocs tool_use, reflexion adaptative). Anthropic n'a
 pas d'API d'embeddings, le duo est donc structurel. Variables : `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY` (obligatoires),
-`ALFRED_MODEL` (defaut `claude-sonnet-5`), `ALFRED_EFFORT` (`medium`), `ALFRED_HYBRID` (`1`), `ALFRED_MIN_COSINE` (`0.30`),
+`ALFRED_MODEL` (defaut `claude-sonnet-5`), `ALFRED_EFFORT` (`medium`), `ALFRED_HYBRID` (`1`), `ALFRED_MIN_COSINE` (`0.65`), `ALFRED_COSINE_GAP` (`0.08`),
 `ALFRED_OCR` (`1`), `ALFRED_INDEXING` (`1`, `0` en test), `ALFRED_HISTORY_MESSAGES` (`16`). Ne pas envoyer `temperature`
 ni `budget_tokens` a Sonnet 5 : l'API repond 400.
 
@@ -318,7 +318,10 @@ l'inclut via `children:`. **Ajouter un modele au corpus = une entree dans `REGIS
 `Indexer` produit deux sortes de passages (`alfred_chunks.kind`) : `record` (la fiche, rendue par `RecordRenderer`) et
 `file` (texte du fichier joint de `Document`). Chaque moitie a son empreinte sur `alfred_index_entries` : modifier les
 notes d'un document ne repaie pas son OCR. `TextExtractor` : pdf-reader d'abord, OCR Mistral si le PDF ramene moins de
-80 caracteres par page (scan) ou si c'est une image.
+80 caracteres par page (scan) ou si c'est une image (reencodee en JPEG sans metadonnees par `MistralOcr` : Mistral refuse
+certains JPEG valides, profil ICC de scanner notamment). **Le corpus doit etre initialise** (`rails alfred:index`) : les
+callbacks n'indexent que ce qui change apres leur installation. `AlfredReindexJob` (cron 4 h 30) rattrape chaque nuit ce
+qui manque ; `alfred:check` affiche les enregistrements jamais indexes.
 - Les attributs `encrypts` (IBAN, numero de securite sociale, passeport...) sont **ecartes du corpus** automatiquement
   (`klass.encrypted_attributes`) pour ne pas les recopier en clair dans `alfred_chunks` ; Alfred les lit a la demande
   par `query_records`. En revanche le texte OCR d'un document (un scan de passeport) est bien en clair dans
@@ -330,8 +333,9 @@ notes d'un document ne repaie pas son OCR. `TextExtractor` : pdf-reader d'abord,
   `indexer_test.rb` et `tools_test.rb` verrouillent ce point.
 
 **Recherche** (`Alfred::Corpus::Search`), hybride par defaut (vectoriel 0.7 + lexical 0.3 : les noms propres comptent
-dans des donnees personnelles). Trois invariants a ne pas defaire, couverts par `search_test.rb` : (1) le plancher
-`MIN_COSINE_SIMILARITY` porte sur le **cosine brut** et rien en dessous n'atteint le modele ; (2) le bras lexical
+dans des donnees personnelles). Trois invariants a ne pas defaire, couverts par `search_test.rb` : (1) les planchers
+(`MIN_COSINE_SIMILARITY`, absolu, et `MAX_COSINE_GAP`, relatif au meilleur cosine de la requete) portent sur le **cosine
+brut** et rien en dessous n'atteint le modele (mistral-embed tasse les cosines : deux textes sans rapport sont deja a ~0.70) ; (2) le bras lexical
 (tsvector `french` sur `content_fold`, accents plies en Ruby des deux cotes par `Alfred::AccentFolding`) **reclasse sans
 jamais elargir** l'ensemble eligible ; (3) la fraicheur (`Recency`, plancher 0.9) ne fait qu'ordonner et `ensure_anchor`
 garantit que le meilleur cosine brut survit a la coupe. S'y ajoutent un plafond de 3 passages par enregistrement et une
@@ -343,7 +347,12 @@ changer de modele d'embedding impose une migration de la colonne et un `alfred:i
 `AlfredReplyJob` fait tourner `Alfred::Agent` : boucle d'outils (12 tours max), texte diffuse dans
 `alfred_messages.content` toutes les 350 ms. La table fait foi, l'interface la sonde toutes les secondes (pas de SSE ni
 d'ActionCable : meme patron que Downloader et Sentinelle, et une reponse survit a un rechargement de page). Outils :
-`search_corpus`, `query_records` (lecture structuree, `DataAccess::READABLE`), `describe_models`, `propose_write`.
+`search_corpus`, `read_document` (texte integral d'un document, recolle depuis ses passages par `Indexer.file_text`, sans
+repayer l'OCR), `query_records` (lecture structuree, `DataAccess::READABLE`), `describe_models`, `propose_write`.
+**Sources** (`Alfred::Citations`) : Alfred marque dans sa reponse `[[Type#id]]` ce qui la fonde ; seuls les marqueurs
+designant un enregistrement que ses outils lui ont renvoye pendant le tour (`Tools::Context#seen`) deviennent des sources,
+puis les marqueurs sont retires du texte (et masques cote front pendant la diffusion). Ne pas revenir a « tout ce que la
+recherche a ramene » : les passages voisins hors sujet s'affichaient comme sources.
 L'historique rejoue ne contient que du texte (questions, reponses, notes `[Systeme]`), jamais les resultats d'outils
 des tours passes : Alfred relit la base. Vider la conversation depuis le widget = `DELETE` de la conversation (rien n'est
 archive, l'export PDF `GET /api/alfred_conversations/:id/export`, `Alfred::ConversationPdf`, est la pour ca) : c'est

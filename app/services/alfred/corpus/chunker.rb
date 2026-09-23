@@ -29,6 +29,12 @@ module Alfred
         chunks
       end
 
+      # Inverse de `call` : recolle des passages consecutifs en retirant le
+      # recouvrement. Sert a relire un document en entier sans refaire l'OCR.
+      def join(chunks)
+        chunks.each_with_index.map { |chunk, index| index.zero? ? chunk : chunk[@overlap_chars..].to_s }.join
+      end
+
       private
 
       def normalize(text)

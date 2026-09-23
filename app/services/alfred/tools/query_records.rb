@@ -46,7 +46,10 @@ module Alfred
         fields = (["id"] + fields).uniq
         limit = (input["limit"] || DEFAULT_LIMIT).to_i.clamp(1, MAX_LIMIT)
 
-        records = relation.limit(limit).map { |record| truncate_values(DataAccess.serialize(record, fields)) }
+        records = relation.limit(limit).map do |record|
+          @context.seen&.add([name, record.id])
+          truncate_values(DataAccess.serialize(record, fields))
+        end
         { model: name, total: total, returned: records.size, records: records }
       end
 

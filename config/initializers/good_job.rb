@@ -24,6 +24,11 @@ Rails.application.configure do
       cron: "*/10 * * * *",
       class: "GoogleCalendarPullJob",
       description: "Recopie l'agenda Google dans la table events toutes les 10 minutes (sans effet si non configure)"
+    },
+    alfred_reindex: {
+      cron: "30 4 * * *",
+      class: "AlfredReindexJob",
+      description: "Rattrape l'index du corpus d'Alfred chaque nuit (enregistrements manquants, echecs, orphelins)"
     }
   }
 

@@ -38,7 +38,7 @@ class Api::HealthProfilesController < ApplicationController
 
   def health_profile_params
     params.require(:health_profile).permit(
-      :blood_type, :allergies, :current_medications, :medical_history,
+      :blood_type, :height_cm, :weight_kg, :allergies, :current_medications, :medical_history,
       :attending_physician, :attending_physician_phone, :specialists,
       :social_security_number,
       :health_insurance_name, :health_insurance_number, :health_insurance_website,

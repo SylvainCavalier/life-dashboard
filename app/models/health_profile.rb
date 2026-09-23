@@ -26,4 +26,17 @@ class HealthProfile < ApplicationRecord
   BLOOD_TYPES = %w[A+ A- B+ B- AB+ AB- O+ O-].freeze
 
   validates :blood_type, inclusion: { in: BLOOD_TYPES }, allow_blank: true
+  validates :height_cm, numericality: { only_integer: true, in: 50..250 }, allow_nil: true
+  validates :weight_kg, numericality: { in: 20..300 }, allow_nil: true
+
+  # Indice de masse corporelle, arrondi a une decimale
+  def bmi
+    return unless height_cm.present? && weight_kg.present?
+
+    (weight_kg / ((height_cm / 100.0)**2)).round(1)
+  end
+
+  def as_json(options = {})
+    super(options).merge("bmi" => bmi&.to_f)
+  end
 end

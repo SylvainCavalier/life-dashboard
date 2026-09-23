@@ -9,6 +9,15 @@ module Alfred
 
       def self.call(record, **opts) = new(record, **opts).call
 
+      # Texte integral du fichier joint, recolle depuis les passages indexes (sans
+      # l'en-tete ajoute a chacun). nil si le fichier n'est pas (encore) indexe.
+      def self.file_text(record, chunker: Chunker.new)
+        chunks = AlfredChunk.for_source(record).where(kind: "file").order(:position).pluck(:content)
+        return nil if chunks.empty?
+
+        chunker.join(chunks.map { |chunk| chunk.split("\n", 2).last.to_s })
+      end
+
       def initialize(record, embedding_provider: Embeddings.default, extractor: TextExtractor.new,
                      chunker: Chunker.new, force: false)
         @record = record
@@ -74,7 +83,8 @@ module Alfred
         text, extractor = @extractor.call(blob)
         # Chaque passage du fichier rappelle de quel document il vient : un extrait
         # de releve sans son titre est introuvable et inutilisable.
-        header = "#{@config[:title]} : #{renderer.label}" \
+        # En-tete sur UNE ligne : `file_text` le retire en coupant au premier saut de ligne.
+        header = "#{@config[:title]} : #{renderer.label.to_s.squish}" \
                  "#{" (#{renderer.source_date.strftime('%d/%m/%Y')})" if renderer.source_date}\n"
         replace_chunks("file", @chunker.call(text).map { |chunk| header + chunk }, renderer)
         entry.assign_attributes(file_digest: blob.checksum, file_extractor: extractor)

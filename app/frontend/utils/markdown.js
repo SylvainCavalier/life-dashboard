@@ -7,6 +7,10 @@ const escapeHtml = (text) =>
 
 const SAFE_URL = /^(https?:\/\/|\/(?!\/))[^\s]*$/
 
+// Marqueurs de citation ([[Document#12]]) : le serveur les retire de la reponse
+// finale et en fait les sources ; on les masque pendant qu'elle s'ecrit.
+const CITATION = / ?\[\[[A-Z][A-Za-z]+#\d+\]\]/g
+
 const inline = (text) =>
   text
     .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-gray-100 text-[0.85em]">$1</code>')
@@ -22,7 +26,7 @@ const inline = (text) =>
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
 
 export function renderMarkdown(source) {
-  const lines = escapeHtml(source || '').split('\n')
+  const lines = escapeHtml((source || '').replace(CITATION, '')).split('\n')
   const html = []
   let list = null // 'ul' | 'ol'
   let code = null

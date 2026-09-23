@@ -3,7 +3,7 @@ module Alfred
   # envoye a Claude) et `#call(input)` qui renvoie un Hash serialisable. Une erreur
   # previsible est renvoyee AU MODELE ({ error: }) pour qu'il corrige son appel.
   module Tools
-    ALL = [Tools::SearchCorpus, Tools::DescribeModels, Tools::QueryRecords, Tools::ProposeWrite,
+    ALL = [Tools::SearchCorpus, Tools::ReadDocument, Tools::DescribeModels, Tools::QueryRecords, Tools::ProposeWrite,
            Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
            Tools::ProposeMailTriage].freeze
 
@@ -13,7 +13,9 @@ module Alfred
     # Outils qui ne font que proposer (carte a confirmer dans le chat).
     PROPOSALS = [Tools::ProposeWrite, Tools::ProposeEmail, Tools::ProposeMailTriage].freeze
 
-    Context = Struct.new(:conversation, :message, keyword_init: true)
+    # seen : [type, id] des enregistrements renvoyes au modele pendant ce tour, seuls
+    # citables comme sources (voir Alfred::Citations).
+    Context = Struct.new(:conversation, :message, :seen, keyword_init: true)
 
     module_function
 

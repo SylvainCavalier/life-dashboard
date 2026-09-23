@@ -18,7 +18,7 @@ module Alfred
       @message = message
       @conversation = message.conversation
       @client = client || Anthropic::Client.new(api_key: ENV["ANTHROPIC_API_KEY"], timeout: 120)
-      @context = Tools::Context.new(conversation: @conversation, message: @message)
+      @context = Tools::Context.new(conversation: @conversation, message: @message, seen: Set.new)
       @text = +""
       @usage = { input: 0, output: 0, cached: 0 }
     end
@@ -48,8 +48,9 @@ module Alfred
         end
       end
 
+      content, sources = Citations.extract(@text, seen: @context.seen)
       @message.update!(
-        status: "done", content: @text.strip.presence || "Je n'ai rien a ajouter, Monsieur.",
+        status: "done", content: content.strip.presence || "Je n'ai rien a ajouter, Monsieur.", sources: sources,
         model: Alfred.model, input_tokens: @usage[:input], output_tokens: @usage[:output], cached_tokens: @usage[:cached],
         latency_ms: ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
       )

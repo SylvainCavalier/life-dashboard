@@ -63,4 +63,14 @@ class AlfredSearchTest < ActiveSupport::TestCase
     assert_empty search("bail", { "bail" => AlfredTestSupport.axis(1, 0) }, source_types: ["Contact"])
     assert_equal 1, search("bail", { "bail" => AlfredTestSupport.axis(1, 0) }, source_types: ["PasswordEntry"]).size
   end
+
+  test "un passage trop loin du meilleur cosine est ecarte, meme au-dessus du plancher absolu" do
+    best = chunk!("compte rendu d'analyses", AlfredTestSupport.axis(1, 0), position: 0)
+    # cosine ~0.83 : au-dessus du plancher absolu, mais a plus de MAX_COSINE_GAP du meilleur (1.0).
+    chunk!("arret de la chambre sociale", AlfredTestSupport.axis(1, 0.67), position: 1)
+
+    hits = search("analyses", { "analyses" => AlfredTestSupport.axis(1, 0) }, hybrid: false)
+
+    assert_equal [best.id], hits.map { |hit| hit.chunk.id }
+  end
 end

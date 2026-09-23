@@ -1,4 +1,5 @@
 require "base64"
+require "image_processing/vips"
 
 module Alfred
   module Corpus
@@ -26,11 +27,21 @@ module Alfred
       private
 
       def document_for(blob)
-        data_uri = "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}"
         if blob.content_type.start_with?("image/")
-          { type: "image_url", image_url: data_uri }
+          { type: "image_url", image_url: "data:image/jpeg;base64,#{Base64.strict_encode64(normalized_image(blob))}" }
         else
-          { type: "document_url", document_url: data_uri }
+          { type: "document_url", document_url: "data:#{blob.content_type};base64,#{Base64.strict_encode64(blob.download)}" }
+        end
+      end
+
+      # Mistral refuse certains JPEG pourtant valides (« could not be loaded as a valid
+      # image ») : profil ICC de scanner, segments Photoshop... Reencoder en JPEG
+      # depouille de ses metadonnees les fait passer, et reduit au passage le poids.
+      def normalized_image(blob)
+        blob.open do |file|
+          ImageProcessing::Vips.source(file).autorot.convert("jpg").saver(strip: true, quality: 90).call.then do |out|
+            File.binread(out.path).tap { out.close! }
+          end
         end
       end
 

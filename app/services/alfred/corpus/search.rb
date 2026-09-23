@@ -7,6 +7,7 @@ module Alfred
     # INVARIANTS (ne pas revenir dessus) :
     # 1. Le plancher de pertinence porte sur le COSINE BRUT. Rien en dessous
     #    n'atteint le modele : sans resultat, l'outil repond « rien trouve ».
+    #    Deux planchers : absolu, et relatif au meilleur cosine de la requete.
     # 2. Le bras lexical ne fait que RECLASSER l'ensemble eligible, il ne l'elargit jamais.
     # 3. La fraicheur ne fait qu'ordonner ; le meilleur cosine brut survit toujours
     #    a la coupe (`ensure_anchor`).
@@ -15,7 +16,14 @@ module Alfred
 
       DEFAULT_TOP_K = 8
       MAX_TOP_K = 20
-      MIN_COSINE_SIMILARITY = ENV.fetch("ALFRED_MIN_COSINE", "0.30").to_f
+      # Calibre sur mistral-embed, dont les cosines sont tasses vers le haut : deux
+      # textes francais sans rapport (une analyse de sang, un arret de la chambre
+      # sociale) y sont deja a ~0.70, un passage pertinent a 0.80 et plus.
+      MIN_COSINE_SIMILARITY = ENV.fetch("ALFRED_MIN_COSINE", "0.65").to_f
+      # Plancher relatif : un passage a plus de cet ecart du meilleur cosine est du
+      # bruit de fond, pas une piste. Sans lui, un corpus riche en veille juridique
+      # remplit les resultats de jurisprudence des qu'une question porte sur autre chose.
+      MAX_COSINE_GAP = ENV.fetch("ALFRED_COSINE_GAP", "0.08").to_f
       VECTOR_WEIGHT = 0.7
       LEXICAL_WEIGHT = 0.3
       CANDIDATE_MULTIPLIER = 4
@@ -58,12 +66,15 @@ module Alfred
         @source_types.any? ? AlfredChunk.where(source_type: @source_types) : AlfredChunk.all
       end
 
-      # Le plancher s'applique ICI, sur le cosine brut.
+      # Les planchers s'appliquent ICI, sur le cosine brut.
       def vector_arm(limit)
         embedding = @embedding_provider.embed(texts: [@query]).first
-        scope.nearest_to(embedding, limit: limit).each_with_object({}) do |chunk, eligible|
-          cosine = 1.0 - chunk.neighbor_distance.to_f
-          eligible[chunk.id] = { chunk: chunk, cosine: cosine } if cosine >= MIN_COSINE_SIMILARITY
+        candidates = scope.nearest_to(embedding, limit: limit).map { |chunk| [chunk, 1.0 - chunk.neighbor_distance.to_f] }
+        best = candidates.map(&:last).max or return {}
+        floor = [MIN_COSINE_SIMILARITY, best - MAX_COSINE_GAP].max
+
+        candidates.each_with_object({}) do |(chunk, cosine), eligible|
+          eligible[chunk.id] = { chunk: chunk, cosine: cosine } if cosine >= floor
         end
       end
 

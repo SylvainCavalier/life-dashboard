@@ -8,6 +8,14 @@ namespace :alfred do
     puts "pgvector          : #{vector || 'ABSENT (rails db:migrate)'}"
     puts "Corpus            : #{AlfredChunk.count} passages, #{AlfredIndexEntry.where(status: 'indexed').count} enregistrements indexes"
     AlfredChunk.group(:source_type).count.sort_by { |_, n| -n }.each { |type, n| puts "  #{type.ljust(18)} #{n}" }
+    missing = Alfred::Corpus.indexed_models.filter_map do |name|
+      pending = name.constantize.where.not(id: AlfredIndexEntry.where(source_type: name).select(:source_id))
+      filter = Alfred::Corpus.config_for(name)[:only_if]
+      # Les enregistrements ecartes volontairement (only_if) n'ont pas d'entree : normal.
+      count = filter ? pending.find_each.count { |record| filter.call(record) } : pending.count
+      "#{name}=#{count}" if count.positive?
+    end
+    puts "Jamais indexes    : #{missing.any? ? "#{missing.join(', ')} (rails alfred:index)" : 'aucun'}"
     extractors = AlfredIndexEntry.where.not(file_extractor: nil).group(:file_extractor).count
     puts "Fichiers          : #{extractors.map { |k, n| "#{k}=#{n}" }.join(', ')}" if extractors.any?
     AlfredIndexEntry.failed.limit(20).each { |e| puts "  ECHEC #{e.source_type}##{e.source_id} : #{e.error}" }

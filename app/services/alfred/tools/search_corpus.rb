@@ -32,9 +32,8 @@ module Alfred
                                    source_types: input["source_types"])
         return { results: [], note: "Aucun passage pertinent dans le corpus." } if hits.empty?
 
-        results = hits.map { |hit| result_for(hit) }
-        remember_sources(results)
-        { results: results }
+        hits.each { |hit| @context.seen&.add([hit.chunk.source_type, hit.chunk.source_id]) }
+        { results: hits.map { |hit| result_for(hit) } }
       end
 
       private
@@ -52,16 +51,6 @@ module Alfred
         }
         result[:download] = "/api/documents/#{chunk.source_id}/download" if chunk.source_type == "Document"
         result.compact
-      end
-
-      # Sources affichees sous la reponse (tracabilite), dedoublonnees par enregistrement.
-      def remember_sources(results)
-        message = @context.message or return
-        known = message.sources.map { |s| [s["type"], s["id"]] }
-        fresh = results.map { |r| r.slice(:type, :id, :label, :page, :download, :score).stringify_keys }
-                       .uniq { |s| [s["type"], s["id"]] }
-                       .reject { |s| known.include?([s["type"], s["id"]]) }
-        message.update!(sources: message.sources + fresh) if fresh.any?
       end
     end
   end

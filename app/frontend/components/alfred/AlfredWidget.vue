@@ -125,7 +125,7 @@
                     </p>
                   </div>
 
-                  <!-- Sources du corpus consultees -->
+                  <!-- Sources citees par Alfred (Alfred::Citations) -->
                   <div v-if="message.sources.length && message.status === 'done'" class="mt-1.5 flex flex-wrap gap-1">
                     <a
                       v-for="source in message.sources.slice(0, 6)"

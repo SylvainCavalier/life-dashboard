@@ -216,6 +216,7 @@ const domains = [
   { value: 'companies', label: 'Entreprises' },
   { value: 'leisure', label: 'Loisirs' },
   { value: 'projects', label: 'Projets' },
+  { value: 'meetings', label: 'Reunions' },
   { value: 'general', label: 'General' },
 ]
 
@@ -312,6 +313,11 @@ const subcategoriesByDomain = {
     { value: 'contract', label: 'Contrat' },
     { value: 'other', label: 'Autre' },
   ],
+  meetings: [
+    { value: 'in_person', label: 'Presentiel' },
+    { value: 'visio', label: 'Visio' },
+    { value: 'other', label: 'Autre' },
+  ],
 }
 
 const domainLabels = Object.fromEntries(domains.map(d => [d.value, d.label]))
@@ -328,6 +334,7 @@ const domainColors = {
   companies: 'bg-purple-500',
   leisure: 'bg-pink-500',
   projects: 'bg-indigo-500',
+  meetings: 'bg-teal-500',
   general: 'bg-gray-500',
 }
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_23_104004) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_23_110713) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -560,6 +560,29 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_23_104004) do
     t.index ["email"], name: "index_mail_accounts_on_email", unique: true
   end
 
+  create_table "meetings", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "kind", default: "in_person", null: false
+    t.datetime "held_at", null: false
+    t.text "participants"
+    t.text "context"
+    t.string "status", default: "pending", null: false
+    t.string "step"
+    t.text "error"
+    t.integer "duration_seconds"
+    t.jsonb "transcript", default: [], null: false
+    t.jsonb "speaker_names", default: {}, null: false
+    t.jsonb "summary", default: {}, null: false
+    t.string "summary_model"
+    t.datetime "requested_at"
+    t.datetime "finished_at"
+    t.bigint "document_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_meetings_on_document_id"
+    t.index ["held_at"], name: "index_meetings_on_held_at"
+  end
+
   create_table "notes", force: :cascade do |t|
     t.string "title", null: false
     t.text "content"
@@ -955,6 +978,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_23_104004) do
   add_foreign_key "invoices", "companies"
   add_foreign_key "invoices", "quotes"
   add_foreign_key "language_sessions", "languages"
+  add_foreign_key "meetings", "documents", on_delete: :nullify
   add_foreign_key "project_links", "projects"
   add_foreign_key "project_skills", "projects"
   add_foreign_key "quote_items", "quotes"

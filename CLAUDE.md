@@ -22,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Sentinelle** — Veille hebdomadaire personnalisée, un onglet par domaine (`/sentinelle/:domaine`) : **Droit du travail** (Judilibre, Légifrance, Village de la Justice) et **Désinformation** (flux RSS + recherche web Tavily sur une liste blanche de sites). Chaque semaine (lundi → dimanche) se lance à la main : collecte, tri déterministe, résumé IA par document puis synthèse de la semaine (`/sentinelle/:domaine/:lundi`). Les domaines sont isolés (registre `Sentinel::Domains`) : en ajouter un ne touche pas aux autres
 - **Alfred (chat)** — L'intendant installe dans le dashboard : icone de chat en bas a droite de toutes les pages (`AlfredWidget.vue`, monte dans `App.vue`). Agent a outils (Claude) adosse a un corpus RAG (pgvector + mistral-embed) qui couvre les donnees du dashboard ET le texte des documents (OCR Mistral pour les scans). Lit tout sauf les mots de passe, n'ecrit que sur confirmation explicite dans le chat. Le widget permet de vider la conversation (supprimee, sans archive) ou de l'exporter en PDF. Avatar (bouton flottant, en-tete, bulles) : `app/frontend/images/alfred-avatar.png`, majordome-robot genere avec ImageNX (skill `imagenx-generate`). Page dediee `/alfred` (`AlfredPage.vue`) : instructions du prompt modifiables section par section, consignes particulieres, outils et connexions, perimetre des donnees, memoire documentaire. Voir « Alfred dans le dashboard »
 - **Outils** (`/tools/:onglet`) — Petits utilitaires, un onglet par outil (`TABS` dans `ToolsPage.vue` : en ajouter un = une entree + un composant dans `components/tools/`). Tout tourne **dans le navigateur**, sans backend ni modele (donc rien a exposer a Alfred) : le fichier n'est jamais envoye au serveur. Onglet **PDF** (`PdfTool.vue`) : numerotation, filigrane, signature (celle de « Mon profil », placee a la souris), decoupage ; modifications enchainables et annulables, operations pures dans `pdfOperations.js` (pdf-lib, polices standard donc encodage WinAnsi : pas d'emojis), apercu par pdf.js (`pdfRender.js`, worker servi par Vite, `pdfjs-dist` epingle en 5.4 car les versions suivantes exigent Node 22). Les pages avec `/Rotate` sont gerees : on raisonne dans le repere de la page affichee (`pageFrame`). Onglet **Images** (`ImageTool.vue`, image chargee une fois et partagee par les sous-outils de `components/tools/image/`) : recadrage (cropperjs 1.x, comme dans narval), rotation, miroir, redimensionnement, conversion JPEG/PNG/WebP (`ImageCrop.vue`) ; **fond transparent** (`ImageTransparency.vue`, algorithme dans `imageTransparency.js`) pour les fonds unis : couleur du fond deduite des bords ou prelevee au clic, remplissage depuis les bords (ou toute la couleur), puis detourage des contours anticrenelés (estimation de la couleur du sujet sur les voisins + decontamination, sinon liseré clair sur fond sombre). Volontairement pas de modele d'IA de detourage (`@imgly/background-removal` : AGPL, dizaines de Mo, CDN bloque par la CSP), inutile pour un fond uni. L'apercu est calcule sur une image reduite a 1000 px, l'export en taille reelle
+- **Reunions** (`/meetings`) — Comptes rendus de reunions (presentiel ou visio) : un enregistrement audio devient une transcription par intervenant (Voxtral, diarisation), une synthese (Claude : resume, points cles, decisions, actions, questions ouvertes) et un PDF range dans les documents (domaine `meetings`). L'audio est supprime apres transcription. Voir « Reunions »
 - **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
 Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère tout le UI, Rails sert d'API backend. Vite pour le build frontend.
@@ -38,7 +39,7 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
 - **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code).
@@ -385,6 +386,54 @@ Deja branches : Gmail (voir « Gmail pour Alfred ») et Google Agenda (par ricoc
 Google, voir « Google Calendar »). Pas encore dans l'Alfred du dashboard : Downloader, Sentinelle, Voyages (les points
 d'entree existent : `VideoDownload.enqueue!`, `SentinelWeek.run!`, `Trip#generate_plan!` ; les brancher = un outil de
 plus dans `Alfred::Tools::ALL`, avec confirmation pour ce qui coute).
+
+### Dictee vocale (Voxtral)
+Bouton micro reutilisable `components/VoiceInputButton.vue` (emet `transcribed` avec le texte) + composable
+`useVoiceRecorder.js` (enregistrement `MediaRecorder` natif, sans librairie ; `insertAtCursor` pour inserer au curseur
+d'un textarea). Branche dans le formulaire des notes et dans la saisie d'Alfred (le texte rejoint le brouillon, rien ne
+part sans relecture). `POST /api/transcriptions` (`Api::TranscriptionsController`, synchrone, 20 Mo max, throttle
+Rack::Attack 20/min) passe l'audio a `Transcription::MistralTranscriber` (`/v1/audio/transcriptions`,
+`voxtral-mini-latest`, surchargeable par `TRANSCRIPTION_MODEL`, francais force). **Rien n'est stocke**, ni audio ni texte.
+Chrome envoie du webm/opus, Safari (Mac, iPhone) du mp4/aac : Voxtral accepte les deux tels quels, pas de ffmpeg.
+Enregistrement borne a 5 min cote client (`maxSeconds`) pour rester sous les 30 s du routeur Heroku. Le micro exige
+HTTPS (ou localhost) : hors contexte securise, le bouton ne s'affiche pas. Multipart via Net::HTTP (pas de
+`faraday-multipart` dans le bundle). Tests : `transcriptions_test.rb`, sur un transcripteur factice.
+
+### Reunions (comptes rendus)
+Deux entrees : **import d'un fichier** (Dictaphone de l'iPhone, mp3, wav, webm, video Zoom) et **enregistrement en direct**
+(`/meetings/record`, `MeetingRecordPage.vue` + `useMeetingRecorder.js`) en deux modes : presentiel (micro, iPhone ou Mac)
+et visio (Chrome/Edge sur ordinateur : audio de l'onglet par `getDisplayMedia` + micro, mixes dans un `AudioContext` ;
+l'utilisateur doit cocher « Partager aussi l'audio de l'onglet », sinon `TabAudioMissing`). Le partage d'onglet passe
+AVANT tout `await` (il exige un geste utilisateur frais) et la reunion n'est creee qu'ensuite.
+Enregistrement en direct : `MediaRecorder` avec timeslice de 30 s ; chaque tranche part a `POST /api/meetings/:id/chunks`
+(multipart `chunk`, `part`, `seq` ; idempotent par nom de fichier `part-NNN-SSSSSS.ext`) dans une file sequentielle qui
+relance indefiniment en cas de coupure reseau. La reunion est en statut `recording` ; `POST /finish` (`Meeting#finish!`)
+lance le traitement. Les tranches d'une meme partie sont les morceaux d'un seul flux : le job les **recolle octet par octet**
+(pas de ffmpeg) et fait un seul appel Voxtral par partie, donc des voix coherentes. Une interruption (micro coupe, partage
+arrete, page suspendue par iOS, onglet ferme) termine la partie ; « Reprendre » (meme page, ou `?resume=ID` depuis la page
+de la reunion) ouvre la partie suivante, dont les voix sont prefixees `p2_speaker_1` (libelle « Intervenant 1 (partie 2) »)
+et les horodatages decales. Screen Wake Lock pendant l'enregistrement, niveaux micro/onglet affiches, garde de sortie
+(`onBeforeRouteLeave` + `beforeunload`). **Non verifie en navigateur reel** a l'ecriture : le recollage des tranches Chrome
+(webm) et Safari (mp4 fragmente) est l'hypothese a confirmer au premier essai.
+`MeetingsPage.vue` envoie l'audio en **direct upload** vers le bucket (`useDirectUpload`, pas de delai du routeur Heroku),
+puis `POST /api/meetings` avec le `signed_id`. `Meeting#process!` est le point d'entree unique (verrou de ligne, relance
+possible apres `STUCK_AFTER`) ; `MeetingProcessJob` enchaine trois etapes reprenables (`step`) :
+1. `transcribe` : `Transcription::MistralTranscriber#transcribe_with_speakers` (`diarize=true`, segments horodates avec
+   `speaker_id`), sur le fichier importe ou partie par partie (`Meeting#audio_parts`). Une heure d'audio en ~25 s, un seul appel : Voxtral decoupe en interne et garde la meme numerotation des
+   voix sur tout l'enregistrement (mesure du 23/09/2026). **L'audio est purge des que la transcription est en base**
+   (choix de Sylvain), fichier comme morceaux : l'etape ne tourne que si `has_audio?`.
+2. `summarize` : `Meetings::Summarizer` (Claude, sortie structuree `SCHEMA`, modele `MEETING_SUMMARY_MODEL` sinon
+   `ALFRED_MODEL`, effort `MEETING_SUMMARY_EFFORT` = `medium`). Il devine aussi les noms des intervenants (`speakers`),
+   filtres sur les codes reellement presents ; **un nom saisi par Sylvain n'est jamais ecrase**. Le prompt est accentue a
+   dessein : sans accents, le modele ecrit sans accents.
+3. `render` : `Meetings::ReportPdf` (Prawn, Windows-1252 comme `Alfred::ConversationPdf`) range dans un `Document`
+   (domaine `meetings`, categorie = `kind`, `notes` = resume) cree au premier passage puis remplace a chaque
+   regeneration. Le PDF passe ainsi dans le corpus d'Alfred sans indexer `Meeting` a part.
+Nommer les intervenants (`PATCH speaker_names`) puis `POST /api/meetings/:id/regenerate` refait synthese et PDF sans
+repayer la transcription ; sur une reunion en echec, `regenerate` reprend la ou le traitement s'est arrete. Supprimer une
+reunion garde son PDF dans les documents. Les actions de la synthese s'ajoutent a la to-do list en un clic (`Task`).
+Throttle Rack::Attack : 10 traitements / 10 min. Tests : `meetings_test.rb`, `meeting_process_job_test.rb`,
+`test/services/meetings/` (transcripteur et client Claude factices).
 
 ### Voyages (rapport IA)
 ```bash

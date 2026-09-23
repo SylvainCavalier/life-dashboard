@@ -117,6 +117,22 @@ export default [
     component: () => import('../pages/modules/DownloaderFolderPage.vue'),
   },
   {
+    path: '/meetings',
+    name: 'Meetings',
+    component: () => import('../pages/modules/MeetingsPage.vue'),
+  },
+  {
+    path: '/meetings/record',
+    name: 'MeetingRecord',
+    component: () => import('../pages/modules/MeetingRecordPage.vue'),
+  },
+  {
+    path: '/meetings/:id',
+    name: 'MeetingShow',
+    component: () => import('../pages/modules/MeetingShowPage.vue'),
+    props: true,
+  },
+  {
     path: '/trips',
     name: 'Trips',
     component: () => import('../pages/modules/TripsPage.vue'),

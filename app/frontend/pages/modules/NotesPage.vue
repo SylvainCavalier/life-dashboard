@@ -26,8 +26,11 @@
           </div>
         </div>
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Contenu</label>
-          <textarea v-model="form.content" rows="5" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contenu de la note..."></textarea>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium text-gray-700">Contenu</label>
+            <VoiceInputButton size="sm" @transcribed="insertDictation" />
+          </div>
+          <textarea ref="contentInput" v-model="form.content" rows="5" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contenu de la note... (ou dictez-la avec le micro)"></textarea>
         </div>
         <div class="flex items-center justify-between">
           <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -90,6 +93,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../composables/useApi'
+import { insertAtCursor } from '../../composables/useVoiceRecorder'
+import VoiceInputButton from '../../components/VoiceInputButton.vue'
 
 const { useCrud } = useApi()
 const { list, create, update, destroy } = useCrud('notes')
@@ -109,6 +114,12 @@ const defaultForm = () => ({
 })
 
 const form = ref(defaultForm())
+const contentInput = ref(null)
+
+// Dictee : le texte arrive a la position du curseur dans le contenu.
+const insertDictation = (text) => {
+  form.value.content = insertAtCursor(contentInput.value, form.value.content, text)
+}
 
 const filteredNotes = computed(() => {
   const q = search.value.toLowerCase()

@@ -12,9 +12,11 @@
 #  health_insurance_name     :string
 #  health_insurance_number   :string
 #  health_insurance_website  :string
+#  height_cm                 :integer
 #  medical_history           :text
 #  social_security_number    :string
 #  specialists               :text
+#  weight_kg                 :decimal(5, 1)
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
 #

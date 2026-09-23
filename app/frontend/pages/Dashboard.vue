@@ -81,6 +81,7 @@ const counts = ref({
   file_transfers: 0,
   trips: 0,
   video_downloads: 0,
+  meetings: 0,
 })
 
 const fetchCounts = async () => {
@@ -99,6 +100,7 @@ const fetchCounts = async () => {
     { key: 'file_transfers', resource: 'file_transfers' },
     { key: 'trips', resource: 'trips' },
     { key: 'video_downloads', resource: 'video_downloads' },
+    { key: 'meetings', resource: 'meetings' },
   ]
 
   const results = await Promise.allSettled(
@@ -171,6 +173,7 @@ const modules = computed(() => [
   { name: 'Messagerie', icon: '📧', subtitle: `${counts.value.mails} compte${counts.value.mails > 1 ? 's' : ''}`, to: '/mails' },
   { name: 'Sante', icon: '🏥', subtitle: 'Infos & documents', to: '/health' },
   { name: 'Abonnements', icon: '🔄', subtitle: `${counts.value.subscriptions} abonnement${counts.value.subscriptions > 1 ? 's' : ''}`, to: '/subscriptions' },
+  { name: 'Reunions', icon: '🎙️', subtitle: `${counts.value.meetings} compte${counts.value.meetings > 1 ? 's' : ''} rendu${counts.value.meetings > 1 ? 's' : ''}`, to: '/meetings' },
   { name: 'Notes', icon: '📝', subtitle: `${counts.value.notes} note${counts.value.notes > 1 ? 's' : ''}`, to: '/notes' },
   { name: 'Sites utiles', icon: '🔗', subtitle: `${counts.value.useful_sites} site${counts.value.useful_sites > 1 ? 's' : ''}`, to: '/useful-sites' },
   { name: 'Mes projets', icon: '🚀', subtitle: `${counts.value.projects} projet${counts.value.projects > 1 ? 's' : ''}`, to: '/projects' },

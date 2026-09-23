@@ -67,6 +67,16 @@ Rails.application.routes.draw do
     resource :calendar_sync, only: [:show, :create]
     resources :tasks, only: [:index, :create, :update, :destroy]
     resources :notes, only: [:index, :create, :update, :destroy]
+    # Dictee vocale (Voxtral) : audio en entree, texte en sortie, rien n'est stocke
+    resources :transcriptions, only: [:create]
+    # Module Reunions : audio (direct upload) -> transcription, synthese, PDF dans les documents
+    resources :meetings, only: [:index, :show, :create, :update, :destroy] do
+      member do
+        post :regenerate
+        post :chunks
+        post :finish
+      end
+    end
     resources :subscriptions, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre et liens imbriques ; la to-do list et les

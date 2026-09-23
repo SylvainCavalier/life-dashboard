@@ -57,6 +57,16 @@ class Rack::Attack
     req.ip if req.post? && req.path.match?(%r{^/api/alfred_conversations/\d+/message$})
   end
 
+  # Dictee vocale : chaque requete est une transcription payante (Voxtral).
+  Rack::Attack.throttle('transcriptions', limit: 20, period: 60.seconds) do |req|
+    req.ip if req.post? && req.path == '/api/transcriptions'
+  end
+
+  # Reunions : chaque traitement coute une transcription longue et une synthese.
+  Rack::Attack.throttle('meetings processing', limit: 10, period: 10.minutes) do |req|
+    req.ip if req.post? && req.path.match?(%r{^/api/meetings(/\d+/regenerate)?$})
+  end
+
   # Coffre-fort : une session compromise ne doit pas pouvoir aspirer les entrees
   # une par une via /api/password_entries/:id/reveal.
   Rack::Attack.throttle('vault reveal', limit: 20, period: 5.minutes) do |req|

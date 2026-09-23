@@ -154,6 +154,7 @@
               @keydown.enter.exact.prevent="submit()"
               @input="autosize"
             />
+            <VoiceInputButton :disabled="busy" @transcribed="insertDictation" />
             <button type="submit" class="h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-40" :disabled="busy || !draft.trim()" title="Envoyer">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
@@ -182,6 +183,8 @@ import { useRouter } from 'vue-router'
 import { useAlfred } from '../../composables/useAlfred'
 import { renderMarkdown } from '../../utils/markdown'
 import avatar from '../../images/alfred-avatar.png'
+import VoiceInputButton from '../VoiceInputButton.vue'
+import { insertAtCursor } from '../../composables/useVoiceRecorder'
 
 const router = useRouter()
 const {
@@ -255,6 +258,12 @@ const autosize = () => {
   if (!el) return
   el.style.height = 'auto'
   el.style.height = `${el.scrollHeight}px`
+}
+
+// Dictee : le texte rejoint le brouillon sans partir, pour relecture avant envoi.
+const insertDictation = (text) => {
+  draft.value = insertAtCursor(input.value, draft.value, text)
+  nextTick(autosize)
 }
 
 const submit = async (text) => {

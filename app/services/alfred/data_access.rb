@@ -14,7 +14,7 @@ module Alfred
       "BudgetEntry" => :all, "CalendarSync" => :all, "Client" => :all, "Company" => :all, "Contact" => :all, "CrmProfile" => :all,
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
-      "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all,
+      "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
       "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all,
       "Property" => :all, "Quote" => :all, "QuoteItem" => :all,

@@ -24,7 +24,9 @@ Rails.application.routes.draw do
     resources :password_entries, only: [:index, :create, :destroy] do
       member { get :reveal }
     end
-    resource :personal_profile, only: [:show, :create, :update]
+    resource :personal_profile, only: [:show, :create, :update] do
+      delete :signature, action: :destroy_signature
+    end
     resource :health_profile, only: [:show, :create, :update]
     resources :companies do
       member do
@@ -135,10 +137,14 @@ Rails.application.routes.draw do
     # Alfred : agent IA du dashboard (chat + corpus RAG). Une ecriture proposee par
     # Alfred ne s'execute que par POST /alfred_actions/:id/confirm.
     resource :alfred, only: [:show, :update], controller: "alfred" do
+      get :prompt
       post :reindex
     end
     resources :alfred_conversations, only: [:index, :show, :create, :destroy] do
-      member { post :message }
+      member do
+        post :message
+        get :export
+      end
     end
     resources :alfred_actions, only: [] do
       member do

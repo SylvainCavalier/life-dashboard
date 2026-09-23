@@ -7,6 +7,12 @@ module Alfred
            Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
            Tools::ProposeMailTriage].freeze
 
+    # Outils qui parlent a Gmail : sans GMAIL_USER ils repondent une erreur au modele.
+    MAIL = [Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
+            Tools::ProposeMailTriage].freeze
+    # Outils qui ne font que proposer (carte a confirmer dans le chat).
+    PROPOSALS = [Tools::ProposeWrite, Tools::ProposeEmail, Tools::ProposeMailTriage].freeze
+
     Context = Struct.new(:conversation, :message, keyword_init: true)
 
     module_function
@@ -14,6 +20,21 @@ module Alfred
     def definitions
       # Ordre fixe : la liste des outils fait partie du prefixe mis en cache.
       ALL.map(&:definition)
+    end
+
+    # Description des outils pour la page Alfred : ce qu'ils font, ce dont ils dependent.
+    def catalog
+      ALL.map do |tool|
+        definition = tool.definition
+        mail = MAIL.include?(tool)
+        {
+          name: definition[:name],
+          description: definition[:description],
+          kind: PROPOSALS.include?(tool) ? "proposal" : "read",
+          integration: mail ? "gmail" : "dashboard",
+          available: mail ? Gmail.enabled? : ::Alfred.configured?
+        }
+      end
     end
 
     def find(name)

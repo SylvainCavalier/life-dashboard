@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Life Dashboard** — Application personnelle de gestion de vie quotidienne. Tableau de bord central donnant accès à différents modules :
 
+- **Profil** (`/profile`) — Donnees personnelles (`PersonalProfile`, ligne unique) et **signature manuscrite** (`has_one_attached :signature`, PNG 2 Mo max, `DELETE /api/personal_profile/signature`). Pour signer un document genere : `PersonalProfile.first&.signature_data_url` (data URL integrable telle quelle dans un gabarit HTML/PDF)
 - **Contacts** — Gestion de la liste de contacts personnels et professionnels
 - **Immobilier** — Suivi des biens immobiliers (propriétés, locataires, charges, revenus)
 - **Entreprises** — Gestion d'entreprises avec génération de devis et factures (PDF)
@@ -19,7 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, en entier ou sur un extrait (de 0:34 à 0:47), avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
 - **Projets** — Projets personnels classés par catégorie (`Project::CATEGORIES` : développement, musique, vidéo, jeu vidéo, sport, jeu de rôle, business...). Chaque projet a sa page (`/projects/:id`) : jauge, importance, compétences à apprendre (`ProjectSkill`), liens (`ProjectLink`), notes libres (`projects.notes`), to-do list (`Task` avec `project_id` ; `project_id` nul = to-do list générale du dashboard) et documents (`Document` avec `project_id`, domaine `projects`)
 - **Sentinelle** — Veille hebdomadaire personnalisée, un onglet par domaine (`/sentinelle/:domaine`) : **Droit du travail** (Judilibre, Légifrance, Village de la Justice) et **Désinformation** (flux RSS + recherche web Tavily sur une liste blanche de sites). Chaque semaine (lundi → dimanche) se lance à la main : collecte, tri déterministe, résumé IA par document puis synthèse de la semaine (`/sentinelle/:domaine/:lundi`). Les domaines sont isolés (registre `Sentinel::Domains`) : en ajouter un ne touche pas aux autres
-- **Alfred (chat)** — L'intendant installe dans le dashboard : icone de chat en bas a droite de toutes les pages (`AlfredWidget.vue`, monte dans `App.vue`). Agent a outils (Claude) adosse a un corpus RAG (pgvector + mistral-embed) qui couvre les donnees du dashboard ET le texte des documents (OCR Mistral pour les scans). Lit tout sauf les mots de passe, n'ecrit que sur confirmation explicite dans le chat. Voir « Alfred dans le dashboard »
+- **Alfred (chat)** — L'intendant installe dans le dashboard : icone de chat en bas a droite de toutes les pages (`AlfredWidget.vue`, monte dans `App.vue`). Agent a outils (Claude) adosse a un corpus RAG (pgvector + mistral-embed) qui couvre les donnees du dashboard ET le texte des documents (OCR Mistral pour les scans). Lit tout sauf les mots de passe, n'ecrit que sur confirmation explicite dans le chat. Le widget permet de vider la conversation (supprimee, sans archive) ou de l'exporter en PDF. Avatar (bouton flottant, en-tete, bulles) : `app/frontend/images/alfred-avatar.png`, majordome-robot genere avec ImageNX (skill `imagenx-generate`). Page dediee `/alfred` (`AlfredPage.vue`) : instructions du prompt modifiables section par section, consignes particulieres, outils et connexions, perimetre des donnees, memoire documentaire. Voir « Alfred dans le dashboard »
+- **Outils** (`/tools/:onglet`) — Petits utilitaires, un onglet par outil (`TABS` dans `ToolsPage.vue` : en ajouter un = une entree + un composant dans `components/tools/`). Tout tourne **dans le navigateur**, sans backend ni modele (donc rien a exposer a Alfred) : le fichier n'est jamais envoye au serveur. Onglet **PDF** (`PdfTool.vue`) : numerotation, filigrane, signature (celle de « Mon profil », placee a la souris), decoupage ; modifications enchainables et annulables, operations pures dans `pdfOperations.js` (pdf-lib, polices standard donc encodage WinAnsi : pas d'emojis), apercu par pdf.js (`pdfRender.js`, worker servi par Vite, `pdfjs-dist` epingle en 5.4 car les versions suivantes exigent Node 22). Les pages avec `/Rotate` sont gerees : on raisonne dans le repere de la page affichee (`pageFrame`). Onglet **Images** (`ImageTool.vue`, image chargee une fois et partagee par les sous-outils de `components/tools/image/`) : recadrage (cropperjs 1.x, comme dans narval), rotation, miroir, redimensionnement, conversion JPEG/PNG/WebP (`ImageCrop.vue`) ; **fond transparent** (`ImageTransparency.vue`, algorithme dans `imageTransparency.js`) pour les fonds unis : couleur du fond deduite des bords ou prelevee au clic, remplissage depuis les bords (ou toute la couleur), puis detourage des contours anticrenelés (estimation de la couleur du sujet sur les voisins + decontamination, sinon liseré clair sur fond sombre). Volontairement pas de modele d'IA de detourage (`@imgly/background-removal` : AGPL, dizaines de Mo, CDN bloque par la CSP), inutile pour un fond uni. L'apercu est calcule sur une image reduite a 1000 px, l'export en taille reelle
 - **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
 Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère tout le UI, Rails sert d'API backend. Vite pour le build frontend.
@@ -343,9 +345,23 @@ changer de modele d'embedding impose une migration de la colonne et un `alfred:i
 d'ActionCable : meme patron que Downloader et Sentinelle, et une reponse survit a un rechargement de page). Outils :
 `search_corpus`, `query_records` (lecture structuree, `DataAccess::READABLE`), `describe_models`, `propose_write`.
 L'historique rejoue ne contient que du texte (questions, reponses, notes `[Systeme]`), jamais les resultats d'outils
-des tours passes : Alfred relit la base. Le prompt stable est mis en cache cote API ; la date et les consignes
-particulieres (`AlfredSetting`, editables dans le chat) vont dans un second bloc APRES le point de cache : ne rien
+des tours passes : Alfred relit la base. Vider la conversation depuis le widget = `DELETE` de la conversation (rien n'est
+archive, l'export PDF `GET /api/alfred_conversations/:id/export`, `Alfred::ConversationPdf`, est la pour ca) : c'est
+le moyen de repartir avec une fenetre de contexte legere. Le prompt stable est mis en cache cote API ; la date et les
+consignes particulieres (`AlfredSetting#custom_instructions`) vont dans un second bloc APRES le point de cache : ne rien
 mettre de variable dans `Prompt.stable_text`.
+
+**Prompt modifiable depuis la page `/alfred`.** `Alfred::Prompt::SECTIONS` decoupe le prompt en sections (role, sylvain,
+tone, tools, mails, accuracy, writes, limits), chacune avec un texte par defaut dans `Prompt::DEFAULTS`.
+`AlfredSetting#prompt_overrides` (jsonb) remplace le texte d'une section ; une section vidée retombe sur le code, et une
+cle inconnue est refusee par validation. Les parties deduites du code (liste des modeles lisibles, `Gmail::MAILBOXES`)
+sont generees par `rendered_section` et ne passent pas par les surcharges. Modifier une surcharge invalide le cache du
+prompt une fois : normal. `GET /api/alfred` renvoie sections (defaut + surcharge), catalogue des outils
+(`Alfred::Tools.catalog` : lecture / proposition, dashboard / Gmail, disponible ou non), connexions et listes
+`READABLE` / `WRITABLE` ; `GET /api/alfred/prompt` donne le texte complet tel qu'il partira. Le modele, l'effort et la
+taille d'historique restent des variables d'environnement (affichees, pas editables). **Un nouvel outil** s'ajoute a
+`Tools::ALL` (et a `MAIL` / `PROPOSALS` s'il y a lieu) : la page le liste toute seule ; penser a le decrire aussi dans
+`DEFAULTS["tools"]` pour qu'Alfred sache quand l'utiliser.
 
 **Ecritures : le modele ne peut que proposer.** `propose_write` valide (liste blanche `DataAccess::WRITABLE`, memes
 tiers que la skill write, `record.valid?`) et cree une `AlfredAction` `proposed`, rien d'autre. Le chat affiche une carte

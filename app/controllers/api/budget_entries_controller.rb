@@ -37,12 +37,19 @@ module Api
 
       fixed_income = fixed.incomes.sum(:amount)
       fixed_expense = fixed.expenses.sum(:amount)
+      subscriptions = Subscription.all.to_a
       variable_by_month = (1..12).map do |m|
         month_var = variable.for_month(m, year)
+        subscription_expense = subscriptions_expense_for(subscriptions, m, year)
+        variable_income = month_var.incomes.sum(:amount)
+        variable_expense = month_var.expenses.sum(:amount)
         {
           month: m,
-          variable_income: month_var.incomes.sum(:amount),
-          variable_expense: month_var.expenses.sum(:amount)
+          variable_income: variable_income,
+          variable_expense: variable_expense,
+          # Meme convention que la page Budget : les abonnements sont des charges fixes
+          subscription_expense: subscription_expense,
+          balance: fixed_income + variable_income - fixed_expense - subscription_expense - variable_expense
         }
       end
 
@@ -55,6 +62,19 @@ module Api
     end
 
     private
+
+    # Cout mensuel des abonnements actifs sur le mois (annuel lisse sur 12 mois),
+    # transposition de `subscriptionsExpenseForMonth` de BudgetPage.vue.
+    def subscriptions_expense_for(subscriptions, month, year)
+      month_start = Date.new(year, month, 1)
+      month_end = month_start.end_of_month
+      subscriptions.sum do |sub|
+        next 0 if sub.start_date && sub.start_date > month_end
+        next 0 if sub.end_date && sub.end_date < month_start
+
+        sub.billing_cycle == "yearly" ? sub.cost / 12 : sub.cost
+      end
+    end
 
     def budget_entry_params
       params.require(:budget_entry).permit(:name, :entry_type, :recurrence, :category, :amount, :month, :year, :notes)

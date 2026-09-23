@@ -13,7 +13,8 @@
         aria-label="Conversation avec Alfred"
       >
         <!-- En-tete -->
-        <header class="flex items-center gap-2 px-4 py-3 bg-gray-900 text-white">
+        <header class="flex items-center gap-2 px-3 py-2.5 bg-gray-900 text-white">
+          <img :src="avatar" alt="" class="h-9 w-9 rounded-full object-cover ring-2 ring-white/20 flex-shrink-0" />
           <div class="flex-1 min-w-0">
             <h2 class="font-semibold leading-tight">Alfred</h2>
             <p class="text-xs text-gray-400 truncate">{{ subtitle }}</p>
@@ -24,7 +25,14 @@
           <button type="button" class="header-btn" :class="{ 'bg-white/20': view === 'history' }" title="Conversations" @click="toggle('history')">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </button>
-          <button type="button" class="header-btn" :class="{ 'bg-white/20': view === 'settings' }" title="Reglages" @click="toggle('settings')">
+          <!-- Export PDF et vidage : seulement quand une conversation est ouverte -->
+          <a v-if="conversation" :href="exportUrl(conversation.id)" class="header-btn" title="Enregistrer en PDF" download>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" /></svg>
+          </a>
+          <button v-if="conversation" type="button" class="header-btn hover:text-red-300" title="Vider la conversation" :disabled="busy" @click="clearConversation">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12M9 7V4h6v3" /></svg>
+          </button>
+          <button type="button" class="header-btn" title="Page Alfred : instructions, outils, reglages" @click="openSettingsPage">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>
           </button>
           <button type="button" class="header-btn" title="Fermer" @click="isOpen = false">
@@ -56,33 +64,11 @@
           </div>
         </div>
 
-        <!-- Reglages -->
-        <div v-else-if="view === 'settings'" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
-          <div>
-            <label for="alfred-instructions" class="block font-medium text-gray-800 mb-1">Consignes particulieres</label>
-            <p class="text-xs text-gray-500 mb-2">Ajoutees a ses instructions a chaque conversation (preferences, habitudes, choses a savoir).</p>
-            <textarea id="alfred-instructions" v-model="instructions" rows="6" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
-            <button type="button" class="mt-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs hover:bg-gray-700" @click="saveSettings">
-              {{ settingsSaved ? 'Enregistre' : 'Enregistrer' }}
-            </button>
-          </div>
-          <div v-if="overview" class="border-t border-gray-100 pt-4">
-            <p class="font-medium text-gray-800 mb-1">Memoire documentaire</p>
-            <p class="text-xs text-gray-500">
-              {{ overview.corpus.records }} enregistrements indexes ({{ overview.corpus.chunks }} passages)<span v-if="overview.corpus.failed">, {{ overview.corpus.failed }} en echec</span>.
-              <span v-if="overview.corpus.last_indexed_at">Derniere indexation : {{ formatDateTime(overview.corpus.last_indexed_at) }}.</span>
-            </p>
-            <p class="text-xs text-gray-500 mt-1">Modele : {{ overview.model }}</p>
-            <button type="button" class="mt-2 px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50" :disabled="reindexing" @click="launchReindex">
-              {{ reindexing ? 'Reindexation lancee' : 'Tout reindexer' }}
-            </button>
-          </div>
-        </div>
-
         <!-- Conversation -->
         <template v-else>
           <div ref="scroller" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50" @click="onContentClick">
-            <div v-if="!messages.length" class="text-center mt-10 px-4">
+            <div v-if="!messages.length" class="text-center mt-8 px-4">
+              <img :src="avatar" alt="Alfred" class="mx-auto h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-md mb-3" />
               <p class="text-sm text-gray-600">Bonjour, Monsieur. Que puis-je pour vous ?</p>
               <div class="mt-4 flex flex-col gap-2">
                 <button v-for="hint in hints" :key="hint" type="button" class="text-xs text-left text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:border-gray-400" @click="submit(hint)">
@@ -101,53 +87,56 @@
               <p v-else-if="message.role === 'event'" class="text-xs text-center text-gray-400 px-6">{{ message.content }}</p>
 
               <!-- Alfred -->
-              <div v-else class="max-w-[92%]">
-                <ul v-if="message.steps.length" class="mb-1 space-y-0.5">
-                  <li v-for="(step, index) in message.steps" :key="index" class="text-xs text-gray-400 truncate">{{ step.label }}</li>
-                </ul>
+              <div v-else class="flex items-end gap-2 max-w-[92%]">
+                <img :src="avatar" alt="" class="h-7 w-7 rounded-full object-cover ring-1 ring-gray-200 flex-shrink-0 mb-0.5" :class="{ 'animate-pulse': isRunning(message) }" />
+                <div class="min-w-0 flex-1">
+                  <ul v-if="message.steps.length" class="mb-1 space-y-0.5">
+                    <li v-for="(step, index) in message.steps" :key="index" class="text-xs text-gray-400 truncate">{{ step.label }}</li>
+                  </ul>
 
-                <div v-if="message.content" class="rounded-2xl rounded-bl-md bg-white border border-gray-200 text-sm text-gray-800 px-3.5 py-2 break-words" v-html="renderMarkdown(message.content)" />
-                <p v-else-if="isRunning(message)" class="text-sm text-gray-400 italic">Alfred reflechit...</p>
+                  <div v-if="message.content" class="rounded-2xl rounded-bl-md bg-white border border-gray-200 text-sm text-gray-800 px-3.5 py-2 break-words" v-html="renderMarkdown(message.content)" />
+                  <p v-else-if="isRunning(message)" class="text-sm text-gray-400 italic">Alfred reflechit...</p>
 
-                <p v-if="message.status === 'failed'" class="mt-1 text-xs text-red-600">{{ message.error || 'La reponse a echoue.' }}</p>
+                  <p v-if="message.status === 'failed'" class="mt-1 text-xs text-red-600">{{ message.error || 'La reponse a echoue.' }}</p>
 
-                <!-- Ecritures proposees : rien n'est ecrit sans le bouton Confirmer -->
-                <div v-for="action in message.actions" :key="action.id" class="mt-2 rounded-xl border bg-white text-sm overflow-hidden" :class="actionBorder(action)">
-                  <div class="px-3 py-2 border-b border-gray-100">
-                    <p class="text-xs uppercase tracking-wide text-gray-400">
-                      {{ operationLabel(action) }} · {{ action.target_model }}<span v-if="action.record_id"> #{{ action.record_id }}</span>
-                    </p>
-                    <p class="text-gray-800">{{ action.summary }}</p>
-                  </div>
-                  <dl class="px-3 py-2 space-y-1 text-xs">
-                    <div v-for="(value, field) in action.attributes" :key="field" class="flex gap-2">
-                      <dt class="w-28 flex-shrink-0 text-gray-400 truncate">{{ field }}</dt>
-                      <dd class="min-w-0 break-words whitespace-pre-line">
-                        <span v-if="action.operation === 'update'" class="text-gray-400 line-through mr-1">{{ display(action.before[field]) }}</span>
-                        <span class="text-gray-900">{{ display(value) }}</span>
-                      </dd>
+                  <!-- Ecritures proposees : rien n'est ecrit sans le bouton Confirmer -->
+                  <div v-for="action in message.actions" :key="action.id" class="mt-2 rounded-xl border bg-white text-sm overflow-hidden" :class="actionBorder(action)">
+                    <div class="px-3 py-2 border-b border-gray-100">
+                      <p class="text-xs uppercase tracking-wide text-gray-400">
+                        {{ operationLabel(action) }} · {{ action.target_model }}<span v-if="action.record_id"> #{{ action.record_id }}</span>
+                      </p>
+                      <p class="text-gray-800">{{ action.summary }}</p>
                     </div>
-                  </dl>
-                  <div v-if="action.status === 'proposed'" class="flex gap-2 px-3 py-2 border-t border-gray-100 bg-gray-50">
-                    <button type="button" class="px-3 py-1 rounded-lg bg-gray-900 text-white text-xs hover:bg-gray-700 disabled:opacity-50" :disabled="resolving === action.id" @click="resolve(action, 'confirm')">Confirmer</button>
-                    <button type="button" class="px-3 py-1 rounded-lg border border-gray-300 text-xs text-gray-700 hover:bg-white disabled:opacity-50" :disabled="resolving === action.id" @click="resolve(action, 'cancel')">Annuler</button>
+                    <dl class="px-3 py-2 space-y-1 text-xs">
+                      <div v-for="(value, field) in action.attributes" :key="field" class="flex gap-2">
+                        <dt class="w-28 flex-shrink-0 text-gray-400 truncate">{{ field }}</dt>
+                        <dd class="min-w-0 break-words whitespace-pre-line">
+                          <span v-if="action.operation === 'update'" class="text-gray-400 line-through mr-1">{{ display(action.before[field]) }}</span>
+                          <span class="text-gray-900">{{ display(value) }}</span>
+                        </dd>
+                      </div>
+                    </dl>
+                    <div v-if="action.status === 'proposed'" class="flex gap-2 px-3 py-2 border-t border-gray-100 bg-gray-50">
+                      <button type="button" class="px-3 py-1 rounded-lg bg-gray-900 text-white text-xs hover:bg-gray-700 disabled:opacity-50" :disabled="resolving === action.id" @click="resolve(action, 'confirm')">Confirmer</button>
+                      <button type="button" class="px-3 py-1 rounded-lg border border-gray-300 text-xs text-gray-700 hover:bg-white disabled:opacity-50" :disabled="resolving === action.id" @click="resolve(action, 'cancel')">Annuler</button>
+                    </div>
+                    <p v-else class="px-3 py-2 border-t border-gray-100 text-xs" :class="actionStatusClass(action)">
+                      {{ actionStatusLabel(action) }}
+                    </p>
                   </div>
-                  <p v-else class="px-3 py-2 border-t border-gray-100 text-xs" :class="actionStatusClass(action)">
-                    {{ actionStatusLabel(action) }}
-                  </p>
-                </div>
 
-                <!-- Sources du corpus consultees -->
-                <div v-if="message.sources.length && message.status === 'done'" class="mt-1.5 flex flex-wrap gap-1">
-                  <a
-                    v-for="source in message.sources.slice(0, 6)"
-                    :key="`${source.type}-${source.id}`"
-                    :href="source.download || source.page || '#'"
-                    :data-internal="source.download ? null : 'true'"
-                    :target="source.download ? '_blank' : null"
-                    class="text-[11px] text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5 hover:border-gray-400 max-w-[14rem] truncate"
-                    :title="`${source.type} #${source.id}`"
-                  >{{ source.label }}</a>
+                  <!-- Sources du corpus consultees -->
+                  <div v-if="message.sources.length && message.status === 'done'" class="mt-1.5 flex flex-wrap gap-1">
+                    <a
+                      v-for="source in message.sources.slice(0, 6)"
+                      :key="`${source.type}-${source.id}`"
+                      :href="source.download || source.page || '#'"
+                      :data-internal="source.download ? null : 'true'"
+                      :target="source.download ? '_blank' : null"
+                      class="text-[11px] text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5 hover:border-gray-400 max-w-[14rem] truncate"
+                      :title="`${source.type} #${source.id}`"
+                    >{{ source.label }}</a>
+                  </div>
                 </div>
               </div>
             </template>
@@ -173,16 +162,16 @@
       </section>
     </transition>
 
+    <!-- Bouton flottant : l'avatar d'Alfred, avec une croix quand le panneau est ouvert -->
     <button
       type="button"
-      class="h-14 w-14 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-700 hover:scale-105 transition flex items-center justify-center"
+      class="relative h-[4.5rem] w-[4.5rem] rounded-full bg-gray-900 shadow-lg ring-4 ring-white hover:scale-105 transition flex items-center justify-center overflow-hidden"
       :title="isOpen ? 'Fermer Alfred' : 'Parler a Alfred'"
       :aria-expanded="isOpen"
       @click="toggleOpen"
     >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5M21 12c0 4.4-4 8-9 8-1.4 0-2.8-.3-4-.8L3 20l1.3-3.9C3.5 14.9 3 13.5 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" />
-      </svg>
+      <img :src="avatar" alt="Alfred" class="h-full w-full object-cover" :class="{ 'opacity-40': isOpen }" />
+      <svg v-if="isOpen" class="absolute w-7 h-7 text-white drop-shadow" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
     </button>
   </div>
 </template>
@@ -192,19 +181,17 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAlfred } from '../../composables/useAlfred'
 import { renderMarkdown } from '../../utils/markdown'
+import avatar from '../../images/alfred-avatar.png'
 
 const router = useRouter()
 const {
-  overview, conversations, messages, busy, error,
-  loadOverview, resume, open, startNew, loadConversations, remove, send, resolveAction, saveInstructions, reindex,
+  overview, conversation, conversations, messages, busy, error,
+  loadOverview, resume, open, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
 } = useAlfred()
 
 const isOpen = ref(false)
-const view = ref('chat') // chat | history | settings
+const view = ref('chat') // chat | history
 const draft = ref('')
-const instructions = ref('')
-const settingsSaved = ref(false)
-const reindexing = ref(false)
 const resolving = ref(null)
 const scroller = ref(null)
 const input = ref(null)
@@ -228,7 +215,6 @@ const toggleOpen = async () => {
   if (!isOpen.value) return
   view.value = 'chat'
   await Promise.allSettled([loadOverview(), resume()])
-  instructions.value = overview.value?.custom_instructions || ''
   scrollToBottom()
   nextTick(() => input.value?.focus())
 }
@@ -236,7 +222,6 @@ const toggleOpen = async () => {
 const toggle = async (target) => {
   view.value = view.value === target ? 'chat' : target
   if (view.value === 'history') await loadConversations()
-  if (view.value === 'settings') await loadOverview()
   if (view.value === 'chat') scrollToBottom()
 }
 
@@ -244,6 +229,19 @@ const newConversation = () => {
   startNew()
   view.value = 'chat'
   nextTick(() => input.value?.focus())
+}
+
+// Supprime la conversation courante (rien n'est archive : l'export PDF est la pour ca).
+const clearConversation = async () => {
+  if (!conversation.value || busy.value) return
+  await clear()
+  view.value = 'chat'
+  nextTick(() => input.value?.focus())
+}
+
+// Les reglages vivent sur la page Alfred ; le panneau reste ouvert pour y revenir.
+const openSettingsPage = () => {
+  router.push('/alfred')
 }
 
 const openConversation = async (id) => {
@@ -272,17 +270,6 @@ const resolve = async (action, decision) => {
   resolving.value = action.id
   await resolveAction(action, decision)
   resolving.value = null
-}
-
-const saveSettings = async () => {
-  await saveInstructions(instructions.value)
-  settingsSaved.value = true
-  setTimeout(() => { settingsSaved.value = false }, 2000)
-}
-
-const launchReindex = async () => {
-  reindexing.value = true
-  await reindex()
 }
 
 // Liens internes des reponses (rendus par v-html) : navigation par le routeur,

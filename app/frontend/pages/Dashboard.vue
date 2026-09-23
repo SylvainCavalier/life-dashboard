@@ -34,19 +34,8 @@
           <TodoList />
         </aside>
 
-        <!-- Colonne droite : Resume du jour + Modules -->
+        <!-- Colonne droite : Modules -->
         <div class="flex-1 min-w-0">
-          <!-- Resume du jour -->
-          <div class="mb-10">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Resume du jour</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div v-for="panel in summaryPanels" :key="panel.title" class="bg-white rounded-xl shadow-sm p-5">
-                <h3 class="text-sm font-medium text-gray-500 mb-2">{{ panel.title }}</h3>
-                <p class="text-gray-400 text-sm">{{ panel.content }}</p>
-              </div>
-            </div>
-          </div>
-
           <!-- Grille de modules -->
           <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <router-link
@@ -71,7 +60,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../composables/useApi'
 import TodoList from '../components/TodoList.vue'
 
-const { useCrud } = useApi()
+const { useCrud, get } = useApi()
 
 // Jeton CSRF pose par Rails dans le layout : necessaire au formulaire de
 // deconnexion, qui est un POST Rails classique et non un appel axios.
@@ -123,6 +112,45 @@ const fetchCounts = async () => {
   })
 }
 
+// Solde du mois courant, calcule par le serveur avec la meme formule que la page Budget
+const monthlyBalance = ref(null)
+
+const fetchBudgetSummary = async () => {
+  try {
+    const today = new Date()
+    const summary = await get('/budget_entries/summary', { params: { year: today.getFullYear() } })
+    const current = summary.months?.find(m => m.month === today.getMonth() + 1)
+    if (current) monthlyBalance.value = parseFloat(current.balance)
+  } catch {
+    monthlyBalance.value = null
+  }
+}
+
+// GET /api/languages renvoie { languages, available_names } et non un tableau
+const languages = ref([])
+
+const fetchLanguages = async () => {
+  try {
+    const data = await get('/languages')
+    languages.value = data.languages || []
+  } catch {
+    languages.value = []
+  }
+}
+
+const languagesSubtitle = computed(() => {
+  const total = languages.value.length
+  const practicedToday = languages.value.filter(l => l.practiced_today).length
+  const label = `${total} langue${total > 1 ? 's' : ''}`
+  return practicedToday > 0 ? `${label} · ${practicedToday} pratiquée${practicedToday > 1 ? 's' : ''} aujourd'hui` : label
+})
+
+const budgetSubtitle = computed(() => {
+  if (monthlyBalance.value === null) return 'Solde du mois indisponible'
+  const formatted = monthlyBalance.value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return `Solde du mois : ${monthlyBalance.value >= 0 ? '+' : ''}${formatted} €`
+})
+
 const formattedDate = computed(() => {
   return new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
@@ -136,8 +164,8 @@ const modules = computed(() => [
   { name: 'Contacts', icon: '👥', subtitle: `${counts.value.contacts} contact${counts.value.contacts > 1 ? 's' : ''}`, to: '/contacts' },
   { name: 'Immobilier', icon: '🏠', subtitle: `${counts.value.properties} bien${counts.value.properties > 1 ? 's' : ''}`, to: '/properties' },
   { name: 'Entreprises', icon: '🏢', subtitle: `${counts.value.companies} entreprise${counts.value.companies > 1 ? 's' : ''}`, to: '/companies' },
-  { name: 'Budget', icon: '💰', subtitle: 'Non configure', to: '/budget' },
-  { name: 'Langues', icon: '🌍', subtitle: '0 langues', to: '/languages' },
+  { name: 'Budget', icon: '💰', subtitle: budgetSubtitle.value, to: '/budget' },
+  { name: 'Langues', icon: '🌍', subtitle: languagesSubtitle.value, to: '/languages' },
   { name: 'Agenda', icon: '📅', subtitle: `${counts.value.events} événement${counts.value.events > 1 ? 's' : ''}`, to: '/agenda' },
   { name: 'Mots de passe', icon: '🔐', subtitle: `${counts.value.passwords} entree${counts.value.passwords > 1 ? 's' : ''}`, to: '/passwords' },
   { name: 'Messagerie', icon: '📧', subtitle: `${counts.value.mails} compte${counts.value.mails > 1 ? 's' : ''}`, to: '/mails' },
@@ -153,13 +181,13 @@ const modules = computed(() => [
   { name: 'Voyages', icon: '✈️', subtitle: `${counts.value.trips} voyage${counts.value.trips > 1 ? 's' : ''}`, to: '/trips' },
   { name: 'Downloader', icon: '🎬', subtitle: `${counts.value.video_downloads} telechargement${counts.value.video_downloads > 1 ? 's' : ''}`, to: '/downloader' },
   { name: 'Sentinelle', icon: '🛰️', subtitle: 'Veille désinformation et droit du travail', to: '/sentinelle' },
+  { name: 'Outils', icon: '🧰', subtitle: 'PDF et images', to: '/tools' },
+  { name: 'Alfred', icon: '🎩', subtitle: 'Intendant IA : instructions, outils, mémoire', to: '/alfred' },
 ])
 
-const summaryPanels = [
-  { title: 'Prochains RDV', content: 'Aucune donnee' },
-  { title: 'Budget du mois', content: 'Aucune donnee' },
-  { title: 'Factures en attente', content: 'Aucune donnee' },
-]
-
-onMounted(fetchCounts)
+onMounted(() => {
+  fetchCounts()
+  fetchBudgetSummary()
+  fetchLanguages()
+})
 </script>

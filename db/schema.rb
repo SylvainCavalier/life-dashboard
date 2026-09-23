@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_22_174605) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_22_233438) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -127,6 +127,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_22_174605) do
     t.text "custom_instructions"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "prompt_overrides", default: {}, null: false
   end
 
   create_table "budget_entries", force: :cascade do |t|

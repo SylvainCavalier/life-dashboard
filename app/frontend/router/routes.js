@@ -140,6 +140,17 @@ export default [
     props: true,
   },
   {
+    path: '/tools/:tab?',
+    name: 'Tools',
+    component: () => import('../pages/modules/ToolsPage.vue'),
+    props: true,
+  },
+  {
+    path: '/alfred',
+    name: 'Alfred',
+    component: () => import('../pages/modules/AlfredPage.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),

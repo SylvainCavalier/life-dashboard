@@ -59,6 +59,51 @@ class AlfredApiTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "la page Alfred lit et modifie les sections du prompt" do
+    sign_in_owner
+
+    get "/api/alfred", headers: JSON_HEADERS
+    assert_response :success
+    body = response.parsed_body
+    assert_equal Alfred::Prompt::SECTIONS.map { |s| s[:key] }, body["prompt_sections"].map { |s| s["key"] }
+    assert_nil body["prompt_sections"].first["override"]
+    assert_equal Alfred::Tools::ALL.size, body["tools"].size
+    assert_includes body["readable_models"], "Contact"
+    assert_not_includes body["readable_models"], "PasswordEntry"
+
+    patch "/api/alfred", params: { prompt_overrides: { tone: "Sobre et bref." } }.to_json, headers: JSON_HEADERS
+    assert_response :success
+    assert_equal "Sobre et bref.", response.parsed_body["prompt_sections"].find { |s| s["key"] == "tone" }["override"]
+    assert_equal "Sobre et bref.", AlfredSetting.instance.override_for("tone")
+
+    get "/api/alfred/prompt", headers: JSON_HEADERS
+    assert_includes response.parsed_body["text"], "## Ton\nSobre et bref."
+
+    patch "/api/alfred", params: { prompt_overrides: { tone: nil } }.to_json, headers: JSON_HEADERS
+    assert_nil AlfredSetting.instance.override_for("tone")
+
+    patch "/api/alfred", params: { prompt_overrides: { hack: "x" } }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_content
+  end
+
+  test "une conversation s'exporte en PDF et se vide" do
+    sign_in_owner
+    conversation = AlfredConversation.create!(title: "Test")
+    conversation.messages.create!(role: "user", content: "Bonjour")
+    conversation.messages.create!(role: "assistant", content: "Bonjour, Monsieur.")
+
+    get "/api/alfred_conversations/#{conversation.id}/export"
+    assert_response :success
+    assert_equal "application/pdf", response.media_type
+    assert_match(/attachment/, response.headers["Content-Disposition"])
+    assert response.body.start_with?("%PDF")
+
+    assert_difference "AlfredMessage.count", -2 do
+      delete "/api/alfred_conversations/#{conversation.id}", headers: JSON_HEADERS
+    end
+    assert_response :no_content
+  end
+
   test "la confirmation d'une proposition passe par l'API" do
     sign_in_owner
     conversation = AlfredConversation.create!

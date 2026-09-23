@@ -3,7 +3,7 @@ class Api::PersonalProfilesController < ApplicationController
   def show
     @profile = PersonalProfile.first
     if @profile
-      render json: @profile
+      render json: profile_payload
     else
       render json: nil, status: :ok
     end
@@ -13,7 +13,7 @@ class Api::PersonalProfilesController < ApplicationController
   def create
     @profile = PersonalProfile.new(profile_params)
     if @profile.save
-      render json: @profile, status: :created
+      render json: profile_payload, status: :created
     else
       render json: { errors: @profile.errors.full_messages }, status: :unprocessable_entity
     end
@@ -28,10 +28,22 @@ class Api::PersonalProfilesController < ApplicationController
     end
 
     if @profile.update(profile_params)
-      render json: @profile
+      render json: profile_payload
     else
       render json: { errors: @profile.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  # DELETE /api/personal_profile/signature
+  def destroy_signature
+    @profile = PersonalProfile.first
+    if @profile.nil?
+      render json: { errors: ["Profil introuvable"] }, status: :not_found
+      return
+    end
+
+    @profile.signature.purge if @profile.signature.attached?
+    render json: profile_payload
   end
 
   private
@@ -48,7 +60,12 @@ class Api::PersonalProfilesController < ApplicationController
       :siret_number,
       :marital_status, :spouse_name, :number_of_children, :emergency_contact_name,
       :emergency_contact_phone, :emergency_contact_relationship,
-      :bank_name, :iban, :bic
+      :bank_name, :iban, :bic,
+      :signature
     )
+  end
+
+  def profile_payload
+    @profile.as_json.merge("signature_data_url" => @profile.signature_data_url)
   end
 end

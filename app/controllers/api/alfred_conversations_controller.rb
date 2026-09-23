@@ -2,7 +2,7 @@ module Api
   # Conversations avec Alfred. `show` sert aussi de sonde pendant qu'une reponse
   # est en cours : la table alfred_messages fait foi (texte partiel, outils appeles).
   class AlfredConversationsController < ApplicationController
-    before_action :set_conversation, only: [:show, :destroy, :message]
+    before_action :set_conversation, only: [:show, :destroy, :message, :export]
 
     # GET /api/alfred_conversations
     def index
@@ -25,6 +25,13 @@ module Api
     def destroy
       @conversation.destroy
       head :no_content
+    end
+
+    # GET /api/alfred_conversations/:id/export
+    # La conversation en PDF (texte seul), a garder avant de la vider.
+    def export
+      pdf = ::Alfred::ConversationPdf.new(@conversation)
+      send_data pdf.generate, filename: pdf.filename, type: "application/pdf", disposition: "attachment"
     end
 
     # POST /api/alfred_conversations/:id/message

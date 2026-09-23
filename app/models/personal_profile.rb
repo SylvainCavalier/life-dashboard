@@ -60,12 +60,18 @@ class PersonalProfile < ApplicationRecord
 
   MARITAL_STATUSES = %w[single married pacs divorced widowed].freeze
   GENDERS = %w[male female other].freeze
+  SIGNATURE_MAX_BYTES = 2.megabytes
+
+  # Signature manuscrite scannee (PNG, fond transparent de preference),
+  # reutilisable pour signer les documents generes par l'application.
+  has_one_attached :signature
 
   validates :marital_status, inclusion: { in: MARITAL_STATUSES }, allow_blank: true
   validates :gender, inclusion: { in: GENDERS }, allow_blank: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :professional_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :number_of_children, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validate :acceptable_signature
 
   def full_name
     "#{first_name} #{last_name}"
@@ -73,5 +79,21 @@ class PersonalProfile < ApplicationRecord
 
   def full_address
     [address_line1, address_line2, "#{postal_code} #{city}", state, country].compact_blank.join(", ")
+  end
+
+  # Data URL directement integrable dans un <img> ou un gabarit PDF (Grover, Prawn).
+  def signature_data_url
+    return nil unless signature.attached?
+    "data:#{signature.content_type};base64,#{Base64.strict_encode64(signature.download)}"
+  rescue ActiveStorage::FileNotFoundError
+    nil
+  end
+
+  private
+
+  def acceptable_signature
+    return unless signature.attached?
+    errors.add(:signature, "doit être une image PNG") unless signature.content_type == "image/png"
+    errors.add(:signature, "est trop volumineuse (max 2 Mo)") if signature.byte_size > SIGNATURE_MAX_BYTES
   end
 end

@@ -284,6 +284,42 @@
                 </div>
               </div>
             </section>
+
+            <!-- Signature -->
+            <section>
+              <h2 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Signature</h2>
+              <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div class="relative w-64 h-28 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
+                  <img v-if="profile.signature_data_url" :src="profile.signature_data_url" alt="Signature" class="max-w-full max-h-full object-contain p-2" />
+                  <span v-else class="text-gray-400 text-xs text-center px-2">Aucune signature</span>
+                  <div v-if="signatureUploading" class="absolute inset-0 bg-white/70 flex items-center justify-center text-xs text-gray-600">Envoi...</div>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <input ref="signatureInput" type="file" accept="image/png" class="hidden" @change="onSignatureSelected" />
+                  <div class="flex gap-3">
+                    <button
+                      type="button"
+                      @click="signatureInput.click()"
+                      :disabled="signatureUploading"
+                      class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50"
+                    >
+                      {{ profile.signature_data_url ? 'Remplacer' : 'Ajouter' }}
+                    </button>
+                    <button
+                      v-if="profile.signature_data_url"
+                      type="button"
+                      @click="removeSignature"
+                      :disabled="signatureUploading"
+                      class="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                  <p class="text-xs text-gray-500">PNG uniquement, 2 Mo max. Un fond transparent rend mieux sur les documents.</p>
+                  <p v-if="signatureError" class="text-xs text-red-600">{{ signatureError }}</p>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
 
@@ -611,6 +647,61 @@ const saveProfile = async () => {
       profileExists.value = true
       editing.value = false
     }
+  }
+}
+
+// ---- Signature ----
+const signatureInput = ref(null)
+const signatureUploading = ref(false)
+const signatureError = ref(null)
+
+const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || ''
+
+const signatureRequest = async (url, method, body) => {
+  const response = await fetch(url, {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Accept': 'application/json', 'X-CSRF-Token': csrfToken() },
+    body,
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.errors?.join(', ') || `Erreur ${response.status}`)
+  profile.value = data
+}
+
+const onSignatureSelected = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  if (file.type !== 'image/png') {
+    signatureError.value = 'La signature doit etre une image PNG'
+  } else if (file.size > 2 * 1024 * 1024) {
+    signatureError.value = 'Fichier trop volumineux (max 2 Mo)'
+  } else {
+    signatureError.value = null
+    signatureUploading.value = true
+    try {
+      const formData = new FormData()
+      formData.append('personal_profile[signature]', file)
+      await signatureRequest('/api/personal_profile', 'PATCH', formData)
+    } catch (e) {
+      signatureError.value = e.message || 'Erreur upload'
+    } finally {
+      signatureUploading.value = false
+    }
+  }
+  if (signatureInput.value) signatureInput.value.value = ''
+}
+
+const removeSignature = async () => {
+  if (!confirm('Supprimer la signature ?')) return
+  signatureError.value = null
+  signatureUploading.value = true
+  try {
+    await signatureRequest('/api/personal_profile/signature', 'DELETE')
+  } catch (e) {
+    signatureError.value = e.message || 'Erreur suppression'
+  } finally {
+    signatureUploading.value = false
   }
 }
 

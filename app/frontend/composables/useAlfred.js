@@ -97,6 +97,21 @@ export function useAlfred() {
     if (conversation.value?.id === id) startNew()
   }
 
+  // Vide la conversation courante : elle est supprimee (pas d'archive), le prochain
+  // message repart d'un historique vierge, donc d'une fenetre de contexte legere.
+  const clear = async () => {
+    if (!conversation.value) return
+    error.value = null
+    try {
+      await remove(conversation.value.id)
+    } catch (err) {
+      error.value = messageOf(err)
+    }
+  }
+
+  // Le PDF est servi par Rails avec la session : un simple lien suffit.
+  const exportUrl = (id) => `/api/alfred_conversations/${id}/export`
+
   const send = async (content) => {
     const text = content.trim()
     if (!text || busy.value) return false
@@ -132,12 +147,20 @@ export function useAlfred() {
     overview.value = (await apiClient.patch('/alfred', { custom_instructions: customInstructions })).data
   }
 
+  // { section: texte } ; un texte vide ou null remet la section au texte par defaut.
+  const savePromptOverrides = async (overrides) => {
+    overview.value = (await apiClient.patch('/alfred', { prompt_overrides: overrides })).data
+  }
+
+  const loadPrompt = async () => (await apiClient.get('/alfred/prompt')).data.text
+
   const reindex = async () => {
     await apiClient.post('/alfred/reindex')
   }
 
   return {
     overview, conversation, conversations, messages, busy, error,
-    loadOverview, resume, open, startNew, loadConversations, remove, send, resolveAction, saveInstructions, reindex,
+    loadOverview, resume, open, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
+    saveInstructions, savePromptOverrides, loadPrompt, reindex,
   }
 }

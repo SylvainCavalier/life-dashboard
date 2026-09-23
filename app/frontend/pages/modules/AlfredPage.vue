@@ -146,6 +146,60 @@
             />
             <button type="button" class="mt-2 btn-primary" :disabled="saving === 'custom'" @click="saveCustom">Enregistrer</button>
           </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <h2 class="font-semibold text-gray-900">
+                Suggestions d'accueil
+                <span v-if="overview.suggestions_customized" class="ml-2 text-[11px] font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full align-middle">modifiees</span>
+              </h2>
+              <span v-if="saved === 'suggestions'" class="text-xs text-green-700">Enregistre</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-3">
+              Phrases proposees dans le widget a l'ouverture d'une nouvelle conversation ; un clic les envoie telles quelles.
+              {{ overview.max_suggestions }} au maximum, les lignes vides sont ignorees.
+            </p>
+            <div class="space-y-2">
+              <div v-for="(_, index) in suggestionDrafts" :key="index" class="flex items-center gap-2">
+                <input
+                  v-model="suggestionDrafts[index]"
+                  type="text"
+                  maxlength="200"
+                  class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                  placeholder="Ex. : Quelles factures sont encore impayees ?"
+                />
+                <button type="button" class="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Monter" :disabled="index === 0" @click="moveSuggestion(index, -1)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" /></svg>
+                </button>
+                <button type="button" class="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Descendre" :disabled="index === suggestionDrafts.length - 1" @click="moveSuggestion(index, 1)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <button type="button" class="p-1.5 text-gray-400 hover:text-red-600" title="Supprimer" @click="suggestionDrafts.splice(index, 1)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+              </div>
+            </div>
+            <button
+              v-if="suggestionDrafts.length < overview.max_suggestions"
+              type="button"
+              class="mt-2 text-sm text-gray-600 hover:text-gray-900"
+              @click="suggestionDrafts.push('')"
+            >
+              + Ajouter une suggestion
+            </button>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button type="button" class="btn-primary" :disabled="saving === 'suggestions' || !suggestionsChanged" @click="saveSuggestionList">Enregistrer</button>
+              <button
+                v-if="overview.suggestions_customized"
+                type="button"
+                class="btn-secondary"
+                :disabled="saving === 'suggestions'"
+                @click="resetSuggestions"
+              >
+                Retablir les suggestions par defaut
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Outils -->
@@ -245,7 +299,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useAlfred } from '../../composables/useAlfred'
 import avatar from '../../images/alfred-avatar.png'
 
-const { overview, loadOverview, saveInstructions, savePromptOverrides, loadPrompt, reindex } = useAlfred()
+const { overview, loadOverview, saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex } = useAlfred()
 
 const tabs = [
   { key: 'instructions', label: 'Instructions' },
@@ -258,6 +312,7 @@ const loading = ref(true)
 const pageError = ref(null)
 const drafts = reactive({})
 const customInstructions = ref('')
+const suggestionDrafts = ref([])
 const saving = ref(null)
 const saved = ref(null)
 const preview = ref(null)
@@ -280,6 +335,7 @@ const integrations = computed(() => {
 const syncDrafts = () => {
   for (const section of overview.value.prompt_sections) drafts[section.key] = currentText(section)
   customInstructions.value = overview.value.custom_instructions || ''
+  suggestionDrafts.value = [...overview.value.suggestions]
 }
 
 const flash = (key) => {
@@ -313,6 +369,21 @@ const resetSection = (section) => withSaving(section.key, async () => {
 })
 
 const saveCustom = () => withSaving('custom', () => saveInstructions(customInstructions.value))
+
+const cleanSuggestions = () => suggestionDrafts.value.map((text) => text.trim()).filter(Boolean)
+
+const suggestionsChanged = computed(() =>
+  JSON.stringify(cleanSuggestions()) !== JSON.stringify(overview.value?.suggestions || []))
+
+const moveSuggestion = (index, offset) => {
+  const list = suggestionDrafts.value
+  ;[list[index], list[index + offset]] = [list[index + offset], list[index]]
+}
+
+// Une liste videe revient aux suggestions par defaut, comme le bouton de retablissement.
+const saveSuggestionList = () => withSaving('suggestions', () => saveSuggestions(cleanSuggestions()))
+
+const resetSuggestions = () => withSaving('suggestions', () => saveSuggestions([]))
 
 const togglePreview = async () => {
   preview.value = preview.value === null ? await loadPrompt() : null

@@ -86,6 +86,28 @@ class AlfredApiTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
   end
 
+  test "les suggestions d'accueil du widget se modifient et se retablissent" do
+    sign_in_owner
+
+    get "/api/alfred", headers: JSON_HEADERS
+    assert_equal AlfredSetting::DEFAULT_SUGGESTIONS, response.parsed_body["suggestions"]
+    assert_not response.parsed_body["suggestions_customized"]
+
+    suggestions = ["  Mes factures impayées ?  ", "", "Mes factures impayées ?"]
+    patch "/api/alfred", params: { suggestions: suggestions }.to_json, headers: JSON_HEADERS
+    assert_response :success
+    assert_equal ["Mes factures impayées ?"], response.parsed_body["suggestions"]
+    assert response.parsed_body["suggestions_customized"]
+
+    too_many = Array.new(AlfredSetting::MAX_SUGGESTIONS + 1) { |i| "Question #{i}" }
+    patch "/api/alfred", params: { suggestions: too_many }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_content
+
+    patch "/api/alfred", params: { suggestions: [] }.to_json, headers: JSON_HEADERS
+    assert_equal AlfredSetting::DEFAULT_SUGGESTIONS, response.parsed_body["suggestions"]
+    assert_empty AlfredSetting.instance.suggestions
+  end
+
   test "une conversation s'exporte en PDF et se vide" do
     sign_in_owner
     conversation = AlfredConversation.create!(title: "Test")

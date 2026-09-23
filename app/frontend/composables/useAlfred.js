@@ -152,6 +152,11 @@ export function useAlfred() {
     overview.value = (await apiClient.patch('/alfred', { prompt_overrides: overrides })).data
   }
 
+  // Liste des phrases d'accueil du widget ; une liste vide remet celles par defaut.
+  const saveSuggestions = async (suggestions) => {
+    overview.value = (await apiClient.patch('/alfred', { suggestions })).data
+  }
+
   const loadPrompt = async () => (await apiClient.get('/alfred/prompt')).data.text
 
   const reindex = async () => {
@@ -161,6 +166,6 @@ export function useAlfred() {
   return {
     overview, conversation, conversations, messages, busy, error,
     loadOverview, resume, open, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
-    saveInstructions, savePromptOverrides, loadPrompt, reindex,
+    saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex,
   }
 }

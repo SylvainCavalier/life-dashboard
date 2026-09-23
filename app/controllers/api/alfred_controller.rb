@@ -9,10 +9,12 @@ module Api
     # PATCH /api/alfred
     # `custom_instructions` : texte libre ajoute au prompt. `prompt_overrides` : { section => texte },
     # un texte vide (ou null) remet la section au texte par defaut du code.
+    # `suggestions` : liste des phrases d'accueil du widget ; vide (ou null) = phrases par defaut.
     def update
       setting = AlfredSetting.instance
       setting.update!(custom_instructions: params[:custom_instructions].to_s.strip.presence) if params.key?(:custom_instructions)
       setting.merge_overrides!(overrides_params) if params.key?(:prompt_overrides)
+      setting.replace_suggestions!(suggestions_params) if params.key?(:suggestions)
       render json: overview_json
     rescue ActiveRecord::RecordInvalid => e
       render json: { error: e.message }, status: :unprocessable_content
@@ -42,6 +44,10 @@ module Api
       raw.to_h.transform_values { |v| v.is_a?(String) ? v : nil }
     end
 
+    def suggestions_params
+      Array(params[:suggestions]).map(&:to_s)
+    end
+
     def overview_json
       setting = AlfredSetting.instance
       {
@@ -51,6 +57,10 @@ module Api
         effort: ENV.fetch("ALFRED_EFFORT", "medium"),
         history_messages: ::Alfred::Agent::HISTORY_MESSAGES,
         custom_instructions: setting.custom_instructions,
+        suggestions: setting.effective_suggestions,
+        default_suggestions: AlfredSetting::DEFAULT_SUGGESTIONS,
+        suggestions_customized: setting.suggestions.any?,
+        max_suggestions: AlfredSetting::MAX_SUGGESTIONS,
         prompt_sections: ::Alfred::Prompt::SECTIONS.map do |section|
           {
             key: section[:key], title: section[:title], help: section[:help],

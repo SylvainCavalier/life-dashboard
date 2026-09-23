@@ -199,11 +199,13 @@ const resolving = ref(null)
 const scroller = ref(null)
 const input = ref(null)
 
-const hints = [
+// Phrases d'accueil reglables depuis la page Alfred ; repli si /api/alfred n'a pas repondu.
+const FALLBACK_HINTS = [
   'Quels sont mes rendez-vous de la semaine ?',
   'Retrouve mon dernier avis d\'imposition.',
-  'Ajoute une tache : renouveler mon passeport.',
+  'Ajoute une tâche : renouveler mon passeport.',
 ]
+const hints = computed(() => overview.value?.suggestions || FALLBACK_HINTS)
 
 const subtitle = computed(() => (busy.value ? 'A votre service, un instant...' : 'Votre intendant'))
 

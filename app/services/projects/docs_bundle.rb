@@ -1,3 +1,4 @@
+require "base64"
 require "zlib"
 
 module Projects
@@ -5,7 +6,8 @@ module Projects
   # .knowledge/marketing.md) dans les documents des projets du dashboard.
   #
   # Deux temps, parce que les depots ne vivent que sur le Mac :
-  # 1. `build` lit les depots et produit un paquet JSON gzippe (rien en base) ;
+  # 1. `build` lit les depots et produit un paquet JSON gzippe puis encode en base64
+  #    (le stdin de `heroku run` n'est pas sur en binaire) ; rien en base ;
   # 2. `import!` le rejoue sur n'importe quelle base, production comprise
   #    (`heroku run ... < paquet`). Idempotent : un document deja present n'est
   #    remplace que si le fichier a change, un projet absent est cree.
@@ -96,7 +98,7 @@ module Projects
         { folder: folder, name: config[:name], github_url: github_url(dir),
           create: config.fetch(:create, nil), files: files }
       end
-      Zlib.gzip({ generated_at: Time.current.iso8601, projects: projects }.to_json)
+      Base64.encode64(Zlib.gzip({ generated_at: Time.current.iso8601, projects: projects }.to_json))
     end
 
     def self.github_url(dir)
@@ -106,8 +108,8 @@ module Projects
       url.sub(/\Agit@github\.com:/, "https://github.com/").delete_suffix(".git")
     end
 
-    def initialize(gzipped, dry_run: false, log: $stdout)
-      @data = JSON.parse(Zlib.gunzip(gzipped))
+    def initialize(encoded, dry_run: false, log: $stdout)
+      @data = JSON.parse(Zlib.gunzip(Base64.decode64(encoded)))
       @dry_run = dry_run
       @log = log
     end

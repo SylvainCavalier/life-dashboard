@@ -476,9 +476,9 @@ sont les ids de cette carte (ISO alpha-2 minuscule).
 
 ### Documentation des depots dans les projets
 ```bash
-bin/rails projects:docs_bundle                  # lit ~/code/SylvainCavalier (ROOT=...), ecrit tmp/project_docs.json.gz
+bin/rails projects:docs_bundle                  # lit ~/code/SylvainCavalier (ROOT=...), ecrit tmp/project_docs.b64
 bin/rails projects:import_docs DRY_RUN=1        # simulation
-heroku run --no-tty -x 'bin/rails projects:import_docs FILE=-' < tmp/project_docs.json.gz   # production
+heroku run --no-tty -x 'bin/rails projects:import_docs FILE=-' < tmp/project_docs.b64   # production
 ```
 `Projects::DocsBundle` range `CLAUDE.md`, `.knowledge/history.md` et `.knowledge/marketing.md` de chaque depot
 (`REPOSITORIES` : dossier => projet) en `Document` du projet (domaine `projects`, categorie `reference`, nom

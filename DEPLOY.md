@@ -171,6 +171,21 @@ Domaine chez Namecheap (Advanced DNS) : un `ALIAS Record` sur `@` et un `CNAME R
 l'enregistrement de parking (`URL Redirect` ou `A` vers 162.255.119.x). Les MX et le TXT SPF
 de la redirection mail Namecheap peuvent rester.
 
+### CORS du bucket OVH (direct upload)
+
+Transfert, Reunions et l'outil Videos envoient les fichiers directement du navigateur vers
+le bucket (PUT sur l'URL pre-signee). Sans CORS pour le domaine, le serveur cree bien le blob
+(`POST /rails/active_storage/direct_uploads` en 200) puis l'envoi echoue cote navigateur, sans
+trace dans les logs Heroku. L'upload des documents, qui passe par le serveur, marche lui quand
+meme : ce n'est pas un indice. Declarer les deux hotes, avec et sans `www` :
+
+```bash
+heroku run --no-tty -x 'bin/rails ovh:cors:setup ORIGINS=https://life-dashboard.online,https://www.life-dashboard.online'
+heroku run --no-tty -x 'bin/rails ovh:cors:show'
+```
+
+Les origines `localhost` de developpement sont conservees automatiquement (meme bucket).
+
 **Ne pas** deposer le domaine dans la Search Console, ni le lier depuis un site
 public, ni le poster nulle part : la premiere source d'indexation d'un domaine
 prive, ce sont les backlinks, pas les crawlers.
@@ -318,6 +333,9 @@ curl -s   $D/api/personal_profile -H 'Accept: application/json' -o /dev/null -w 
 curl -s   $D/api/password_entries -H 'Accept: application/json' -o /dev/null -w '%{http_code}\n'  # 401
 curl -s   $D/robots.txt            | head -6                            # Disallow: /
 curl -sI  https://life-dashboard-prive-56bbcac09954.herokuapp.com/ -o /dev/null -w '%{http_code}\n'  # 403 (APP_HOST)
+# CORS du bucket : doit renvoyer Access-Control-Allow-Origin (direct upload)
+curl -s -o /dev/null -D - -X OPTIONS https://s3.gra.io.cloud.ovh.net/life-dashboard/x \
+  -H "Origin: https://www.life-dashboard.online" -H "Access-Control-Request-Method: PUT" | grep -i allow-origin
 ```
 
 ## 8. Points connus a traiter apres la premiere mise en ligne

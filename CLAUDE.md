@@ -474,6 +474,18 @@ en jsonb dans `trip_plans.content`. Variables : `OPENAI_API_KEY` (obligatoire),
 La carte du monde de l'index vient de `@svg-maps/world` (CC BY 4.0) ; les codes pays
 sont les ids de cette carte (ISO alpha-2 minuscule).
 
+### Documentation des depots dans les projets
+```bash
+bin/rails projects:docs_bundle                  # lit ~/code/SylvainCavalier (ROOT=...), ecrit tmp/project_docs.json.gz
+bin/rails projects:import_docs DRY_RUN=1        # simulation
+heroku run --no-tty -x 'bin/rails projects:import_docs FILE=-' < tmp/project_docs.json.gz   # production
+```
+`Projects::DocsBundle` range `CLAUDE.md`, `.knowledge/history.md` et `.knowledge/marketing.md` de chaque depot
+(`REPOSITORIES` : dossier => projet) en `Document` du projet (domaine `projects`, categorie `reference`, nom
+« Projet - fichier »). Idempotent : document remplace seulement si le contenu a change, projet cree s'il manque. Le
+paquet transite par l'entree standard et **jamais par git** (le depot est public). Nouveau depot a suivre = une
+entree dans `REPOSITORIES` ; les CLAUDE.md de boilerplate non retouches sont volontairement omis.
+
 ### Deploiement (Heroku)
 ```bash
 git push heroku master                    # migrations jouees par le `release:` du Procfile

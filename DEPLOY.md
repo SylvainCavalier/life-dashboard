@@ -32,7 +32,14 @@ heroku buildpacks:add heroku/ruby   --app life-dashboard-prive
 
 # Chrome headless, pour l'export PDF du CV (Grover/Puppeteer).
 # Sans lui, l'export bascule automatiquement sur l'impression navigateur.
-heroku buildpacks:add --index 1 heroku-community/google-chrome --app life-dashboard-prive
+heroku buildpacks:add --index 1 heroku-community/chrome-for-testing --app life-dashboard-prive
+# Le buildpack ne pose pas GOOGLE_CHROME_BIN : a renseigner a la main
+heroku config:set GOOGLE_CHROME_BIN=/app/.chrome-for-testing/chrome-linux64/chrome PUPPETEER_SKIP_DOWNLOAD=true --app life-dashboard-prive
+
+# Le buildpack Node elague les devDependencies (dont vite) avant que
+# assets:precompile ne lance le build Vite cote Ruby. Le script heroku-postbuild
+# de package.json remplace aussi son "npm run build", qui appellerait Ruby trop tot.
+heroku config:set NPM_CONFIG_PRODUCTION=false --app life-dashboard-prive
 ```
 
 ## 3. Variables d'environnement
@@ -42,7 +49,7 @@ heroku config:set --app life-dashboard-prive \
   RAILS_ENV=production \
   RAILS_MASTER_KEY="$(cat config/master.key)" \
   RAILS_LOG_LEVEL=info \
-  APP_HOST=dashboard.mondomaine.fr \
+  APP_HOST=life-dashboard.online \
   CALENDAR_FEED_TOKEN="$(openssl rand -hex 32)" \
   OVH_S3_ACCESS_KEY=... \
   OVH_S3_SECRET_KEY=... \
@@ -151,13 +158,18 @@ Un compte @gmail.com sans Workspace ne permet pas la delegation : il faudrait un
 ## 4. Domaine et dyno
 
 ```bash
-heroku domains:add dashboard.mondomaine.fr --app life-dashboard-prive
+heroku domains:add life-dashboard.online --app life-dashboard-prive
 heroku certs:auto:enable --app life-dashboard-prive
 heroku ps:type web=basic --app life-dashboard-prive
 ```
 
 Puis creer chez le registrar l'enregistrement CNAME indique par
 `heroku domains --app life-dashboard-prive`.
+
+Domaine chez Namecheap (Advanced DNS) : un `ALIAS Record` sur `@` et un `CNAME Record` sur
+`www`, vers les cibles `*.herokudns.com` affichees par `heroku domains`. Supprimer au passage
+l'enregistrement de parking (`URL Redirect` ou `A` vers 162.255.119.x). Les MX et le TXT SPF
+de la redirection mail Namecheap peuvent rester.
 
 **Ne pas** deposer le domaine dans la Search Console, ni le lier depuis un site
 public, ni le poster nulle part : la premiere source d'indexation d'un domaine
@@ -167,7 +179,7 @@ prive, ce sont les backlinks, pas les crawlers.
 
 `config/initializers/grover.rb` lance Chrome avec `--no-sandbox`,
 `--disable-dev-shm-usage` et `--single-process` (obligatoires dans un
-conteneur), et lit le chemin du binaire dans `GOOGLE_CHROME_BIN`, pose par le
+conteneur), et lit le chemin du binaire dans `GOOGLE_CHROME_BIN`, pose a la main
 buildpack.
 
 Si Chrome manque ou se fait tuer par la limite memoire du dyno (512 Mo sur un
@@ -243,31 +255,45 @@ heroku run rails owner:unlock --app life-dashboard-prive                # apres 
 
 ## 6. Migration des donnees locales
 
-La base fait une dizaine de Mo et les fichiers sont **deja** sur OVH S3 (le
-developpement utilise le meme bucket que la production, cf. `config/storage.yml`) :
-il n'y a que la base a transferer.
+Procedure suivie lors de la mise en ligne du 1er octobre 2026. La base fait une
+dizaine de Mo et les fichiers sont sur OVH S3 (le developpement utilise le meme
+bucket que la production, cf. `config/storage.yml`) : il n'y a que la base a
+transferer, les cles des blobs restent valides telles quelles.
+
+**Avant tout**, verifier qu'aucun blob n'est reste sur le disque local (fichiers
+anterieurs au passage a OVH) : ils seraient introuvables en production.
 
 ```bash
-# Sauvegarde locale, en excluant les tables de jobs (crons et jobs perimes)
+bin/rails runner 'p ActiveStorage::Blob.group(:service_name).count'   # que des "ovh"
+```
+
+S'il en reste, les copier sur le bucket avec la meme cle puis basculer
+`service_name` a `ovh` (`ActiveStorage::Blob.services.fetch(:ovh).upload(key, io, checksum:)`).
+
+```bash
+# Sauvegarde locale : structure complete, sans le contenu des tables GoodJob (crons et jobs perimes)
 pg_dump --no-owner --no-acl --format=custom \
-  --exclude-table='good_job*' \
+  --exclude-table-data='good_job*' \
   life_dashboard_development > /tmp/life_dashboard.dump
 
-# Restauration sur Heroku
-heroku pg:backups:restore --app life-dashboard-prive  # si le dump est accessible en HTTP
-# ou, plus simple pour une base de cette taille :
-pg_restore --no-owner --no-acl --clean --if-exists \
+# Base Heroku remise a zero (elle ne contient que les migrations du premier deploiement)
+heroku maintenance:on --app life-dashboard-prive
+heroku ps:scale web=0 --app life-dashboard-prive
+heroku pg:reset DATABASE_URL --app life-dashboard-prive --confirm life-dashboard-prive
+pg_restore --no-owner --no-acl \
   --dbname "$(heroku config:get DATABASE_URL --app life-dashboard-prive)" \
   /tmp/life_dashboard.dump
+heroku ps:scale web=1 --app life-dashboard-prive
+heroku maintenance:off --app life-dashboard-prive
 ```
 
-Puis rejouer les migrations (le dump ne contient pas la table `users`, creee
-apres coup) et recreer le compte :
+La seule erreur attendue est `must be owner of extension vector` (sur le
+commentaire de l'extension) : sans consequence. Le pg_dump local doit etre d'une
+version au moins egale a celle du serveur Heroku (`heroku pg:info`).
 
-```bash
-heroku run rails db:migrate --app life-dashboard-prive
-heroku run rails owner:bootstrap --app life-dashboard-prive
-```
+La table `users` voyage avec le dump : le compte et son mot de passe actuel sont
+repris, **ne pas relancer `owner:bootstrap`** (pas de fenetre de mot de passe
+provisoire). Le corpus d'Alfred (passages et cache d'embeddings) suit aussi.
 
 Verification que le chiffrement a bien suivi :
 
@@ -278,16 +304,20 @@ heroku run rails runner 'puts PasswordEntry.first&.password.present?' --app life
 Si cette commande leve une erreur de dechiffrement, c'est que `RAILS_MASTER_KEY`
 ne correspond pas au `config/master.key` local.
 
+Une fois la production en service, **c'est elle qui fait foi** : la base locale
+n'est plus qu'une copie de developpement. Attention, en local, l'agenda Google et
+Gmail restent branches sur les vrais comptes (memes variables dans `.env`).
+
 ## 7. Verifications apres mise en ligne
 
 ```bash
-D=https://dashboard.mondomaine.fr
+D=https://life-dashboard.online
 
 curl -sI  $D/                      | grep -i "location\|x-robots-tag"   # 302 vers /users/sign_in
 curl -s   $D/api/personal_profile -H 'Accept: application/json' -o /dev/null -w '%{http_code}\n'  # 401
 curl -s   $D/api/password_entries -H 'Accept: application/json' -o /dev/null -w '%{http_code}\n'  # 401
 curl -s   $D/robots.txt            | head -6                            # Disallow: /
-curl -sI  https://life-dashboard-prive.herokuapp.com/ -o /dev/null -w '%{http_code}\n'  # 403 (APP_HOST)
+curl -sI  https://life-dashboard-prive-56bbcac09954.herokuapp.com/ -o /dev/null -w '%{http_code}\n'  # 403 (APP_HOST)
 ```
 
 ## 8. Points connus a traiter apres la premiere mise en ligne
@@ -301,4 +331,4 @@ curl -sI  https://life-dashboard-prive.herokuapp.com/ -o /dev/null -w '%{http_co
   facteur.
 - **Verifier l'export PDF du CV** apres la premiere mise en ligne : s'il tombe
   en repli navigateur, c'est que Chrome manque ou sature la memoire du dyno.
-- **Sauvegardes.** `heroku pg:backups:schedule DATABASE_URL --at '03:00 Europe/Paris'`.
+- **Sauvegardes** : quotidiennes a 3 h (`heroku pg:backups:schedule`, en place depuis le 1er octobre 2026).

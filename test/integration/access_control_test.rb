@@ -30,6 +30,8 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/tasks
       /api/video_downloads
       /api/video_downloads/availability
+      /api/video_transcripts
+      /api/video_transcripts/sources
       /api/video_folders
       /api/sentinel_domains
       /api/sentinel_domains/droit_travail/weeks

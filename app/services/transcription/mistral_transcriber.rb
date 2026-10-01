@@ -26,13 +26,15 @@ module Transcription
       request(io:, filename:, content_type:, fields: [["language", language]], timeout: DICTATION_TIMEOUT)["text"].to_s.strip
     end
 
-    # Reunion : segments horodates avec l'intervenant (diarisation). Voxtral garde la
+    # Reunion, video : segments horodates avec l'intervenant (diarisation). Voxtral garde la
     # meme numerotation des voix sur tout l'enregistrement, meme long (decoupage interne).
+    # `language: nil` laisse Voxtral detecter la langue (verifie le 23/09/2026 sur du russe
+    # et de l'ukrainien, et sur une video mp4 envoyee telle quelle).
     # Renvoie { segments: [{ "speaker", "start", "end", "text" }], duration: secondes }.
     def transcribe_with_speakers(io:, filename:, content_type:, language: "fr")
       body = request(io:, filename:, content_type:, timeout: MEETING_TIMEOUT, fields: [
-        ["language", language], ["diarize", "true"], ["timestamp_granularities", "segment"]
-      ])
+        (["language", language] if language.present?), ["diarize", "true"], ["timestamp_granularities", "segment"]
+      ].compact)
       segments = Array(body["segments"]).filter_map do |segment|
         text = segment["text"].to_s.strip
         next if text.empty?

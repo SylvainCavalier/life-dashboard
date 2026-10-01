@@ -2,11 +2,7 @@ module Meetings
   # Synthese d'une reunion par Claude, en sortie structuree (SCHEMA). Ne recoit que la
   # transcription et les metadonnees saisies par Sylvain ; ne touche pas a la base
   # (c'est le job qui ecrit). Renvoie { content:, model:, speaker_names: }.
-  class Summarizer
-    class Error < StandardError; end
-
-    MAX_TOKENS = 16_000
-
+  class Summarizer < StructuredSummarizer
     nullable_string = { type: %w[string null] }
     string_list = { type: "array", items: { type: "string" } }
 
@@ -71,45 +67,26 @@ module Meetings
     DAYS = %w[dimanche lundi mardi mercredi jeudi vendredi samedi].freeze
 
     def initialize(meeting, client: nil)
+      super(client: client)
       @meeting = meeting
-      @client = client
     end
 
     def self.model
-      ENV.fetch("MEETING_SUMMARY_MODEL") { Alfred.model }
+      ENV.fetch("MEETING_SUMMARY_MODEL") { super }
+    end
+
+    def self.effort
+      ENV.fetch("MEETING_SUMMARY_EFFORT", "medium")
     end
 
     def call
       raise Error, "Transcription vide : rien a resumer" if @meeting.transcript.blank?
 
-      message = client.messages.create(
-        model: self.class.model,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM,
-        thinking: { type: "adaptive" },
-        output_config: { effort: ENV.fetch("MEETING_SUMMARY_EFFORT", "medium").to_sym,
-                         format_: { type: :json_schema, schema: SCHEMA } },
-        messages: [{ role: "user", content: user_prompt }]
-      )
-      raise Error, "Synthese refusee par le modele" if message.stop_reason.to_s == "refusal"
-      raise Error, "Synthese tronquee (max_tokens)" if message.stop_reason.to_s == "max_tokens"
-
-      text = message.content.select { |block| block.type.to_s == "text" }.map(&:text).join
-      content = JSON.parse(text)
-      { content: content.except("speakers"), model: message.model.to_s, speaker_names: speaker_names_from(content) }
-    rescue JSON::ParserError
-      raise Error, "Synthese illisible (JSON invalide)"
+      content, model = request(system: SYSTEM, schema: SCHEMA, prompt: user_prompt)
+      { content: content.except("speakers"), model: model, speaker_names: speaker_names_from(content, @meeting.speakers) }
     end
 
     private
-
-    def client
-      @client ||= begin
-        raise Error, "ANTHROPIC_API_KEY absente de l'environnement" if ENV["ANTHROPIC_API_KEY"].blank?
-
-        Anthropic::Client.new(api_key: ENV["ANTHROPIC_API_KEY"], timeout: 300)
-      end
-    end
 
     def user_prompt
       <<~TEXT
@@ -121,7 +98,7 @@ module Meetings
         Contexte donné par Sylvain : #{@meeting.context.presence || 'aucun'}
 
         Transcription (code de l'intervenant entre crochets, puis son nom s'il est déjà connu) :
-        #{transcript_for_model}
+        #{@meeting.transcript_for_model}
       TEXT
     end
 
@@ -129,25 +106,6 @@ module Meetings
     def held_on
       time = @meeting.held_at.in_time_zone("Europe/Paris")
       "#{DAYS[time.wday]} #{time.strftime('%Y-%m-%d à %H:%M')}"
-    end
-
-    # Le modele doit pouvoir rattacher ses noms aux codes : on garde le code a cote du libelle.
-    def transcript_for_model
-      @meeting.turns.map do |turn|
-        named = @meeting.speaker_names[turn["speaker"]].presence
-        label = named ? "#{turn['speaker']} = #{named}" : turn["speaker"]
-        "[#{Meeting.timecode(turn['start'])}] [#{label}] #{turn['text']}"
-      end.join("\n")
-    end
-
-    # Seuls les codes presents dans la transcription sont retenus (garde anti-hallucination).
-    def speaker_names_from(content)
-      known = @meeting.speakers
-      Array(content["speakers"]).each_with_object({}) do |entry, names|
-        speaker = entry["speaker"].to_s
-        name = entry["name"].to_s.strip
-        names[speaker] = name if known.include?(speaker) && name.present?
-      end
     end
   end
 end

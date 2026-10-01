@@ -26,8 +26,9 @@ SecureHeaders::Configuration.default do |config|
     img_src: %w('self' https: data:),
     manifest_src: %w('self'),
     # Bucket OVH : le lecteur du module Downloader lit les fichiers cloud via
-    # une redirection vers leur URL pre-signee.
-    media_src: %w('self') + [ OVH_S3_CSP_ORIGIN ].compact,
+    # une redirection vers leur URL pre-signee. blob: : apercu local d'une video
+    # avant envoi (outil Videos, URL.createObjectURL), rien ne quitte le navigateur.
+    media_src: %w('self' blob:) + [ OVH_S3_CSP_ORIGIN ].compact,
     object_src: %w('none'),
     script_src: %w('self'),
     style_src: %w('self' 'unsafe-inline'),

@@ -10,7 +10,7 @@
     <div class="text-4xl mb-3">{{ icon }}</div>
     <p class="text-sm text-gray-700 font-medium">{{ label }}</p>
     <p class="text-xs text-gray-400 mt-1">{{ hint }}</p>
-    <p class="text-xs text-gray-400 mt-3">Traitement dans le navigateur : le fichier n'est envoyé nulle part.</p>
+    <p v-if="note" class="text-xs text-gray-400 mt-3">{{ note }}</p>
     <input ref="input" type="file" :accept="accept" class="hidden" @change="onSelect" />
   </div>
 </template>
@@ -23,6 +23,8 @@ defineProps({
   icon: { type: String, default: '📂' },
   label: { type: String, default: 'Cliquez ou glissez un fichier ici' },
   hint: { type: String, default: '' },
+  // Les outils qui envoient le fichier au serveur (Videos) remplacent cette mention.
+  note: { type: String, default: "Traitement dans le navigateur : le fichier n'est envoyé nulle part." },
 })
 
 const emit = defineEmits(['file'])

@@ -21,14 +21,14 @@ module Alfred
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
       "SentinelSource" => :all, "SentinelWeek" => :all, "Subscription" => :all, "Task" => :all,
       "Trip" => :all, "TripItem" => :all, "TripPlan" => :all, "UsefulSite" => :all,
-      "VideoDownload" => :all, "VideoFolder" => :all
+      "VideoDownload" => :all, "VideoFolder" => :all, "VideoTranscript" => :all
     }.freeze
 
     SYSTEM_FIELDS = %w[id created_at updated_at].freeze
 
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
     # Pas de suppression. Interdits : PasswordEntry, MailAccount, Language, FileTransfer,
-    # TripPlan, VideoDownload, SentinelWeek, SentinelDocument (voir CLAUDE.md).
+    # TripPlan, VideoDownload, VideoTranscript, SentinelWeek, SentinelDocument (voir CLAUDE.md).
     WRITABLE = {
       "Event" => { create: %w[title description event_type start_time end_time location color all_day reminder_minutes] },
       "Note" => { create: %w[title content note_date important] },

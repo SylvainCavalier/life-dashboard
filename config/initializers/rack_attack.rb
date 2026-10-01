@@ -67,6 +67,11 @@ class Rack::Attack
     req.ip if req.post? && req.path.match?(%r{^/api/meetings(/\d+/regenerate)?$})
   end
 
+  # Outil Videos : meme cout qu'une reunion (transcription longue et resume).
+  Rack::Attack.throttle('video transcripts processing', limit: 10, period: 10.minutes) do |req|
+    req.ip if req.post? && req.path.match?(%r{^/api/video_transcripts(/\d+/regenerate)?$})
+  end
+
   # Coffre-fort : une session compromise ne doit pas pouvoir aspirer les entrees
   # une par une via /api/password_entries/:id/reveal.
   Rack::Attack.throttle('vault reveal', limit: 20, period: 5.minutes) do |req|

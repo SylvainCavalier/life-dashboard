@@ -77,6 +77,18 @@ Rails.application.routes.draw do
         post :finish
       end
     end
+    # Outil Videos (page Outils) : video (direct upload ou Downloader) -> transcription, resume, PDF
+    resources :video_transcripts, only: [:index, :show, :create, :update, :destroy] do
+      collection do
+        get :availability
+        get :sources
+      end
+      member do
+        post :regenerate
+        get :pdf
+        post :save_to_documents
+      end
+    end
     resources :subscriptions, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre et liens imbriques ; la to-do list et les

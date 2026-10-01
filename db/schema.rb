@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_23_120844) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_23_122336) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -965,6 +965,30 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_23_120844) do
     t.index "lower((name)::text)", name: "index_video_folders_on_lower_name", unique: true
   end
 
+  create_table "video_transcripts", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "language", default: "auto", null: false
+    t.string "status", default: "pending", null: false
+    t.string "step"
+    t.text "source_citation"
+    t.text "error"
+    t.integer "duration_seconds"
+    t.datetime "transcribed_at"
+    t.jsonb "transcript", default: [], null: false
+    t.jsonb "speaker_names", default: {}, null: false
+    t.jsonb "summary", default: {}, null: false
+    t.string "summary_model"
+    t.datetime "requested_at"
+    t.datetime "finished_at"
+    t.bigint "video_download_id"
+    t.bigint "document_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_video_transcripts_on_created_at"
+    t.index ["document_id"], name: "index_video_transcripts_on_document_id"
+    t.index ["video_download_id"], name: "index_video_transcripts_on_video_download_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "alfred_actions", "alfred_conversations"
@@ -990,4 +1014,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_23_120844) do
   add_foreign_key "trip_items", "trips"
   add_foreign_key "trip_plans", "trips"
   add_foreign_key "video_downloads", "video_folders"
+  add_foreign_key "video_transcripts", "documents", on_delete: :nullify
+  add_foreign_key "video_transcripts", "video_downloads", on_delete: :nullify
 end

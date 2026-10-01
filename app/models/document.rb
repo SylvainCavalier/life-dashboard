@@ -32,7 +32,7 @@ class Document < ApplicationRecord
 
   DOMAINS = %w[
     health real_estate taxes companies general
-    education invoices banking civil_status work leisure projects meetings
+    education invoices banking civil_status work leisure projects meetings transcriptions
   ].freeze
 
   CATEGORIES = {
@@ -49,7 +49,9 @@ class Document < ApplicationRecord
     "leisure" => %w[ticket booking membership manual other],
     "projects" => %w[reference brief asset tutorial contract other],
     # Comptes rendus produits par le module Reunions (Meeting::KINDS)
-    "meetings" => %w[in_person visio other]
+    "meetings" => %w[in_person visio other],
+    # Transcriptions produites par l'outil Videos (page Outils, VideoTranscript)
+    "transcriptions" => %w[video other]
   }.freeze
 
   validates :name, presence: true

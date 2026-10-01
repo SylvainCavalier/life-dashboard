@@ -36,6 +36,8 @@
 # dans les documents (domaine "meetings"). L'audio n'est garde que le temps de la
 # transcription. Voir CLAUDE.md, section « Reunions ».
 class Meeting < ApplicationRecord
+  include SpeakerTranscript
+
   KINDS = %w[in_person visio].freeze
   # recording : enregistrement en direct en cours (ou interrompu), les morceaux arrivent
   # au fil de l'eau dans `audio_chunks`. Le traitement demarre a `finish!`.
@@ -66,7 +68,6 @@ class Meeting < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :step, inclusion: { in: STEPS }, allow_nil: true
   validate :audio_is_acceptable, if: -> { audio.attached? && attachment_changes["audio"].present? }
-  validate :speaker_names_is_a_hash
 
   scope :recent, -> { order(held_at: :desc, id: :desc) }
 
@@ -139,40 +140,6 @@ class Meeting < ApplicationRecord
     update!(step: new_step)
   end
 
-  # Intervenants dans leur ordre d'apparition.
-  def speakers
-    transcript.map { |segment| segment["speaker"] }.uniq
-  end
-
-  # "speaker_2" -> nom donne par Sylvain (ou devine a la synthese), sinon "Intervenant 2".
-  # Apres une reprise, les voix de la partie 2 sont numerotees a part ("p2_speaker_1") :
-  # rien ne garantit que Voxtral les rattache aux memes personnes.
-  def speaker_label(speaker)
-    return speaker_names[speaker] if speaker_names[speaker].present?
-
-    part, number = speaker.to_s.match(/\Ap(\d+)_speaker_(\d+)\z/)&.captures
-    return "Intervenant #{number} (partie #{part})" if part
-
-    "Intervenant #{speaker.to_s[/\d+/] || speaker}"
-  end
-
-  # Segments consecutifs du meme intervenant fusionnes en tours de parole.
-  def turns
-    transcript.each_with_object([]) do |segment, acc|
-      if acc.last && acc.last["speaker"] == segment["speaker"]
-        acc.last["text"] = "#{acc.last['text']} #{segment['text']}"
-        acc.last["end"] = segment["end"]
-      else
-        acc << segment.slice("speaker", "start", "end", "text")
-      end
-    end
-  end
-
-  # Transcription lisible, une ligne par tour : "[00:12:04] Marie : ...".
-  def transcript_text
-    turns.map { |turn| "[#{self.class.timecode(turn['start'])}] #{speaker_label(turn['speaker'])} : #{turn['text']}" }.join("\n")
-  end
-
   def participant_list
     participants.to_s.split(/[,;\n]/).map(&:strip).compact_blank
   end
@@ -181,20 +148,11 @@ class Meeting < ApplicationRecord
     kind == "visio" ? "Visio" : "Présentiel"
   end
 
-  def self.timecode(seconds)
-    total = seconds.to_i
-    format("%02d:%02d:%02d", total / 3600, (total % 3600) / 60, total % 60)
-  end
-
   private
 
   def audio_is_acceptable
     content_type = audio.blob.content_type.to_s
     errors.add(:audio, "n'est pas un fichier audio (#{content_type.presence || 'type inconnu'})") unless AUDIO_TYPES.match?(content_type)
     errors.add(:audio, "depasse #{MAX_AUDIO_BYTES / 1.megabyte} Mo") if audio.blob.byte_size > MAX_AUDIO_BYTES
-  end
-
-  def speaker_names_is_a_hash
-    errors.add(:speaker_names, "doit associer un intervenant a un nom") unless speaker_names.is_a?(Hash)
   end
 end

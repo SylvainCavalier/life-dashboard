@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "bin/vite dev",
     "build": "bin/vite build",
+    "heroku-postbuild": "echo \"Build Vite lance par assets:precompile (buildpack Ruby)\"",
     "lint": "eslint app/frontend",
     "lint:fix": "eslint app/frontend --fix"
   },

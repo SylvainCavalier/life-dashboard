@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-6">
+  <div class="min-h-screen bg-gray-50 p-4 sm:p-6">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="mb-8 flex items-start justify-between gap-4">
+      <div class="mb-6 sm:mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Life Dashboard</h1>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Life Dashboard</h1>
           <p class="text-gray-500 mt-1">{{ formattedDate }}</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
@@ -28,9 +28,50 @@
         </div>
       </div>
 
+      <!-- Bouton d'ouverture du volet To-do (mobile uniquement) -->
+      <button
+        type="button"
+        class="md:hidden fixed left-0 top-1/2 z-30 bg-blue-600 text-white rounded-r-lg shadow-md px-1.5 py-4 text-xs font-medium tracking-wide"
+        style="writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg);"
+        aria-label="Ouvrir la to-do list"
+        :aria-expanded="todoOpen"
+        @click="todoOpen = true"
+      >
+        To-do
+      </button>
+
+      <!-- Fond assombri derriere le volet (mobile) -->
+      <transition
+        enter-active-class="transition-opacity duration-200"
+        enter-from-class="opacity-0"
+        leave-active-class="transition-opacity duration-200"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="todoOpen"
+          class="md:hidden fixed inset-0 z-40 bg-black/40"
+          @click="todoOpen = false"
+        ></div>
+      </transition>
+
       <div class="flex gap-6">
-        <!-- Colonne gauche : Todo List -->
-        <aside class="w-80 flex-shrink-0">
+        <!-- Colonne gauche : Todo List. Sur mobile, volet coulissant depuis la gauche ;
+             une seule instance du composant pour ne pas charger les taches deux fois. -->
+        <aside
+          class="fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm overflow-y-auto bg-gray-50 p-4 shadow-xl transition-transform duration-200
+                 md:static md:z-auto md:w-80 md:max-w-none md:flex-shrink-0 md:overflow-visible md:bg-transparent md:p-0 md:shadow-none md:translate-x-0"
+          :class="todoOpen ? 'translate-x-0' : '-translate-x-full'"
+        >
+          <div class="md:hidden flex justify-end mb-2">
+            <button
+              type="button"
+              class="text-sm text-gray-500 hover:text-gray-800 px-2 py-1"
+              aria-label="Fermer la to-do list"
+              @click="todoOpen = false"
+            >
+              Fermer ✕
+            </button>
+          </div>
           <TodoList />
         </aside>
 
@@ -42,7 +83,7 @@
               v-for="mod in modules"
               :key="mod.name"
               :to="mod.to"
-              class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all"
+              class="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
               <div class="text-3xl mb-3">{{ mod.icon }}</div>
               <h2 class="font-semibold text-gray-900">{{ mod.name }}</h2>
@@ -56,11 +97,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useApi } from '../composables/useApi'
 import TodoList from '../components/TodoList.vue'
 
 const { useCrud, get } = useApi()
+
+// Volet To-do sur mobile (sous le breakpoint md, la colonne devient un tiroir)
+const todoOpen = ref(false)
+
+const onKeydown = (e) => {
+  if (e.key === 'Escape') todoOpen.value = false
+}
+
+// Passage en affichage large volet ouvert : on le referme, sinon le blocage du defilement resterait actif
+const desktopQuery = window.matchMedia('(min-width: 768px)')
+const onBreakpointChange = (e) => {
+  if (e.matches) todoOpen.value = false
+}
+
+// Bloque le defilement de la page derriere le volet ouvert
+watch(todoOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
 
 // Jeton CSRF pose par Rails dans le layout : necessaire au formulaire de
 // deconnexion, qui est un POST Rails classique et non un appel axios.
@@ -188,7 +247,15 @@ const modules = computed(() => [
   { name: 'Alfred', icon: '🎩', subtitle: 'Intendant IA : instructions, outils, mémoire', to: '/alfred' },
 ])
 
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  desktopQuery.removeEventListener('change', onBreakpointChange)
+  document.body.style.overflow = ''
+})
+
 onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  desktopQuery.addEventListener('change', onBreakpointChange)
   fetchCounts()
   fetchBudgetSummary()
   fetchLanguages()

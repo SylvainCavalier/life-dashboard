@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Langues** — Suivi de l'apprentissage de langues étrangères
 - **Messagerie** — Annuaire des comptes mail (`MailAccount`). Les mails eux-memes ne sont pas dans l'application : c'est Alfred (chat) qui lit, trie et redige dans la boite Gmail via l'API, en direct (voir « Gmail pour Alfred »)
 - **SMS/Textos** — Gestion des textos
+- **Rappels** (`/reminders`) — Rappels dates (ponctuels ou recurrents) qui envoient une **notification push** sur l'iPhone (webapp installee sur l'ecran d'accueil) et le Mac a l'heure dite, relancee tant qu'elle n'est pas ouverte, puis doublee d'un mail. Alfred peut en creer (sur confirmation). Voir « Rappels »
 - **Agenda** — Organisation des rendez-vous et événements, miroir bidirectionnel de Google Calendar (compte de service, Google fait foi ; voir « Google Calendar »)
 - **Transfert** — WeTransfer perso : upload direct vers le bucket OVH S3, lien de partage public temporaire, purge automatique après 3 jours
 - **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, en entier ou sur un extrait (de 0:34 à 0:47), avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
@@ -39,12 +40,12 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
-- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code).
+- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `Reminder` (`completed_at` en update seulement), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code).
 - **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
-- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). `SentinelWeek` et `SentinelDocument` sont en lecture seule : une veille se lance via `bin/rails sentinel:run DOMAIN=... MONDAY=...` (asynchrone) ou `sentinel:run_now` (synchrone, celui qu'utilise Alfred, pour la même raison que `fetch_now`). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
+- **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `PushSubscription` (abonnements des appareils, ni lu ni ecrit), `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). `SentinelWeek` et `SentinelDocument` sont en lecture seule : une veille se lance via `bin/rails sentinel:run DOMAIN=... MONDAY=...` (asynchrone) ou `sentinel:run_now` (synchrone, celui qu'utilise Alfred, pour la même raison que `fetch_now`). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
 
 ### Implications pour toute évolution du code
 
@@ -194,6 +195,39 @@ recompile llvm/rust/deno depuis les sources pendant des heures. Ne pas lancer `b
 (Heroku sans buildpack), `GET /api/video_downloads/availability` le signale et la page affiche un
 bandeau ; voir `DEPLOY.md`. Ne pas nommer une action de controleur `status` : cela ecrase
 `ActionController::Metal#status`. Le bucket OVH est en `media_src` dans la CSP pour le lecteur.
+
+### Rappels (notifications push)
+```bash
+bin/rails reminders:vapid_keys     # genere la paire de cles VAPID (une seule fois : en changer invalide les abonnements)
+bin/rails reminders:check          # cles, sujet VAPID, appareils abonnes et leurs erreurs, mail de secours
+bin/rails reminders:test           # notification de test sur tous les appareils
+bin/rails reminders:dispatch_now   # traite les rappels echus sans attendre le cron
+```
+**Web Push, sans service tiers** (gem `web-push`) : le serveur chiffre le message pour chaque appareil
+(`PushSubscription`, un par appareil, cree depuis la page Rappels) et le remet au service push du navigateur
+(Apple, Google). Sur iPhone, le push n'existe que dans la webapp **ajoutee a l'ecran d'accueil** (iOS 16.4+), jamais
+dans un onglet Safari ; la demande d'autorisation doit partir d'un clic (`requestPermission` en tout premier dans
+`usePushNotifications#subscribe`). iOS ne sait pas programmer une notification locale : **c'est le serveur qui
+declenche a l'heure**, par le cron `ReminderDispatchJob` (chaque minute). Variables : `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (mailto:, defaut `GMAIL_USER` ; Apple repond 403 BadJwtToken a un sujet
+invalide), `REMINDER_EMAIL_TO` (mail de secours, defaut `GMAIL_USER`). Sans cles, `PushNotifications.configured?` est
+faux et seuls les mails partent.
+`remind_at` est la prochaine echeance ; les colonnes de livraison (`Reminder::DELIVERY_COLUMNS` : attempts,
+notified_at, last_attempt_at, acknowledged_at, email_sent_at) decrivent l'occurrence en cours et sont **remises a zero
+des que `remind_at` change** (report, occurrence suivante, modification par Alfred). Circuit (`delivery_step`) : une
+notification, deux relances a `RETRY_INTERVAL` (10 min) tant qu'elle n'est pas ouverte, puis un mail
+(`Reminders::EmailFallback`, boite Gmail d'Alfred), un seul par occurrence. Aucun appareil atteint = mail aussitot.
+Un rappel recurrent en retard saute a sa derniere occurrence echue (`catch_up!`) ; « Fait » le fait passer a la
+suivante, un rappel ponctuel est termine (`completed_at`). Le job ecrit par `update_columns` (pas de reindexation du
+corpus a chaque relance) et sous verrou de ligne.
+Service worker : `public/sw.js`, fichier statique (portee `/`, enregistre dans `entrypoints/application.js`), sans
+cache ni interception de requetes. Il affiche **toujours** une notification par push (sinon iOS revoque
+l'abonnement), pose la pastille de l'icone (`badge_count`), et au clic ouvre `/reminders?open=ID` (`&do=done|snooze`
+pour les boutons d'action, affiches par Chrome seulement) ; si l'app est deja ouverte, il lui envoie un message
+et le router navigue. C'est la page qui appelle `seen` / `done` / `snooze` : le service worker n'a pas le jeton CSRF.
+Un abonnement que le service push declare expire (404/410) est supprime a l'envoi suivant.
+Tests : `reminder_test.rb`, `reminder_dispatch_job_test.rb`, `reminders_test.rb` (transport push factice,
+`PushNotifications.transport=`).
 
 ### Google Calendar (synchronisation de l'agenda)
 ```bash
@@ -383,7 +417,8 @@ donner au modele un outil qui ecrit directement. `DataAccess` double les listes 
 Les tables d'Alfred (`alfred_*`, `embedding_caches`) ne sont volontairement exposees a aucune des deux skills.
 
 Deja branches : Gmail (voir « Gmail pour Alfred ») et Google Agenda (par ricochet : `Event` est le miroir de l'agenda
-Google, voir « Google Calendar »). Pas encore dans l'Alfred du dashboard : Downloader, Sentinelle, Voyages (les points
+Google, voir « Google Calendar »). Les rappels passent par `propose_write` sur `Reminder` (le prompt dit qu'un « rappelle-moi » est un Reminder, ni une
+Task ni un Event). Pas encore dans l'Alfred du dashboard : Downloader, Sentinelle, Voyages (les points
 d'entree existent : `VideoDownload.enqueue!`, `SentinelWeek.run!`, `Trip#generate_plan!` ; les brancher = un outil de
 plus dans `Alfred::Tools::ALL`, avec confirmation pour ce qui coute).
 

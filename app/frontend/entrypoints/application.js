@@ -17,6 +17,16 @@ app.use(router)
 // Initialize auth check after app is mounted
 app.mount('#app')
 
+// Service worker des notifications push (module Rappels). Le clic sur une
+// notification, application deja ouverte, arrive ici sous forme de message.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch((error) => console.warn('Service worker non enregistre :', error))
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    const url = event.data?.type === 'navigate' && event.data.url
+    if (typeof url === 'string' && url.startsWith('/')) router.push(url)
+  })
+}
+
 // Check authentication status on app startup (only if Devise is set up)
 // Uncomment the block below after installing Devise and creating auth API routes
 //

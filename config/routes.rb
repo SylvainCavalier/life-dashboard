@@ -67,6 +67,17 @@ Rails.application.routes.draw do
     resource :calendar_sync, only: [:show, :create]
     resources :tasks, only: [:index, :create, :update, :destroy]
     resources :notes, only: [:index, :create, :update, :destroy]
+    # Module Rappels : notification push a l'heure dite (ReminderDispatchJob), relances, mail de secours
+    resources :reminders, only: [:index, :create, :update, :destroy] do
+      member do
+        post :done
+        post :snooze
+        post :seen
+      end
+    end
+    resources :push_subscriptions, only: [:index, :create, :destroy] do
+      collection { post :test_notification }
+    end
     # Dictee vocale (Voxtral) : audio en entree, texte en sortie, rien n'est stocke
     resources :transcriptions, only: [:create]
     # Module Reunions : audio (direct upload) -> transcription, synthese, PDF dans les documents

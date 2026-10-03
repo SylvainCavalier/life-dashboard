@@ -65,6 +65,7 @@ gem "openai", "~> 0.90"
 # Alfred (agent IA du dashboard) : SDK officiel Anthropic pour la boucle d'outils,
 # pgvector via ActiveRecord, extraction du texte des PDF, client HTTP Mistral (embeddings + OCR)
 gem "anthropic"
+gem "web-push" # Notifications push (rappels) vers la webapp installee, cles VAPID
 gem "neighbor"
 gem "pdf-reader"
 gem "faraday"

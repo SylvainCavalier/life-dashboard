@@ -28,6 +28,8 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/trips
       /api/projects
       /api/tasks
+      /api/reminders
+      /api/push_subscriptions
       /api/video_downloads
       /api/video_downloads/availability
       /api/video_transcripts

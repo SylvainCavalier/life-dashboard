@@ -99,6 +99,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useApi } from '../composables/useApi'
+import { updateAppBadge } from '../composables/usePushNotifications'
 import TodoList from '../components/TodoList.vue'
 
 const { useCrud, get } = useApi()
@@ -206,6 +207,27 @@ const languagesSubtitle = computed(() => {
   return practicedToday > 0 ? `${label} · ${practicedToday} pratiquée${practicedToday > 1 ? 's' : ''} aujourd'hui` : label
 })
 
+// Rappels en cours (GET /api/reminders?status=active) ; la pastille de l'icone suit les echus
+const activeReminders = ref([])
+
+const fetchReminders = async () => {
+  try {
+    activeReminders.value = await get('/reminders', { params: { status: 'active' } })
+    const now = new Date()
+    updateAppBadge(activeReminders.value.filter(r => new Date(r.remind_at) <= now).length)
+  } catch {
+    activeReminders.value = []
+  }
+}
+
+const remindersSubtitle = computed(() => {
+  const now = new Date()
+  const due = activeReminders.value.filter(r => new Date(r.remind_at) <= now).length
+  if (due > 0) return `${due} à traiter`
+  const total = activeReminders.value.length
+  return `${total} programmé${total > 1 ? 's' : ''}`
+})
+
 const budgetSubtitle = computed(() => {
   if (monthlyBalance.value === null) return 'Solde du mois indisponible'
   const formatted = monthlyBalance.value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -233,6 +255,7 @@ const modules = computed(() => [
   { name: 'Sante', icon: '🏥', subtitle: 'Infos & documents', to: '/health' },
   { name: 'Abonnements', icon: '🔄', subtitle: `${counts.value.subscriptions} abonnement${counts.value.subscriptions > 1 ? 's' : ''}`, to: '/subscriptions' },
   { name: 'Reunions', icon: '🎙️', subtitle: `${counts.value.meetings} compte${counts.value.meetings > 1 ? 's' : ''} rendu${counts.value.meetings > 1 ? 's' : ''}`, to: '/meetings' },
+  { name: 'Rappels', icon: '⏰', subtitle: remindersSubtitle.value, to: '/reminders' },
   { name: 'Notes', icon: '📝', subtitle: `${counts.value.notes} note${counts.value.notes > 1 ? 's' : ''}`, to: '/notes' },
   { name: 'Sites utiles', icon: '🔗', subtitle: `${counts.value.useful_sites} site${counts.value.useful_sites > 1 ? 's' : ''}`, to: '/useful-sites' },
   { name: 'Mes projets', icon: '🚀', subtitle: `${counts.value.projects} projet${counts.value.projects > 1 ? 's' : ''}`, to: '/projects' },
@@ -259,5 +282,6 @@ onMounted(() => {
   fetchCounts()
   fetchBudgetSummary()
   fetchLanguages()
+  fetchReminders()
 })
 </script>

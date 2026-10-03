@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_23_122336) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_03_161140) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -713,6 +713,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_23_122336) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.text "endpoint", null: false
+    t.string "p256dh", null: false
+    t.string "auth", null: false
+    t.string "user_agent"
+    t.datetime "last_success_at"
+    t.datetime "last_failure_at"
+    t.string "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
+  end
+
   create_table "quote_items", force: :cascade do |t|
     t.bigint "quote_id", null: false
     t.string "description", null: false
@@ -758,6 +771,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_23_122336) do
     t.index ["company_id", "status"], name: "index_quotes_on_company_id_and_status"
     t.index ["company_id"], name: "index_quotes_on_company_id"
     t.index ["number"], name: "index_quotes_on_number", unique: true
+  end
+
+  create_table "reminders", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "notes"
+    t.datetime "remind_at", null: false
+    t.string "recurrence", default: "none", null: false
+    t.string "remindable_type"
+    t.bigint "remindable_id"
+    t.integer "attempts", default: 0, null: false
+    t.datetime "notified_at"
+    t.datetime "last_attempt_at"
+    t.datetime "acknowledged_at"
+    t.datetime "email_sent_at"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["completed_at"], name: "index_reminders_on_completed_at"
+    t.index ["remind_at"], name: "index_reminders_on_remind_at"
+    t.index ["remindable_type", "remindable_id"], name: "index_reminders_on_remindable"
   end
 
   create_table "sentinel_documents", force: :cascade do |t|

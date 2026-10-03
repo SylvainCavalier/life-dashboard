@@ -72,6 +72,11 @@ export default [
     component: () => import('../pages/modules/MailsPage.vue'),
   },
   {
+    path: '/reminders',
+    name: 'Reminders',
+    component: () => import('../pages/modules/RemindersPage.vue'),
+  },
+  {
     path: '/notes',
     name: 'Notes',
     component: () => import('../pages/modules/NotesPage.vue'),

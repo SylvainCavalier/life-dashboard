@@ -25,6 +25,11 @@ Rails.application.configure do
       class: "GoogleCalendarPullJob",
       description: "Recopie l'agenda Google dans la table events toutes les 10 minutes (sans effet si non configure)"
     },
+    reminder_dispatch: {
+      cron: "* * * * *",
+      class: "ReminderDispatchJob",
+      description: "Envoie les rappels echus (notification push, relances, mail de secours) chaque minute"
+    },
     alfred_reindex: {
       cron: "30 4 * * *",
       class: "AlfredReindexJob",

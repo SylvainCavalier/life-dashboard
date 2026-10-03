@@ -26,6 +26,8 @@ module Alfred
                    except: %w[color google_event_id google_updated_at] },
       "Note" => { title: "Note", label: ->(r) { r.title.presence || "Note du #{r.note_date || r.created_at.to_date}" }, date: :note_date, path: ->(_) { "/notes" } },
       "Task" => { title: "Tache", label: ->(r) { r.description.to_s.truncate(80) }, path: ->(r) { r.project_id ? "/projects/#{r.project_id}" : "/" } },
+      "Reminder" => { title: "Rappel", label: ->(r) { r.title }, date: :remind_at, path: ->(_) { "/reminders" },
+                      except: Reminder::DELIVERY_COLUMNS },
       "BudgetEntry" => { title: "Ligne de budget", label: ->(r) { r.name }, path: ->(_) { "/budget" } },
       "Subscription" => { title: "Abonnement", label: ->(r) { r.name }, path: ->(_) { "/subscriptions" } },
       "Property" => { title: "Bien immobilier", label: ->(r) { r.name }, path: ->(_) { "/properties" } },

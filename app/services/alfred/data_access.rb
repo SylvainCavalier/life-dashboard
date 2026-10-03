@@ -17,7 +17,7 @@ module Alfred
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
       "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all,
-      "Property" => :all, "Quote" => :all, "QuoteItem" => :all,
+      "Property" => :all, "Quote" => :all, "QuoteItem" => :all, "Reminder" => :all,
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
       "SentinelSource" => :all, "SentinelWeek" => :all, "Subscription" => :all, "Task" => :all,
       "Trip" => :all, "TripItem" => :all, "TripPlan" => :all, "UsefulSite" => :all,
@@ -45,6 +45,9 @@ module Alfred
       "TripItem" => { create: %w[trip_id day kind title url notes start_time cost position],
                       update: %w[day kind title url notes start_time cost position] },
       "VideoFolder" => { create: %w[name] },
+      # completed_at en modification seulement : marquer un rappel ponctuel comme traite.
+      "Reminder" => { create: %w[title notes remind_at recurrence remindable_type remindable_id],
+                      update: %w[title notes remind_at recurrence remindable_type remindable_id completed_at] },
       "SentinelSource" => { create: %w[domain name url feed_url web_search on_topic language active],
                             update: %w[name url feed_url web_search on_topic language active] },
       "PersonalProfile" => :all, "HealthProfile" => :all, "Property" => :all, "Document" => :all,

@@ -145,6 +145,23 @@ suppose un compte Google Workspace dont on est administrateur :
 
 Un compte @gmail.com sans Workspace ne permet pas la delegation : il faudrait un flux OAuth, non implemente.
 
+**Rappels (notifications push)**. Une paire de cles VAPID, generee une seule fois (en changer invalide les
+abonnements de tous les appareils) :
+
+```bash
+bin/rails reminders:vapid_keys                     # affiche VAPID_PUBLIC_KEY et VAPID_PRIVATE_KEY
+heroku config:set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:admin@sbclabs.fr
+heroku run rails reminders:check                   # cles, appareils abonnes, mail de secours
+```
+
+Puis, sur l'iPhone : ouvrir le domaine dans Safari, Partager > « Sur l'ecran d'accueil », lancer le Dashboard
+**depuis l'icone**, page Rappels > « Activer sur cet appareil », puis « Envoyer un test ». Le push n'existe pas dans
+un onglet Safari (iOS 16.4 minimum). Faire de meme sur le Mac si on veut les notifications de bureau.
+Le mail de secours part de la boite `GMAIL_USER` ; `REMINDER_EMAIL_TO` le dirige ailleurs (un mail envoye a
+soi-meme arrive deja lu dans Gmail, donc sans notification). L'envoi est fait par le cron `ReminderDispatchJob`
+(toutes les minutes, dans le dyno web) : le dyno Basic ne dort pas, et apres un redemarrage le passage suivant
+rattrape les rappels echus.
+
 | Variable | Role |
 |---|---|
 | `RAILS_MASTER_KEY` | Dechiffre `credentials.yml.enc` (secret_key_base **et** cles Active Record Encryption) |
@@ -153,6 +170,9 @@ Un compte @gmail.com sans Workspace ne permet pas la delegation : il faudrait un
 | `GOOGLE_CALENDAR_ID` | Agenda Google synchronise (adresse Gmail pour l'agenda principal) |
 | `GOOGLE_CALENDAR_CREDENTIALS` | Contenu JSON de la cle du compte de service (alias accepte : `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`) |
 | `GMAIL_USER` | Boite Gmail que gere Alfred (delegation au niveau du domaine, voir ci-dessous) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Cles des notifications push des rappels (`rails reminders:vapid_keys`) |
+| `VAPID_SUBJECT` | Contact `mailto:` annonce aux services push (Apple refuse un sujet invalide) ; defaut `mailto:GMAIL_USER` |
+| `REMINDER_EMAIL_TO` | Optionnel. Destinataire du mail de secours des rappels (defaut `GMAIL_USER`) |
 | `GOOD_JOB_EXECUTION_MODE` | Optionnel. `async` par defaut (jobs dans le process web) ; `external` si un dyno worker est ajoute |
 
 ## 4. Domaine et dyno

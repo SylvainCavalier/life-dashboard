@@ -103,7 +103,7 @@
                   <div v-for="action in message.actions" :key="action.id" class="mt-2 rounded-xl border bg-white text-sm overflow-hidden" :class="actionBorder(action)">
                     <div class="px-3 py-2 border-b border-gray-100">
                       <p class="text-xs uppercase tracking-wide text-gray-400">
-                        {{ operationLabel(action) }} · {{ action.target_model }}<span v-if="action.record_id"> #{{ action.record_id }}</span>
+                        {{ operationLabel(action) }} · {{ targetLabel(action) }}<span v-if="action.record_id"> #{{ action.record_id }}</span>
                       </p>
                       <p class="text-gray-800">{{ action.summary }}</p>
                     </div>
@@ -111,8 +111,8 @@
                       <div v-for="(value, field) in action.attributes" :key="field" class="flex gap-2">
                         <dt class="w-28 flex-shrink-0 text-gray-400 truncate">{{ field }}</dt>
                         <dd class="min-w-0 break-words whitespace-pre-line">
-                          <span v-if="action.operation === 'update'" class="text-gray-400 line-through mr-1">{{ display(action.before[field]) }}</span>
-                          <span class="text-gray-900">{{ display(value) }}</span>
+                          <span v-if="['update', 'revise_memory'].includes(action.operation)" class="text-gray-400 line-through mr-1">{{ display(action.before[field]) }}</span>
+                          <span :class="action.operation === 'forget' ? 'text-gray-400 line-through' : 'text-gray-900'">{{ display(value) }}</span>
                         </dd>
                       </div>
                     </dl>
@@ -300,14 +300,19 @@ const display = (value) => {
   return typeof value === 'object' ? JSON.stringify(value) : String(value)
 }
 
-// Ecritures en base (create / update) et actions Gmail, confirmees par la meme carte.
+// Ecritures en base (create / update), actions Gmail et memoire d'Alfred, confirmees par la meme carte.
 const operationLabel = (action) => ({
   create: 'Creation',
   update: 'Modification',
   send_email: 'Envoi d\'un mail',
   draft_email: 'Brouillon Gmail',
   triage_email: 'Tri de mails',
+  remember: 'A retenir',
+  revise_memory: 'Correction',
+  forget: 'A oublier',
 }[action.operation] || action.operation)
+
+const targetLabel = (action) => (action.target_model === 'AlfredMemory' ? 'Memoire d\'Alfred' : action.target_model)
 
 const actionBorder = (action) => ({
   proposed: 'border-indigo-200',

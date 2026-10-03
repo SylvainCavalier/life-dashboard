@@ -259,6 +259,79 @@
         <!-- Memoire -->
         <div v-else class="space-y-4">
           <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <h2 class="font-semibold text-gray-900">
+                Ce qu'Alfred a retenu
+                <span v-if="memoryList" class="ml-2 text-xs font-normal text-gray-400">{{ memoryList.memories.length }} / {{ memoryList.max }}</span>
+              </h2>
+              <span v-if="saved === 'memory'" class="text-xs text-green-700">Enregistre</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">
+              Des faits courts qu'Alfred a sous les yeux dans chaque conversation, sans avoir a les chercher. Il les propose
+              lui-meme dans le chat quand vous lui apprenez quelque chose de durable (« si je dis Paul, c'est Paul Reboh ») et
+              rien n'est retenu sans votre confirmation. Vous pouvez aussi les ecrire, corriger ou supprimer ici.
+            </p>
+
+            <div v-if="!memoryList" class="text-sm text-gray-400">Chargement...</div>
+            <template v-else>
+              <p v-if="!memoryList.memories.length" class="text-sm text-gray-400 mb-4">Alfred n'a encore rien retenu.</p>
+              <div v-for="group in memoryGroups" :key="group.key" class="mb-4">
+                <p class="text-xs font-medium text-gray-700 mb-2">{{ group.label }}</p>
+                <ul class="divide-y divide-gray-100 rounded-lg border border-gray-100">
+                  <li v-for="memory in group.memories" :key="memory.id" class="px-3 py-2">
+                    <div v-if="editing && editing.id === memory.id" class="space-y-2">
+                      <textarea
+                        v-model="editing.content"
+                        rows="2"
+                        :maxlength="memoryList.max_length"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                      />
+                      <div class="flex flex-wrap items-center gap-2">
+                        <select v-model="editing.category" class="rounded-lg border border-gray-300 px-2 py-1 text-xs">
+                          <option v-for="c in memoryList.categories" :key="c.key" :value="c.key">{{ c.label }}</option>
+                        </select>
+                        <button type="button" class="btn-primary" :disabled="saving === 'memory' || !editing.content.trim()" @click="saveMemory">Enregistrer</button>
+                        <button type="button" class="btn-secondary" @click="editing = null">Annuler</button>
+                      </div>
+                    </div>
+                    <div v-else class="flex items-start gap-3">
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm text-gray-800 break-words">{{ memory.content }}</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">
+                          <span v-if="memory.subject_type">Fiche {{ memory.subject_type }} #{{ memory.subject_id }} · </span>
+                          retenu le {{ formatDate(memory.created_at) }}
+                        </p>
+                      </div>
+                      <button type="button" class="p-1.5 text-gray-400 hover:text-gray-700" title="Modifier" @click="editing = { ...memory }">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L18.5 9.5a2.5 2.5 0 00-3.536-3.536L4.5 16.5 4 20z" /></svg>
+                      </button>
+                      <button type="button" class="p-1.5 text-gray-400 hover:text-red-600" title="Oublier" :disabled="saving === 'memory'" @click="removeMemory(memory)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
+                      </button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-if="memoryList.memories.length < memoryList.max" class="mt-2 space-y-2">
+                <textarea
+                  v-model="newMemory.content"
+                  rows="2"
+                  :maxlength="memoryList.max_length"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                  placeholder="Ex. : « La fac » designe l'ICP, ou Sylvain enseigne le droit du travail."
+                />
+                <div class="flex flex-wrap items-center gap-2">
+                  <select v-model="newMemory.category" class="rounded-lg border border-gray-300 px-2 py-1 text-xs">
+                    <option v-for="c in memoryList.categories" :key="c.key" :value="c.key">{{ c.label }}</option>
+                  </select>
+                  <button type="button" class="btn-primary" :disabled="saving === 'memory' || !newMemory.content.trim()" @click="addMemory">Retenir</button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6">
             <h2 class="font-semibold text-gray-900 mb-1">Memoire documentaire</h2>
             <p class="text-xs text-gray-500 mb-4">
               Le corpus d'Alfred, c'est le dashboard lui-meme : chaque fiche et le texte de chaque document (OCR compris) sont
@@ -299,7 +372,10 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useAlfred } from '../../composables/useAlfred'
 import avatar from '../../images/alfred-avatar.png'
 
-const { overview, loadOverview, saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex } = useAlfred()
+const {
+  overview, loadOverview, saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex,
+  loadMemories, createMemory, updateMemory, deleteMemory,
+} = useAlfred()
 
 const tabs = [
   { key: 'instructions', label: 'Instructions' },
@@ -317,6 +393,9 @@ const saving = ref(null)
 const saved = ref(null)
 const preview = ref(null)
 const reindexing = ref(false)
+const memoryList = ref(null)
+const editing = ref(null)
+const newMemory = reactive({ content: '', category: 'people' })
 
 const currentText = (section) => section.override || section.default
 
@@ -394,14 +473,39 @@ const launchReindex = async () => {
   await reindex()
 }
 
+// Memoires groupees par categorie, dans l'ordre des categories du modele.
+const memoryGroups = computed(() => (memoryList.value?.categories || [])
+  .map((c) => ({ ...c, memories: memoryList.value.memories.filter((m) => m.category === c.key) }))
+  .filter((group) => group.memories.length))
+
+// Le prompt contient la memoire : on rafraichit l'apercu s'il est ouvert.
+const withMemory = (fn) => withSaving('memory', async () => {
+  memoryList.value = await fn()
+  editing.value = null
+})
+
+const addMemory = () => withMemory(async () => {
+  const list = await createMemory({ content: newMemory.content.trim(), category: newMemory.category })
+  newMemory.content = ''
+  return list
+})
+
+const saveMemory = () => withMemory(() =>
+  updateMemory(editing.value.id, { content: editing.value.content.trim(), category: editing.value.category }))
+
+const removeMemory = (memory) => withMemory(() => deleteMemory(memory.id))
+
 const rowsFor = (text) => Math.min(24, Math.max(4, (text || '').split('\n').length + 1))
+
+const formatDate = (value) => (value ? new Date(value).toLocaleDateString('fr-FR') : '')
 
 const formatDateTime = (value) =>
   (value ? new Date(value).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')
 
 onMounted(async () => {
   try {
-    await loadOverview()
+    const [, memories] = await Promise.all([loadOverview(), loadMemories()])
+    memoryList.value = memories
     syncDrafts()
   } catch (err) {
     pageError.value = err.response?.data?.error || 'Impossible de charger Alfred.'

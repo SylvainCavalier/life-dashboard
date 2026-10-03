@@ -2,6 +2,7 @@ module Alfred
   # Execute (ou annule) une ecriture proposee par Alfred, sur confirmation explicite
   # de Sylvain. Tout est reverifie ici : la liste blanche, l'etat de la proposition
   # et le fait que l'enregistrement n'a pas change depuis qu'elle a ete faite.
+  # Les actions Gmail et de memoire ont leur propre executant (MailActions, MemoryActions).
   class ActionExecutor
     class Stale < StandardError; end
 
@@ -41,6 +42,7 @@ module Alfred
     # Renvoie [note systeme, record_id].
     def perform!
       return [MailActions.execute!(@action), nil] if @action.mail?
+      return MemoryActions.execute!(@action) if @action.memory?
 
       record = write!
       ["Ecriture confirmee par Sylvain et executee : #{@action.operation} #{@action.target_model} ##{record.id} (#{@action.summary}).",

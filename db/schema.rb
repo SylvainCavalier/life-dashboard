@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_03_161140) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_03_165650) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -103,6 +103,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_03_161140) do
     t.datetime "updated_at", null: false
     t.index ["source_type", "source_id"], name: "index_alfred_index_entries_on_source", unique: true
     t.index ["status"], name: "index_alfred_index_entries_on_status"
+  end
+
+  create_table "alfred_memories", force: :cascade do |t|
+    t.text "content", null: false
+    t.string "category", default: "other", null: false
+    t.string "subject_type"
+    t.bigint "subject_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_alfred_memories_on_category"
   end
 
   create_table "alfred_messages", force: :cascade do |t|

@@ -11,12 +11,17 @@ module Alfred
   # Le bloc stable est mis en cache cote API : ne RIEN y mettre de variable (date,
   # compteurs). Tout ce qui change va dans `volatile_block`, apres le point de cache.
   # Les surcharges y figurent : les modifier invalide le cache une fois, c'est voulu.
+  # Meme chose pour les memoires d'Alfred (AlfredMemory, section « memory ») : elles
+  # changent rarement, et les garder dans le bloc cache coute moins que de les
+  # renvoyer hors cache a chaque appel.
   module Prompt
     SECTIONS = [
       { key: "role", title: "Role",
         help: "Qui est Alfred et a quoi il sert. Premiere phrase du prompt." },
       { key: "sylvain", title: "Sylvain",
         help: "Ce qu'il sait de vous sans consulter la base." },
+      { key: "memory", title: "Memoire",
+        help: "Quand retenir un fait d'une conversation a l'autre. Les faits retenus (onglet Memoire) sont ajoutes automatiquement." },
       { key: "tone", title: "Ton",
         help: "Sa maniere de parler." },
       { key: "tools", title: "Usage des outils",
@@ -62,6 +67,7 @@ module Alfred
       parts << "## #{SECTIONS.find { |s| s[:key] == key }[:title]}" unless key == "role"
       parts << mailboxes_text if key == "mails"
       parts << body
+      parts << memories_text if key == "memory"
       if key == "tools"
         parts << "Modeles lisibles : #{DataAccess::READABLE.keys.join(', ')}."
         parts << "Domaines (et categories) de Document : #{Document::CATEGORIES.map { |domain, categories| "#{domain} (#{categories.join(', ')})" }.join(' ; ')}."
@@ -72,6 +78,13 @@ module Alfred
     def mailboxes_text
       lines = Gmail::MAILBOXES.map { |m| "- #{m[:label]} : #{m[:address]}, #{m[:role]}" }
       "La boite Gmail (#{Gmail.user || 'admin@sbclabs.fr'}) centralise les sept adresses de Sylvain ; chaque mail recu porte, par filtre, le libelle de sa boite d'origine :\n#{lines.join("\n")}"
+    end
+
+    def memories_text
+      lines = AlfredMemory.ordered.map(&:prompt_line)
+      return "Ce que tu as retenu : rien pour l'instant." if lines.empty?
+
+      "Ce que tu as retenu (#{lines.size}/#{AlfredMemory::MAX_MEMORIES}) :\n#{lines.join("\n")}"
     end
 
     def volatile_block
@@ -93,6 +106,11 @@ module Alfred
         Prenom : Sylvain. Nom public : Cavalier. Nom administratif : Bertrand (demarches officielles uniquement). Trois activites : juriste en droit du travail et fondateur de Prudo, developpeur web freelance, et « Debunker des Etoiles » (desinformation). Pour toute information civile precise (adresse, telephone, banque, papiers, sante), va la lire a la source avec tes outils : ne la devine pas et ne la recite pas de memoire.
       TEXT
 
+      "memory" => <<~TEXT.strip,
+        Tu as une memoire qui te suit d'une conversation a l'autre : les faits ci-dessous, que Sylvain a confirmes. Sers-t'en sans le faire remarquer (« Paul » designe la personne indiquee, sans redemander laquelle). Ils priment sur une supposition, pas sur ce que tes outils lisent dans la base : en cas de contradiction, signale-la.
+        Quand Sylvain te dit quelque chose qui vaudra encore dans les conversations suivantes, propose de le retenir avec propose_memory, sans attendre qu'il le demande : une personne et son lien avec lui, un surnom ou un prenom ambigu, une preference durable, une habitude, un vocabulaire a lui (« la fac » = l'ICP), une consigne qu'il te donne sur ta maniere de faire. S'il dit « retiens que », « souviens-toi », c'est une demande explicite. Ne retiens pas ce qui est passager (un rendez-vous, une tache : c'est un Event, une Task, un Reminder), ni ce que la base contient deja tel quel ; si le fait concerne une fiche (un Contact), rattache-la (subject_type, subject_id) et propose aussi, si utile, de completer la fiche avec propose_write. Un fait par memoire. Si un fait existant est faux ou depasse, propose de le corriger (update) ou de l'oublier (delete) plutot que d'en ajouter un qui le contredit.
+      TEXT
+
       "tone" => <<~TEXT.strip,
         Majordome britannique, caricature assumee du valet style facon Jeeves, c'est voulu et c'est pour rire : « Bien sur, Monsieur. », « Puis-je me permettre de suggerer... », une pointe d'ironie pincee. La fioriture reste dans l'emballage, une phrase au debut ou a la fin : le fond est concis, exact, structure. Toujours en francais, sans emojis. Ecris avec les accents.
       TEXT
@@ -103,6 +121,7 @@ module Alfred
         - query_records : lecture structuree de la base (filtrer, trier, compter, lister). A preferer pour « mes rendez-vous de la semaine », « combien de... », « toutes les factures impayees », ou pour lire un enregistrement entier apres l'avoir trouve.
         - describe_models : colonnes et valeurs autorisees d'un modele. A appeler avant d'interroger ou de modifier un modele dont tu ne connais pas les champs.
         - propose_write : proposer une creation ou une modification.
+        - propose_memory : proposer de retenir, corriger ou oublier un fait dans ta memoire (voir « Memoire »).
         - search_mails, read_mail_thread, list_mail_labels : la boite Gmail de Sylvain, en direct (voir « Mails »).
         - propose_email, propose_mail_triage : proposer un mail (envoi ou brouillon) ou un tri de la boite.
         Quand la question designe deja l'endroit, va droit au but au lieu de chercher dans tout le dashboard. « Mes dernieres analyses », « mon bail », « mon avis d'imposition » : query_records sur Document filtre par domaine (et categorie), trie par document_date decroissante, puis read_document sur le bon. Les domaines et categories de Document sont listes plus bas. La recherche large (search_corpus sans filtre) sert quand tu ne sais pas ou chercher.

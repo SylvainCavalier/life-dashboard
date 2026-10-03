@@ -151,4 +151,25 @@ class AlfredApiTest < ActionDispatch::IntegrationTest
   ensure
     %w[ANTHROPIC_API_KEY MISTRAL_API_KEY].each { |k| previous[k] ? ENV[k] = previous[k] : ENV.delete(k) }
   end
+
+  test "la memoire d'Alfred se lit, se corrige et s'efface depuis la page" do
+    sign_in_owner
+
+    post "/api/alfred_memories", params: { alfred_memory: { content: "La fac, c'est l'ICP.", category: "context" } }.to_json,
+                                 headers: JSON_HEADERS
+    assert_response :created
+    memory = AlfredMemory.last
+    assert_equal ["La fac, c'est l'ICP."], response.parsed_body["memories"].pluck("content")
+
+    patch "/api/alfred_memories/#{memory.id}", params: { alfred_memory: { content: "" } }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_content
+
+    patch "/api/alfred_memories/#{memory.id}", params: { alfred_memory: { category: "preferences" } }.to_json,
+                                               headers: JSON_HEADERS
+    assert_equal "preferences", memory.reload.category
+
+    delete "/api/alfred_memories/#{memory.id}", headers: JSON_HEADERS
+    assert_response :success
+    assert_empty response.parsed_body["memories"]
+  end
 end

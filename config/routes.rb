@@ -185,6 +185,7 @@ Rails.application.routes.draw do
         post :cancel
       end
     end
+    resources :alfred_memories, only: [:index, :create, :update, :destroy]
 
     # CV module
     resources :cv_experiences, only: [:index, :create, :update, :destroy]

@@ -32,10 +32,12 @@
 class AlfredAction < ApplicationRecord
   # create / update : ecriture en base (DataAccess). send_email / draft_email /
   # triage_email : action Gmail (Alfred::MailActions), target_model "Gmail",
-  # sans record_id.
+  # sans record_id. remember / revise_memory / forget : memoire d'Alfred
+  # (Alfred::MemoryActions), target_model "AlfredMemory".
   WRITE_OPERATIONS = %w[create update].freeze
   MAIL_OPERATIONS = %w[send_email draft_email triage_email].freeze
-  OPERATIONS = (WRITE_OPERATIONS + MAIL_OPERATIONS).freeze
+  MEMORY_OPERATIONS = %w[remember revise_memory forget].freeze
+  OPERATIONS = (WRITE_OPERATIONS + MAIL_OPERATIONS + MEMORY_OPERATIONS).freeze
   STATUSES = %w[proposed executed cancelled failed].freeze
 
   belongs_to :conversation, class_name: "AlfredConversation", foreign_key: :alfred_conversation_id,
@@ -59,4 +61,5 @@ class AlfredAction < ApplicationRecord
 
   def proposed? = status == "proposed"
   def mail? = MAIL_OPERATIONS.include?(operation)
+  def memory? = MEMORY_OPERATIONS.include?(operation)
 end

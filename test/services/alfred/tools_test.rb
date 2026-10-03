@@ -158,4 +158,65 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal [document.id], sources.map { |source| source["id"] }
     assert_equal "/api/documents/#{document.id}/download", sources.first["download"]
   end
+
+  test "propose_memory propose, la confirmation retient et le prompt l'affiche" do
+    contact = Contact.create!(first_name: "Paul", last_name: "Reboh")
+
+    assert_no_difference "AlfredMemory.count" do
+      result, error = run_tool("propose_memory", {
+        "operation" => "create", "category" => "people", "subject_type" => "Contact", "subject_id" => contact.id,
+        "content" => "Paul Reboh est un des meilleurs amis de Sylvain ; « Paul » sans precision, c'est lui.",
+        "summary" => "Retenir qui est Paul"
+      })
+      assert_not error
+      assert result[:action_id]
+    end
+
+    action = @conversation.actions.last
+    assert_equal "remember", action.operation
+    assert_equal "Personnes", action.new_attributes["categorie"]
+    assert_equal "Contact##{contact.id}", action.new_attributes["fiche"]
+
+    assert_difference "AlfredMemory.count", 1 do
+      Alfred::ActionExecutor.new(action).confirm!
+    end
+    memory = AlfredMemory.find(action.reload.record_id)
+    assert_equal "executed", action.status
+    assert_includes Alfred::Prompt.stable_text, "(memoire ##{memory.id}, personnes) Paul Reboh est un des meilleurs amis"
+    assert_includes Alfred::Prompt.stable_text, "[fiche Contact##{contact.id}]"
+  end
+
+  test "propose_memory corrige et oublie, et refuse une memoire modifiee entre-temps" do
+    memory = AlfredMemory.create!(content: "La fac, c'est Paris 12.", category: "context")
+
+    run_tool("propose_memory", { "operation" => "update", "id" => memory.id, "content" => "La fac, c'est l'ICP.",
+                                 "summary" => "Corriger la fac" })
+    revise = @conversation.actions.last
+    assert_equal({ "fait" => "La fac, c'est l'ICP." }, revise.new_attributes)
+    assert_equal({ "fait" => "La fac, c'est Paris 12." }, revise.before_attributes)
+
+    memory.update!(content: "La fac, c'est Assas.")
+    Alfred::ActionExecutor.new(revise).confirm!
+    assert_equal "failed", revise.reload.status
+    assert_equal "La fac, c'est Assas.", memory.reload.content
+
+    run_tool("propose_memory", { "operation" => "delete", "id" => memory.id, "summary" => "Oublier la fac" })
+    assert_difference "AlfredMemory.count", -1 do
+      Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+    end
+  end
+
+  test "propose_memory refuse une memoire vide, une fiche inconnue ou un modele illisible" do
+    result, = run_tool("propose_memory", { "operation" => "create", "content" => " ", "summary" => "x" })
+    assert_match "Validation refusee", result[:error]
+
+    result, = run_tool("propose_memory", { "operation" => "create", "content" => "x", "subject_type" => "Contact",
+                                            "subject_id" => 999_999, "summary" => "x" })
+    assert_match "aucune fiche", result[:error]
+
+    result, = run_tool("propose_memory", { "operation" => "create", "content" => "x", "subject_type" => "PasswordEntry",
+                                            "subject_id" => 1, "summary" => "x" })
+    assert_match "Validation refusee", result[:error]
+    assert_equal 0, @conversation.actions.count
+  end
 end

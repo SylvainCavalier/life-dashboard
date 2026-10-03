@@ -58,7 +58,7 @@ module Alfred
 
         text, = Corpus::TextExtractor.new.call(document.file.blob)
         Corpus.schedule(document)
-        [text.to_s, "extraction directe"]
+        [text.to_s.strip, "extraction directe"]
       end
     end
   end

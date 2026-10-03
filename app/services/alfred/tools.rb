@@ -4,14 +4,14 @@ module Alfred
   # previsible est renvoyee AU MODELE ({ error: }) pour qu'il corrige son appel.
   module Tools
     ALL = [Tools::SearchCorpus, Tools::ReadDocument, Tools::DescribeModels, Tools::QueryRecords, Tools::ProposeWrite,
-           Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
+           Tools::ProposeMemory, Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
            Tools::ProposeMailTriage].freeze
 
     # Outils qui parlent a Gmail : sans GMAIL_USER ils repondent une erreur au modele.
     MAIL = [Tools::SearchMails, Tools::ReadMailThread, Tools::ListMailLabels, Tools::ProposeEmail,
             Tools::ProposeMailTriage].freeze
     # Outils qui ne font que proposer (carte a confirmer dans le chat).
-    PROPOSALS = [Tools::ProposeWrite, Tools::ProposeEmail, Tools::ProposeMailTriage].freeze
+    PROPOSALS = [Tools::ProposeWrite, Tools::ProposeMemory, Tools::ProposeEmail, Tools::ProposeMailTriage].freeze
 
     # seen : [type, id] des enregistrements renvoyes au modele pendant ce tour, seuls
     # citables comme sources (voir Alfred::Citations).

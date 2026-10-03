@@ -40,6 +40,7 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/sentinel_domains/droit_travail/sources
       /api/alfred
       /api/alfred_conversations
+      /api/alfred_memories
       /api/calendar_sync
     ].each do |path|
       get path, headers: { "Accept" => "application/json" }

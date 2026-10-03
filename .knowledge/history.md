@@ -5,6 +5,15 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-03 — Mémoire persistante d'Alfred
+- [feat] **Mémoire d'Alfred** : faits courts et durables qu'Alfred garde d'une conversation à l'autre (ex. « Paul, sans précision, c'est Paul Reboh »), classés par catégorie (personnes, préférences, contexte, divers) et rattachables à une fiche du dashboard (un Contact…). Toutes les mémoires sont injectées dans son prompt (nouvelle section « Mémoire », modifiable comme les autres) : il les a sous les yeux sans avoir à chercher, même après avoir vidé la conversation
+- [feat] Nouvel outil `propose_memory` (retenir, corriger, oublier) : Alfred propose de lui-même de retenir ce qui est durable (personne et lien avec Sylvain, prénom ambigu, préférence, vocabulaire), jamais ce qui est passager ; rien n'est retenu sans confirmation de la carte dans le chat (opérations `remember` / `revise_memory` / `forget` d'`AlfredAction`, exécutées par `Alfred::MemoryActions`, refusées si la mémoire a changé depuis la proposition)
+- [ui] Onglet Mémoire de la page `/alfred` : bloc « Ce qu'Alfred a retenu » pour relire, ajouter, modifier ou supprimer les faits à la main ; cartes du widget adaptées (« À retenir », « Correction » avec avant/après, « À oublier »)
+- [db] Table `alfred_memories` (contenu chiffré, catégorie, `subject_type` / `subject_id`) ; plafonds de 200 mémoires et 500 caractères par fait, puisque tout part dans chaque prompt. Les mémoires vivent dans le bloc mis en cache (elles changent rarement), hors corpus RAG et hors skills locales
+- [chore] Tests ajoutés (outil, confirmation, mémoire périmée, API de la page, contrôle d'accès de `/api/alfred_memories`) et `CLAUDE.md` documenté
+- [fix] `read_document` : le texte extrait à la volée (document pas encore indexé) n'était pas débarrassé des blancs de fin, contrairement au texte indexé
+- [fix] Suite de tests : les clés VAPID du `.env` de développement sont neutralisées en test (comme `GMAIL_USER`), sinon deux tests des Rappels échouaient ; suite complète au vert (376 tests). Note : le lancement parallèle peut se bloquer sous macOS (workers tués par la protection fork d'Objective-C) ; `PGGSSENCMODE=disable` l'évite
+
 ### 2026-10-03 — Rappels avec notifications push
 - [feat] Nouveau module **Rappels** (`/reminders`, tuile ⏰ indiquant « N à traiter ») : rappels ponctuels ou récurrents (jour, semaine, mois, an) avec libellé dictable, raccourcis d'échéance (dans 1 h, ce soir 19 h, demain 9 h, lundi 9 h) et précisions affichées dans la notification. Les rappels échus remontent dans « À traiter » avec Fait / +10 min / +1 h / Demain 9 h ; « Fait » termine un rappel ponctuel et fait passer un rappel récurrent à l'occurrence suivante
 - [api] **Notifications Web Push** sans service tiers (gem `web-push`, clés VAPID `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`) : le serveur chiffre le message pour chaque appareil abonné et le remet au service push d'Apple ou Google. Sur iPhone, fonctionne uniquement dans la webapp ajoutée à l'écran d'accueil (iOS 16.4+) ; activation, liste des appareils et notification de test depuis la page Rappels

@@ -163,9 +163,19 @@ export function useAlfred() {
     await apiClient.post('/alfred/reindex')
   }
 
+  // Memoire d'Alfred : chaque appel renvoie la liste complete ({ memories, categories, max, max_length }).
+  const loadMemories = async () => (await apiClient.get('/alfred_memories')).data
+
+  const createMemory = async (memory) => (await apiClient.post('/alfred_memories', { alfred_memory: memory })).data
+
+  const updateMemory = async (id, memory) => (await apiClient.patch(`/alfred_memories/${id}`, { alfred_memory: memory })).data
+
+  const deleteMemory = async (id) => (await apiClient.delete(`/alfred_memories/${id}`)).data
+
   return {
     overview, conversation, conversations, messages, busy, error,
     loadOverview, resume, open, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
     saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex,
+    loadMemories, createMemory, updateMemory, deleteMemory,
   }
 }

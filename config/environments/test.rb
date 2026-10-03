@@ -13,6 +13,10 @@ ENV["GOOGLE_CALENDAR_ID"] = nil
 ENV["GOOGLE_CALENDAR_CREDENTIALS"] = nil
 ENV["GOOGLE_SERVICE_ACCOUNT_CREDENTIALS"] = nil
 ENV["GMAIL_USER"] = nil
+# Meme raison pour les rappels : sans cles VAPID, aucune vraie notification push ne
+# part ; les tests qui en ont besoin injectent un transport factice.
+ENV["VAPID_PUBLIC_KEY"] = nil
+ENV["VAPID_PRIVATE_KEY"] = nil
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.

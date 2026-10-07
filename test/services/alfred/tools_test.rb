@@ -11,6 +11,16 @@ class AlfredToolsTest < ActiveSupport::TestCase
     Alfred::Tools.run(name, input, @context)
   end
 
+  test "describe_models donne la section de l'interface et les categories" do
+    result, error = run_tool("describe_models", { "models" => %w[CvFormation Note] })
+
+    assert_not error
+    formation, note = result[:models]
+    assert_match "Formations & travaux", formation[:note]
+    assert_includes formation[:columns].find { |c| c[:name] == "category" }[:values], "seminaire"
+    assert_not note.key?(:note)
+  end
+
   test "query_records refuse le coffre-fort" do
     PasswordEntry.create!(name: "Banque", login: "sylvain", password: "s3cr3t-tres-long")
 

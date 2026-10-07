@@ -384,6 +384,9 @@ changer de modele d'embedding impose une migration de la colonne et un `alfred:i
 d'ActionCable : meme patron que Downloader et Sentinelle, et une reponse survit a un rechargement de page). Outils :
 `search_corpus`, `read_document` (texte integral d'un document, recolle depuis ses passages par `Indexer.file_text`, sans
 repayer l'OCR), `query_records` (lecture structuree, `DataAccess::READABLE`), `describe_models`, `propose_write`.
+`DataAccess::MODEL_NOTES` dit ce que les colonnes ne disent pas (section de l'interface d'un modele, ou ranger une fiche quand
+plusieurs modeles semblent convenir, ex. CV : seminaire = `CvFormation`, pas `CvExperience`) : rendu dans le prompt et renvoye par
+`describe_models`. Un libelle d'interface qu'Alfred ne relie pas a un modele = une note a ajouter la.
 **Sources** (`Alfred::Citations`) : Alfred marque dans sa reponse `[[Type#id]]` ce qui la fonde ; seuls les marqueurs
 designant un enregistrement que ses outils lui ont renvoye pendant le tour (`Tools::Context#seen`) deviennent des sources,
 puis les marqueurs sont retires du texte (et masques cote front pendant la diffusion). Ne pas revenir a « tout ce que la

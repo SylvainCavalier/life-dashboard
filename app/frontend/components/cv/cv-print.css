@@ -22,6 +22,9 @@
   min-height: 297mm;
   box-sizing: border-box;
   padding: 10mm;
+  /* Une URL (descriptions des publications) n'a pas d'espace : sans cela elle
+     ne se coupe pas et deborde a droite de la page. */
+  overflow-wrap: anywhere;
 }
 
 .cv-root[data-color="indigo"]   { --accent: #4f46e5; --accent-soft: #eef2ff; }
@@ -150,7 +153,9 @@
 /* ---- Modern template (2 columns) ---- */
 .cv-modern {
   display: grid;
-  grid-template-columns: 70mm 1fr;
+  /* minmax(0, 1fr) et non 1fr : sinon la colonne s'elargit au mot le plus long
+     de son contenu et sort de la page. */
+  grid-template-columns: 70mm minmax(0, 1fr);
   gap: 8mm;
   padding: 0;
 }

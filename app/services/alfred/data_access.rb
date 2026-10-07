@@ -26,6 +26,25 @@ module Alfred
 
     SYSTEM_FIELDS = %w[id created_at updated_at].freeze
 
+    # Ce que les colonnes ne disent pas : a quelle partie de l'interface correspond
+    # un modele, et ou ranger une fiche quand plusieurs modeles semblent convenir.
+    # Rendu dans le prompt (section Outils) et renvoye par describe_models.
+    MODEL_NOTES = {
+      "CvExperience" => "Page CV, trois sections selon category : « Expériences professionnelles » (emploi, freelance, " \
+                        "associatif ou vide), « Conférences & Interventions » (intervention : Sylvain y intervient, donne " \
+                        "une conférence), « Publications & Médias » (media : article, interview, émission). Une participation " \
+                        "à un séminaire, une formation, un concours ou un travail universitaire n'est PAS une CvExperience : " \
+                        "c'est une CvFormation.",
+      "CvFormation" => "Page CV, section « Formations & travaux » : diplômes (diplome), mémoires (memoire), séminaires " \
+                       "suivis (seminaire), certifications (certification), et tout le reste du parcours de formation " \
+                       "(autre : concours, prix, travaux universitaires...). institution = établissement ou organisme.",
+      "CvSkill" => "Page CV, section « Compétences ».",
+      "CvInterest" => "Page CV, section « Activités & centres d'intérêt ».",
+      "CvPitch" => "Page CV, section « Accroches » : plusieurs accroches enregistrées, celle affichée sur le CV est " \
+                   "CvSetting.active_pitch_id.",
+      "CvSetting" => "Réglages du CV (ligne unique) : template, couleur, accroche affichée (active_pitch_id)."
+    }.freeze
+
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
     # Pas de suppression. Interdits : PasswordEntry, MailAccount, Language, FileTransfer,
     # TripPlan, VideoDownload, VideoTranscript, SentinelWeek, SentinelDocument (voir CLAUDE.md).

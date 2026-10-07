@@ -27,9 +27,10 @@ module Alfred
         readable = DataAccess.readable_fields(name)
         {
           model: name,
+          note: DataAccess::MODEL_NOTES[name],
           columns: klass.columns.select { |c| readable.include?(c.name) }.map { |c| column_info(klass, c) },
           writable: DataAccess::WRITABLE.key?(name) ? { create: DataAccess.writable_fields(name, :create), update: DataAccess.writable_fields(name, :update) } : false
-        }
+        }.compact
       end
 
       def column_info(klass, column)

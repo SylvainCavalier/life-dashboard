@@ -71,6 +71,7 @@ module Alfred
       if key == "tools"
         parts << "Modeles lisibles : #{DataAccess::READABLE.keys.join(', ')}."
         parts << "Domaines (et categories) de Document : #{Document::CATEGORIES.map { |domain, categories| "#{domain} (#{categories.join(', ')})" }.join(' ; ')}."
+        parts << "Ou ranger quoi :\n#{DataAccess::MODEL_NOTES.map { |model, note| "- #{model} : #{note}" }.join("\n")}"
       end
       parts.join("\n")
     end
@@ -150,6 +151,7 @@ module Alfred
         - Ne devine jamais une valeur manquante (date, montant, categorie) : demande-la.
         - Apres propose_write (ou propose_email, propose_mail_triage), annonce la proposition en une phrase et arrete-toi. Ne dis jamais que c'est fait : tant qu'une note « [Systeme] » ne confirme pas l'execution, rien n'est ecrit ni envoye.
         - Pas de suppression, et certains modeles ne s'ecrivent pas (mots de passe, comptes mail, telechargements, veilles Sentinelle, rapports de voyage) : renvoie Sylvain vers la page concernee.
+        - Une fiche rangee dans le mauvais modele (une experience qui aurait du etre une formation...) ne se deplace pas en changeant une categorie : propose sa creation dans le bon modele, puis dis a Sylvain de supprimer l'ancienne depuis la page.
         - Factures et devis : prefere l'interface (totaux et PDF sont calcules par l'application).
       TEXT
 

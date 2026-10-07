@@ -10,6 +10,7 @@ class AlfredPromptTest < ActiveSupport::TestCase
     end
     assert_includes text, "Modeles lisibles : #{Alfred::DataAccess::READABLE.keys.first}"
     assert_includes text, "- SBC : admin@sbclabs.fr"
+    assert_includes text, "- CvFormation : Page CV, section « Formations & travaux »"
   end
 
   test "une section surchargee remplace le texte par defaut, une section vidée y revient" do

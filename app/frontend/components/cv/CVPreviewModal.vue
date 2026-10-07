@@ -12,6 +12,15 @@
           <button @click="$emit('close')" class="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
         </div>
 
+        <!-- Pitch picker -->
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Accroche</div>
+          <select v-model="pitchId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            <option :value="null">— Aucune —</option>
+            <option v-for="p in pitches" :key="p.id" :value="p.id">{{ p.title }}</option>
+          </select>
+        </div>
+
         <!-- Template picker -->
         <div>
           <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Template</div>
@@ -153,7 +162,8 @@ const props = defineProps({
   skills: { type: Array, default: () => [] },
   interests: { type: Array, default: () => [] },
   photoDataUrl: { type: String, default: null },
-  pitch: { type: String, default: null },
+  pitches: { type: Array, default: () => [] },
+  activePitchId: { type: Number, default: null },
   initialTemplate: { type: String, default: 'classic' },
   initialColor: { type: String, default: 'indigo' },
 })
@@ -245,6 +255,17 @@ const checkOverflow = async () => {
 }
 watch([template, accentColor, interestsDetailed, selectedIds, () => props.experiences, () => props.formations], checkOverflow, { deep: true })
 onMounted(checkOverflow)
+
+// Pitch: l'accroche choisie ici devient celle du CV (meme reglage que sur la page)
+const pitchId = ref(props.pitches.some(p => p.id === props.activePitchId) ? props.activePitchId : null)
+const pitch = computed(() => props.pitches.find(p => p.id === pitchId.value)?.content || null)
+watch(pitch, checkOverflow)
+watch(pitchId, async (id) => {
+  try {
+    const data = await patch('/cv_setting', { cv_setting: { active_pitch_id: id } })
+    emit('settings-saved', { active_pitch_id: data.active_pitch_id, pitch: data.pitch })
+  } catch (_) { /* non-blocking */ }
+})
 
 // Persist settings
 let settingsSaveTimer = null

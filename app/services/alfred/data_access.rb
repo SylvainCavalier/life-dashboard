@@ -12,7 +12,7 @@ module Alfred
 
     READABLE = {
       "BudgetEntry" => :all, "CalendarSync" => :all, "Client" => :all, "Company" => :all, "Contact" => :all, "CrmProfile" => :all,
-      "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvSetting" => :all, "CvSkill" => :all,
+      "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
@@ -52,7 +52,7 @@ module Alfred
                             update: %w[name url feed_url web_search on_topic language active] },
       "PersonalProfile" => :all, "HealthProfile" => :all, "Property" => :all, "Document" => :all,
       "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all, "Company" => :all, "CrmProfile" => :all,
-      "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvSetting" => :all, "CvSkill" => :all,
+      "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all
     }.freeze
 

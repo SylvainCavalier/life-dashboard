@@ -15,7 +15,8 @@ module Api
         formations:  CvFormation.ordered,
         skills:      CvSkill.ordered,
         interests:   CvInterest.ordered,
-        settings:    setting.slice(:default_template, :default_color, :pitch).merge(
+        pitches:     CvPitch.ordered,
+        settings:    setting.slice(:default_template, :default_color, :active_pitch_id, :pitch).merge(
           photo_data_url: setting.photo_data_url
         )
       }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_03_165650) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_07_201512) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -300,12 +300,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_03_165650) do
     t.index ["position"], name: "index_cv_interests_on_position"
   end
 
+  create_table "cv_pitches", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "content", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_cv_pitches_on_position"
+  end
+
   create_table "cv_settings", force: :cascade do |t|
     t.string "default_template", default: "classic", null: false
     t.string "default_color", default: "indigo", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "pitch"
+    t.bigint "active_pitch_id"
+    t.index ["active_pitch_id"], name: "index_cv_settings_on_active_pitch_id"
   end
 
   create_table "cv_skills", force: :cascade do |t|
@@ -1039,6 +1049,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_03_165650) do
   add_foreign_key "alfred_messages", "alfred_conversations"
   add_foreign_key "clients", "companies"
   add_foreign_key "crm_profiles", "contacts"
+  add_foreign_key "cv_settings", "cv_pitches", column: "active_pitch_id", on_delete: :nullify
   add_foreign_key "documents", "companies"
   add_foreign_key "documents", "projects"
   add_foreign_key "invoice_items", "invoices"

@@ -75,20 +75,77 @@
         </div>
       </section>
 
-      <!-- Accroche -->
+      <!-- Accroches -->
       <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-lg font-semibold text-gray-900">Accroche</h2>
-          <span class="text-xs text-gray-400">2-3 lignes qui te résument — affichée en haut du CV</span>
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-lg font-semibold text-gray-900">Accroches</h2>
+          <button @click="openPitchForm()" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
+            + Ajouter
+          </button>
         </div>
-        <textarea
-          v-model="pitchDraft"
-          @blur="savePitch"
-          rows="3"
-          placeholder="Ex. Développeur full-stack passionné par les produits utiles. 8 ans d'expérience en Rails/Vue, spécialisé dans les apps à forte logique métier."
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-        ></textarea>
-        <div v-if="pitchSaving" class="text-xs text-gray-400 mt-1">Enregistrement...</div>
+        <p class="text-xs text-gray-400 mb-4">2-3 lignes qui te résument. Garde une accroche par type de poste et choisis celle qui s'affiche en haut du CV.</p>
+
+        <div v-if="pitchForm.open" class="bg-gray-50 rounded-lg p-4 mb-4">
+          <input v-model="pitchForm.title" placeholder="Nom de l'accroche * (ex. Dev full-stack, Juriste droit social...)" class="w-full border rounded-lg px-3 py-2 text-sm mb-3" />
+          <textarea
+            v-model="pitchForm.content"
+            rows="3"
+            placeholder="Ex. Développeur full-stack passionné par les produits utiles. 8 ans d'expérience en Rails/Vue, spécialisé dans les apps à forte logique métier."
+            class="w-full border rounded-lg px-3 py-2 text-sm mb-3"
+          ></textarea>
+          <div class="flex items-center justify-between gap-2">
+            <label v-if="!pitchForm.id" class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+              <input type="checkbox" v-model="pitchForm.activate" class="accent-indigo-600" />
+              Afficher sur le CV
+            </label>
+            <span v-else></span>
+            <div class="flex gap-2">
+              <button @click="pitchForm.open = false" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Annuler</button>
+              <button @click="savePitch" :disabled="!pitchForm.title || !pitchForm.content" class="bg-black text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 disabled:opacity-40">
+                {{ pitchForm.id ? 'Modifier' : 'Ajouter' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="pitches.length === 0 && !pitchForm.open" class="text-sm text-gray-400 italic text-center py-4">
+          Aucune accroche enregistrée
+        </div>
+        <ul v-else class="space-y-2">
+          <li
+            v-for="p in pitches" :key="p.id"
+            class="border rounded-lg p-4 transition cursor-pointer"
+            :class="p.id === settings.active_pitch_id ? 'border-indigo-500 bg-indigo-50/40' : 'border-gray-100 hover:bg-gray-50'"
+            @click="selectPitch(p.id)"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex items-start gap-3 flex-1">
+                <input type="radio" name="active-pitch" :checked="p.id === settings.active_pitch_id" class="mt-1 accent-indigo-600" @click.stop="selectPitch(p.id)" />
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-semibold text-gray-900">{{ p.title }}</span>
+                    <span v-if="p.id === settings.active_pitch_id" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Sur le CV</span>
+                  </div>
+                  <p class="text-sm text-gray-700 mt-1 whitespace-pre-line">{{ p.content }}</p>
+                </div>
+              </div>
+              <div class="flex gap-2 text-xs" @click.stop>
+                <button @click="openPitchForm(p)" class="text-blue-500 hover:text-blue-700">Modifier</button>
+                <button @click="duplicatePitch(p)" class="text-gray-500 hover:text-gray-700">Dupliquer</button>
+                <button @click="deletePitch(p)" class="text-red-400 hover:text-red-600">Supprimer</button>
+              </div>
+            </div>
+          </li>
+          <li
+            class="border rounded-lg px-4 py-2 transition cursor-pointer text-sm flex items-center gap-3"
+            :class="!settings.active_pitch_id ? 'border-indigo-500 bg-indigo-50/40 text-gray-700' : 'border-gray-100 text-gray-400 hover:bg-gray-50'"
+            @click="selectPitch(null)"
+          >
+            <input type="radio" name="active-pitch" :checked="!settings.active_pitch_id" class="accent-indigo-600" @click.stop="selectPitch(null)" />
+            Pas d'accroche sur le CV
+          </li>
+        </ul>
+        <div v-if="pitchError" class="text-xs text-red-600 mt-2">{{ pitchError }}</div>
       </section>
 
       <!-- Expériences professionnelles -->
@@ -422,7 +479,8 @@
       :skills="skills"
       :interests="interests"
       :photo-data-url="settings.photo_data_url"
-      :pitch="settings.pitch"
+      :pitches="pitches"
+      :active-pitch-id="settings.active_pitch_id"
       :initial-template="settings.default_template"
       :initial-color="settings.default_color"
       @close="showPreview = false"
@@ -442,12 +500,14 @@ const experienceCrud = useCrud('cv_experiences')
 const formationCrud  = useCrud('cv_formations')
 const skillCrud      = useCrud('cv_skills')
 const interestCrud   = useCrud('cv_interests')
+const pitchCrud      = useCrud('cv_pitches')
 
 const profile = ref({})
 const experiences = ref([])
 const formations = ref([])
 const skills = ref([])
 const interests = ref([])
+const pitches = ref([])
 const settings = ref({ default_template: 'classic', default_color: 'indigo' })
 
 const showPreview = ref(false)
@@ -529,8 +589,8 @@ const fetchAll = async () => {
   formations.value = data.formations || []
   skills.value = data.skills || []
   interests.value = data.interests || []
+  pitches.value = data.pitches || []
   settings.value = data.settings || { default_template: 'classic', default_color: 'indigo' }
-  pitchDraft.value = settings.value.pitch || ''
 }
 
 // ---- Experience ----
@@ -615,20 +675,42 @@ const deleteInterest = async (id) => {
 
 const onSettingsSaved = (newSettings) => {
   settings.value = { ...settings.value, ...newSettings }
-  if (newSettings.pitch !== undefined) pitchDraft.value = newSettings.pitch || ''
 }
 
-// ---- Pitch ----
-const pitchDraft = ref('')
-const pitchSaving = ref(false)
+// ---- Pitches ----
+const emptyPitch = () => ({ open: false, id: null, title: '', content: '', activate: false })
+const pitchForm = reactive(emptyPitch())
+const pitchError = ref(null)
+
+const openPitchForm = (p = null) => {
+  Object.assign(pitchForm, p
+    ? { ...emptyPitch(), open: true, id: p.id, title: p.title, content: p.content }
+    : { ...emptyPitch(), open: true, activate: pitches.value.length === 0 }
+  )
+}
 const savePitch = async () => {
-  if ((pitchDraft.value || '') === (settings.value.pitch || '')) return
-  pitchSaving.value = true
+  if (!pitchForm.title || !pitchForm.content) return
+  const payload = { cv_pitch: { title: pitchForm.title, content: pitchForm.content } }
+  if (pitchForm.id) await pitchCrud.update(pitchForm.id, payload)
+  else              await pitchCrud.create({ ...payload, activate: pitchForm.activate })
+  Object.assign(pitchForm, emptyPitch())
+  await fetchAll()
+}
+const duplicatePitch = (p) => {
+  Object.assign(pitchForm, { ...emptyPitch(), open: true, title: `${p.title} (copie)`, content: p.content })
+}
+const deletePitch = async (p) => {
+  if (!confirm(`Supprimer l'accroche « ${p.title} » ?`)) return
+  await pitchCrud.destroy(p.id); await fetchAll()
+}
+const selectPitch = async (id) => {
+  if ((settings.value.active_pitch_id ?? null) === id) return
+  pitchError.value = null
   try {
-    const data = await patch('/cv_setting', { cv_setting: { pitch: pitchDraft.value || null } })
+    const data = await patch('/cv_setting', { cv_setting: { active_pitch_id: id } })
     settings.value = { ...settings.value, ...data }
-  } finally {
-    pitchSaving.value = false
+  } catch (e) {
+    pitchError.value = e.response?.data?.errors?.join(', ') || 'Impossible de changer d\'accroche'
   }
 }
 

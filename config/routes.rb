@@ -192,6 +192,7 @@ Rails.application.routes.draw do
     resources :cv_formations, only: [:index, :create, :update, :destroy]
     resources :cv_skills, only: [:index, :create, :update, :destroy]
     resources :cv_interests, only: [:index, :create, :update, :destroy]
+    resources :cv_pitches, only: [:index, :create, :update, :destroy]
     resource :cv_setting, only: [:show, :update] do
       delete :photo, action: :destroy_photo
     end

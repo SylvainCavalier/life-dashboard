@@ -22,11 +22,11 @@ module Api
     private
 
     def setting_params
-      params.fetch(:cv_setting, params).permit(:default_template, :default_color, :pitch, :photo)
+      params.fetch(:cv_setting, params).permit(:default_template, :default_color, :active_pitch_id, :photo)
     end
 
     def setting_payload(setting)
-      setting.slice(:default_template, :default_color, :pitch).merge(
+      setting.slice(:default_template, :default_color, :active_pitch_id, :pitch).merge(
         photo_data_url: setting.photo_data_url
       )
     end

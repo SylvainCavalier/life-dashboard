@@ -50,6 +50,7 @@ module Alfred
       "CvFormation" => { title: "Formation (CV)", label: ->(r) { [r.title, r.institution].compact_blank.join(" - ") }, path: ->(_) { "/cv" }, except: %w[position] },
       "CvSkill" => { title: "Competence (CV)", label: ->(r) { r.name }, path: ->(_) { "/cv" }, except: %w[position] },
       "CvInterest" => { title: "Centre d'interet (CV)", label: ->(r) { r.name }, path: ->(_) { "/cv" }, except: %w[position] },
+      "CvPitch" => { title: "Accroche (CV)", label: ->(r) { r.title }, path: ->(_) { "/cv" }, except: %w[position] },
       "Trip" => { title: "Voyage", label: ->(r) { "Voyage : #{r.destination}" }, date: :start_date, path: ->(r) { "/trips/#{r.id}" },
                   children: { trip_items: %w[day kind title notes cost url] } },
       "TripItem" => { parent: :trip },

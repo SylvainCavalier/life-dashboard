@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_12_093038) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_12_104150) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -329,6 +329,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_093038) do
     t.index ["position"], name: "index_cv_skills_on_position"
   end
 
+  create_table "deadlines", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "category", default: "autre", null: false
+    t.date "due_on", null: false
+    t.string "recurrence", default: "none", null: false
+    t.date "ends_on"
+    t.decimal "amount", precision: 10, scale: 2
+    t.text "notes"
+    t.date "generated_until"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["due_on"], name: "index_deadlines_on_due_on"
+  end
+
   create_table "documents", force: :cascade do |t|
     t.string "domain", null: false
     t.string "name", null: false
@@ -369,6 +383,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_093038) do
     t.datetime "updated_at", null: false
     t.string "google_event_id"
     t.datetime "google_updated_at"
+    t.bigint "deadline_id"
+    t.index ["deadline_id"], name: "index_events_on_deadline_id"
     t.index ["event_type"], name: "index_events_on_event_type"
     t.index ["google_event_id"], name: "index_events_on_google_event_id", unique: true
     t.index ["start_time"], name: "index_events_on_start_time"
@@ -1070,6 +1086,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_093038) do
   add_foreign_key "cv_settings", "cv_pitches", column: "active_pitch_id", on_delete: :nullify
   add_foreign_key "documents", "companies"
   add_foreign_key "documents", "projects"
+  add_foreign_key "events", "deadlines", on_delete: :nullify
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "companies"

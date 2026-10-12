@@ -45,6 +45,10 @@
       <!-- Formulaire -->
       <div v-if="showForm" class="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h2 class="text-lg font-semibold mb-4">{{ editingId ? 'Modifier l\'événement' : 'Nouvel événement' }}</h2>
+        <p v-if="editingDeadlineId" class="text-xs text-rose-700 bg-rose-50 rounded-lg px-3 py-2 mb-4">
+          Occurrence d'une échéance notable : les changements faits ici ne valent que pour cette date.
+          Pour modifier toutes les occurrences, passez par le module « Échéances notables » sous l'agenda.
+        </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
@@ -252,6 +256,11 @@
           </div>
         </div>
       </div>
+
+      <!-- === ÉCHÉANCES NOTABLES === -->
+      <div class="mt-8">
+        <DeadlinesPanel @changed="onDeadlinesChanged" />
+      </div>
     </div>
   </div>
 </template>
@@ -259,6 +268,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useApi } from '../../composables/useApi'
+import DeadlinesPanel from '../../components/deadlines/DeadlinesPanel.vue'
 
 const { useCrud, get, post } = useApi()
 const { list, create, update, destroy } = useCrud('events')
@@ -266,6 +276,7 @@ const { list, create, update, destroy } = useCrud('events')
 const events = ref([])
 const showForm = ref(false)
 const editingId = ref(null)
+const editingDeadlineId = ref(null)
 const viewMode = ref('calendar')
 const filterType = ref('')
 const icsCopied = ref(false)
@@ -279,6 +290,7 @@ const eventTypes = [
   { value: 'visio', label: 'Visioconférence' },
   { value: 'lecon', label: 'Leçon' },
   { value: 'reunion', label: 'Réunion' },
+  { value: 'echeance', label: 'Échéance' },
   { value: 'autre', label: 'Autre' },
 ]
 
@@ -287,6 +299,7 @@ const eventTypeColors = {
   visio: '#8b5cf6',
   lecon: '#06b6d4',
   reunion: '#f59e0b',
+  echeance: '#e11d48',
   autre: '#64748b',
 }
 
@@ -392,6 +405,7 @@ const nextMonth = () => {
 }
 
 const onDayClick = (cell) => {
+  editingDeadlineId.value = null
   const f = defaultForm()
   f.start_time = cell.date + 'T09:00'
   f.end_time = cell.date + 'T10:00'
@@ -425,6 +439,7 @@ const fetchEvents = async () => {
 }
 
 const openForm = (event = null) => {
+  editingDeadlineId.value = event?.deadline_id || null
   if (event) {
     editingId.value = event.id
     form.value = {
@@ -463,6 +478,11 @@ const deleteEvent = async (id) => {
   await destroy(id)
   await fetchEvents()
   await fetchAlerts()
+}
+
+// Les occurrences des échéances sont des événements : on recharge l'agenda.
+const onDeadlinesChanged = async () => {
+  await fetchEvents()
 }
 
 // === Helpers ===

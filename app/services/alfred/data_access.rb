@@ -13,7 +13,7 @@ module Alfred
     READABLE = {
       "BudgetEntry" => :all, "CalendarSync" => :all, "Client" => :all, "Company" => :all, "Contact" => :all, "CrmProfile" => :all,
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
-      "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
+      "Deadline" => { exclude: %w[generated_until] }, "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Letter" => { exclude: %w[body] }, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
       "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all,
@@ -45,6 +45,12 @@ module Alfred
                        "suivis (seminaire), certifications (certification), et tout le reste du parcours de formation " \
                        "(autre : concours, prix, travaux universitaires...). institution = établissement ou organisme.",
       "CvSkill" => "Page CV, section « Compétences ».",
+      "Deadline" => "Page Agenda, module « Échéances notables » : échéances régulières importantes (crédit, charges, " \
+                    "URSSAF, impôts, taxe foncière...). due_on = première échéance, recurrence none/monthly/quarterly/" \
+                    "semiannual/yearly, ends_on = dernière (fin d'un crédit), category credit/charges/impots/social/" \
+                    "assurance/loyer/autre, amount facultatif. Chaque occurrence est posée automatiquement dans l'agenda " \
+                    "(Event journée entière, event_type echeance, deadline_id) : ne crée pas les Event toi-même. " \
+                    "Une échéance d'argent ou administrative récurrente est une Deadline, pas un Reminder.",
       "CvInterest" => "Page CV, section « Activités & centres d'intérêt ».",
       "CvPitch" => "Page CV, section « Accroches » : plusieurs accroches enregistrées, celle affichée sur le CV est " \
                    "CvSetting.active_pitch_id.",
@@ -63,6 +69,7 @@ module Alfred
     WRITABLE = {
       "Event" => { create: %w[title description event_type start_time end_time location color all_day reminder_minutes] },
       "Note" => { create: %w[title content note_date important] },
+      "Deadline" => { create: %w[title category due_on recurrence ends_on amount notes] },
       "Task" => { create: %w[description priority deadline completed project_id] },
       "BudgetEntry" => { create: %w[name entry_type recurrence category amount month year notes] },
       "Contact" => { create: %w[last_name first_name birth_date gender occupation city phone email last_contacted_on

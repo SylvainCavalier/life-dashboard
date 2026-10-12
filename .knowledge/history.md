@@ -5,6 +5,14 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-12 — Échéances notables sous l'agenda
+- [feat] Nouveau module **Échéances notables** sous le calendrier de la page Agenda (`DeadlinesPanel.vue`) : formulaire simple (intitulé, catégorie crédit / charges / impôts / URSSAF / assurance / loyer / autre, montant facultatif, date, récurrence ponctuelle / mensuelle / trimestrielle / semestrielle / annuelle, dernière échéance facultative, notes) et liste chronologique des 12 prochains mois groupée par mois, avec compte à rebours et couleur d'urgence ; vue « Toutes les échéances » pour gérer l'ensemble
+- [feat] Chaque occurrence est posée dans l'agenda comme événement journée entière de type « Échéance » (donc aussi dans Google Agenda) ; récurrences calculées depuis la première date (une échéance du 31 retombe le 31 après février), fenêtre glissante de 12 mois prolongée chaque nuit par `DeadlineEventsJob` (cron 4 h 15) ; une occurrence supprimée à la main ne revient pas, modifier l'échéance repose les occurrences à venir, la supprimer les retire de l'agenda et laisse les passées
+- [improve] Agenda : nouveau type d'événement « Échéance » (rouge) et avertissement dans le formulaire d'un événement issu d'une échéance (modification valable pour cette date seulement)
+- [db] Table `deadlines` (dont `generated_until`, borne des occurrences déjà posées) et colonne `events.deadline_id` (clé étrangère en nullify)
+- [feat] Alfred : `Deadline` lisible et proposable en écriture (Tier 1) dans le dashboard et dans les skills locales, indexé dans le corpus RAG, note de modèle et repère dans le prompt (ne pas créer soi-même les Event d'une échéance) ; `CLAUDE.md` documenté
+- [chore] Tests : `deadline_test.rb` (fins de mois, horizon, cron, reconstruction, suppression) et `deadlines_test.rb` (API) ; tests d'Alfred et de contrôle d'accès au vert avec `PARALLEL_WORKERS=1`
+
 ### 2026-10-12 — Module Courrier et Alfred rédacteur
 - [feat] Nouveau module **Courrier** (`/letters/:id?`, tuile ✉️) : générateur de lettres classiques avec formulaire (expéditeur, destinataire, lieu et date, mode d'envoi, référence, objet, contenu, signataire, signature manuscrite, pied de page) et **aperçu A4 en temps réel** ; destinataire dans la fenêtre d'une enveloppe DL, date à la française (« le 1er octobre »)
 - [feat] Pré-remplissage depuis « Mon profil » (bloc d'adresse, ville, nom, signature manuscrite) via `GET /api/letters/defaults`, et destinataire choisi parmi les contacts

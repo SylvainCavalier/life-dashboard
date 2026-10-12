@@ -30,6 +30,11 @@ Rails.application.configure do
       class: "ReminderDispatchJob",
       description: "Envoie les rappels echus (notification push, relances, mail de secours) chaque minute"
     },
+    deadline_events: {
+      cron: "15 4 * * *",
+      class: "DeadlineEventsJob",
+      description: "Prolonge dans l'agenda les occurrences des echeances notables recurrentes (fenetre de 12 mois)"
+    },
     alfred_reindex: {
       cron: "30 4 * * *",
       class: "AlfredReindexJob",

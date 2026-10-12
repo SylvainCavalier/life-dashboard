@@ -15,13 +15,19 @@
 #  title             :string           not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
+#  deadline_id       :bigint
 #  google_event_id   :string
 #
 # Indexes
 #
+#  index_events_on_deadline_id      (deadline_id)
 #  index_events_on_event_type       (event_type)
 #  index_events_on_google_event_id  (google_event_id) UNIQUE
 #  index_events_on_start_time       (start_time)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (deadline_id => deadlines.id) ON DELETE => nullify
 #
 require "test_helper"
 require "minitest/mock"

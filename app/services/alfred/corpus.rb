@@ -13,6 +13,7 @@ module Alfred
   #   except   : colonnes ignorees en plus des colonnes techniques
   #   only_if  : ->(record) false = l'enregistrement est retire du corpus
   #   file     : nom de la piece jointe Active Storage dont le texte est indexe
+  #   text     : ->(record) texte ajoute a la fiche (contenu que les colonnes rendent mal, JSON...)
   #
   # Jamais ici : PasswordEntry (coffre-fort), MailAccount (identifiants), User.
   # Les attributs chiffres (`encrypts`) sont ecartes automatiquement du corpus
@@ -54,6 +55,8 @@ module Alfred
       "Trip" => { title: "Voyage", label: ->(r) { "Voyage : #{r.destination}" }, date: :start_date, path: ->(r) { "/trips/#{r.id}" },
                   children: { trip_items: %w[day kind title notes cost url] } },
       "TripItem" => { parent: :trip },
+      "Letter" => { title: "Courrier", label: ->(r) { r.label }, date: :letter_date, path: ->(r) { "/letters/#{r.id}" },
+                    except: %w[body document_id include_signature], text: ->(r) { "Contenu :\n#{r.body_text}" if r.body_text.present? } },
       "UsefulSite" => { title: "Site utile", label: ->(r) { r.name }, path: ->(_) { "/useful-sites" } },
       "VideoDownload" => { title: "Video telechargee", label: ->(r) { r.title.presence || r.url }, date: :published_at, path: ->(_) { "/downloader" },
                            only_if: ->(r) { r.status == "completed" },

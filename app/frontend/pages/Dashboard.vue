@@ -142,6 +142,7 @@ const counts = ref({
   trips: 0,
   video_downloads: 0,
   meetings: 0,
+  letters: 0,
 })
 
 const fetchCounts = async () => {
@@ -161,6 +162,7 @@ const fetchCounts = async () => {
     { key: 'trips', resource: 'trips' },
     { key: 'video_downloads', resource: 'video_downloads' },
     { key: 'meetings', resource: 'meetings' },
+    { key: 'letters', resource: 'letters' },
   ]
 
   const results = await Promise.allSettled(
@@ -262,6 +264,7 @@ const modules = computed(() => [
   { name: 'Mon profil', icon: '👤', subtitle: 'Donnees personnelles', to: '/profile' },
   { name: 'CV', icon: '📄', subtitle: 'Experiences, formations, competences', to: '/cv' },
   { name: 'Documents', icon: '📁', subtitle: `${counts.value.documents} document${counts.value.documents > 1 ? 's' : ''}`, to: '/documents' },
+  { name: 'Courrier', icon: '✉️', subtitle: `${counts.value.letters} brouillon${counts.value.letters > 1 ? 's' : ''}`, to: '/letters' },
   { name: 'Transfert', icon: '📤', subtitle: `${counts.value.file_transfers} fichier${counts.value.file_transfers > 1 ? 's' : ''} partage${counts.value.file_transfers > 1 ? 's' : ''}`, to: '/transfer' },
   { name: 'Voyages', icon: '✈️', subtitle: `${counts.value.trips} voyage${counts.value.trips > 1 ? 's' : ''}`, to: '/trips' },
   { name: 'Downloader', icon: '🎬', subtitle: `${counts.value.video_downloads} telechargement${counts.value.video_downloads > 1 ? 's' : ''}`, to: '/downloader' },

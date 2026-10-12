@@ -22,6 +22,8 @@ module Alfred
       def text
         lines = ["#{@config[:title]} : #{label}"]
         lines.concat(attribute_lines(@record, except: Array(@config[:except])))
+        extra = @config[:text]&.call(@record)
+        lines << extra if extra.present?
         (@config[:children] || {}).each do |association, columns|
           lines.concat(children_lines(association, columns))
         end

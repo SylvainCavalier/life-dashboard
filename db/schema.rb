@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_07_201512) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_12_093038) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -567,6 +567,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_07_201512) do
     t.index ["name"], name: "index_languages_on_name", unique: true
   end
 
+  create_table "letters", force: :cascade do |t|
+    t.text "sender"
+    t.text "recipient"
+    t.string "place"
+    t.date "letter_date"
+    t.string "mention"
+    t.string "reference"
+    t.string "subject"
+    t.jsonb "body", default: {}, null: false
+    t.string "signatory"
+    t.boolean "include_signature", default: true, null: false
+    t.text "footer"
+    t.bigint "document_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_letters_on_document_id"
+  end
+
   create_table "mail_accounts", force: :cascade do |t|
     t.string "email", null: false
     t.string "provider", null: false
@@ -1057,6 +1075,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_07_201512) do
   add_foreign_key "invoices", "companies"
   add_foreign_key "invoices", "quotes"
   add_foreign_key "language_sessions", "languages"
+  add_foreign_key "letters", "documents", on_delete: :nullify
   add_foreign_key "meetings", "documents", on_delete: :nullify
   add_foreign_key "project_links", "projects"
   add_foreign_key "project_skills", "projects"

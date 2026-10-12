@@ -5,6 +5,7 @@ module Alfred
       DEFAULT_LIMIT = 25
       MAX_LIMIT = 100
       MAX_VALUE_CHARS = 3000
+      MAX_EXTRA_CHARS = 30_000
       OPERATORS = %w[eq ne gt gte lt lte in nin ilike is_null].freeze
 
       def self.definition
@@ -42,13 +43,15 @@ module Alfred
         return { model: name, count: total } if input["count_only"]
 
         relation = apply_order(relation, allowed, input["order"] || [])
-        fields = input["fields"].present? ? Array(input["fields"]).map(&:to_s) & allowed : allowed
+        returnable = allowed + DataAccess.readable_extras(name)
+        fields = input["fields"].present? ? Array(input["fields"]).map(&:to_s) & returnable : returnable
         fields = (["id"] + fields).uniq
         limit = (input["limit"] || DEFAULT_LIMIT).to_i.clamp(1, MAX_LIMIT)
 
+        extras = DataAccess.readable_extras(name)
         records = relation.limit(limit).map do |record|
           @context.seen&.add([name, record.id])
-          truncate_values(DataAccess.serialize(record, fields))
+          truncate_values(DataAccess.serialize(record, fields), uncapped: extras)
         end
         { model: name, total: total, returned: records.size, records: records }
       end
@@ -95,10 +98,13 @@ module Alfred
         relation
       end
 
-      def truncate_values(attributes)
-        attributes.transform_values do |value|
+      # Les champs calcules (texte d'un courrier) passent en entier, a concurrence de
+      # MAX_EXTRA_CHARS : on ne relit pas une lettre dont il manque la fin.
+      def truncate_values(attributes, uncapped: [])
+        attributes.to_h do |field, value|
+          limit = uncapped.include?(field) ? MAX_EXTRA_CHARS : MAX_VALUE_CHARS
           text = value.is_a?(Hash) || value.is_a?(Array) ? value.to_json : value
-          text.is_a?(String) && text.length > MAX_VALUE_CHARS ? "#{text.first(MAX_VALUE_CHARS)}... [tronque]" : value
+          [field, text.is_a?(String) && text.length > limit ? "#{text.first(limit)}... [tronque]" : value]
         end
       end
     end

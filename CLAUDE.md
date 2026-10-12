@@ -24,6 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Alfred (chat)** — L'intendant installe dans le dashboard : icone de chat en bas a droite de toutes les pages (`AlfredWidget.vue`, monte dans `App.vue`). Agent a outils (Claude) adosse a un corpus RAG (pgvector + mistral-embed) qui couvre les donnees du dashboard ET le texte des documents (OCR Mistral pour les scans). Lit tout sauf les mots de passe, n'ecrit que sur confirmation explicite dans le chat. Le widget permet de vider la conversation (supprimee, sans archive) ou de l'exporter en PDF. Avatar (bouton flottant, en-tete, bulles) : `app/frontend/images/alfred-avatar.png`, majordome-robot genere avec ImageNX (skill `imagenx-generate`). Page dediee `/alfred` (`AlfredPage.vue`) : instructions du prompt modifiables section par section, consignes particulieres, suggestions d'accueil du widget (`AlfredSetting#suggestions`, vide = `DEFAULT_SUGGESTIONS`), outils et connexions, perimetre des donnees, memoire d'Alfred (faits retenus, `AlfredMemory`) et memoire documentaire. Voir « Alfred dans le dashboard »
 - **Outils** (`/tools/:onglet`) — Petits utilitaires, un onglet par outil (`TABS` dans `ToolsPage.vue` : en ajouter un = une entree + un composant dans `components/tools/`). Tout tourne **dans le navigateur**, sans backend ni modele : le fichier n'est jamais envoye au serveur. **Seule exception : l'onglet Videos** (voir plus bas et « Outil Videos »). Onglet **PDF** (`PdfTool.vue`) : numerotation, filigrane, signature (celle de « Mon profil », placee a la souris), decoupage ; modifications enchainables et annulables, operations pures dans `pdfOperations.js` (pdf-lib, polices standard donc encodage WinAnsi : pas d'emojis), apercu par pdf.js (`pdfRender.js`, worker servi par Vite, `pdfjs-dist` epingle en 5.4 car les versions suivantes exigent Node 22). Les pages avec `/Rotate` sont gerees : on raisonne dans le repere de la page affichee (`pageFrame`). Onglet **Images** (`ImageTool.vue`, image chargee une fois et partagee par les sous-outils de `components/tools/image/`) : recadrage (cropperjs 1.x, comme dans narval), rotation, miroir, redimensionnement, conversion JPEG/PNG/WebP (`ImageCrop.vue`) ; **fond transparent** (`ImageTransparency.vue`, algorithme dans `imageTransparency.js`) pour les fonds unis : couleur du fond deduite des bords ou prelevee au clic, remplissage depuis les bords (ou toute la couleur), puis detourage des contours anticrenelés (estimation de la couleur du sujet sur les voisins + decontamination, sinon liseré clair sur fond sombre). Volontairement pas de modele d'IA de detourage (`@imgly/background-removal` : AGPL, dizaines de Mo, CDN bloque par la CSP), inutile pour un fond uni. L'apercu est calcule sur une image reduite a 1000 px, l'export en taille reelle. Onglet **Videos** (`VideoTool.vue`, `components/tools/video/`) : transcription par intervenant (Voxtral) et resume en francais (Claude) d'une video importee ou deja rangee par le Downloader, PDF a telecharger ou a ranger dans les documents (domaine `transcriptions`) ; passe par le serveur (`VideoTranscript`, job), voir « Outil Videos »
 - **Reunions** (`/meetings`) — Comptes rendus de reunions (presentiel ou visio) : un enregistrement audio devient une transcription par intervenant (Voxtral, diarisation), une synthese (Claude : resume, points cles, decisions, actions, questions ouvertes) et un PDF range dans les documents (domaine `meetings`). L'audio est supprime apres transcription. Voir « Reunions »
+- **Courrier** (`/letters/:id?`) — Generateur de lettres classiques : formulaire (expediteur pre-rempli depuis « Mon profil », destinataire depuis un contact, lieu et date, mode d'envoi, reference, objet, contenu sous Tiptap, signature manuscrite du profil, pied de page) avec apercu A4 en temps reel ; brouillons (`Letter`), telechargement PDF / DOCX et rangement du PDF dans les documents (domaine `letters`). Voir « Courrier »
 - **Voyages** — Organisation des voyages : rapport IA (OpenAI, recherche web) avec estimation des coûts, lieux, restaurants et itinéraire, planning visuel jour par jour, historique et carte SVG des pays visités
 
 Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère tout le UI, Rails sert d'API backend. Vite pour le build frontend.
@@ -31,7 +32,11 @@ Architecture : Rails 8.0 monolith + Vue 3 SPA frontend. Single domain, Vue gère
 ## Rules
 
 - **Do NOT run the dev server, tests, or linters** unless explicitly asked.
-- Toujours demander confirmation avant de lancer `db:migrate` ou toute commande destructive.
+- Les migrations (`db:migrate`) se lancent **sans demander**. Elles se creent toujours par `bin/rails generate migration` ;
+  un fichier de migration deja joue (en local ou en production) ne se modifie jamais : on ecrit une nouvelle migration.
+  Modifier un fichier genere dans la session et pas encore joue est permis.
+- Demander confirmation avant toute commande **destructive** (`db:drop`, `db:reset`, `db:rollback`, suppression de donnees...)
+  et avant tout **deploiement en production** (`git push heroku master`, `heroku run` qui ecrit).
 - Le projet est en français (UI, commentaires) sauf le code (variables, méthodes en anglais).
 
 ## Subagent Alfred (intendant)
@@ -40,10 +45,10 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
-- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `Reminder` (`completed_at` en update seulement), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code).
+- **Tier 1 (attributs explicites)** : `Event`, `Note`, `Task` (dont `project_id`), `Reminder` (`completed_at` en update seulement), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code), `Letter` (contenu par l'attribut virtuel `body_text`, jamais `body` ; rendu par `bin/rails letters:pdf|docx|save_to_documents ID=...`).
 - **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvPitch`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
 - **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `PushSubscription` (abonnements des appareils, ni lu ni ecrit), `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). `SentinelWeek` et `SentinelDocument` sont en lecture seule : une veille se lance via `bin/rails sentinel:run DOMAIN=... MONDAY=...` (asynchrone) ou `sentinel:run_now` (synchrone, celui qu'utilise Alfred, pour la même raison que `fetch_now`). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
 
@@ -433,7 +438,11 @@ Les tables d'Alfred (`alfred_*`, `embedding_caches`) ne sont volontairement expo
 
 Deja branches : Gmail (voir « Gmail pour Alfred ») et Google Agenda (par ricochet : `Event` est le miroir de l'agenda
 Google, voir « Google Calendar »). Les rappels passent par `propose_write` sur `Reminder` (le prompt dit qu'un « rappelle-moi » est un Reminder, ni une
-Task ni un Event). Pas encore dans l'Alfred du dashboard : Downloader, Sentinelle, Voyages (les points
+Task ni un Event). Courrier : section « Courriers » du prompt (`Prompt::DEFAULTS["letters"]`) : Alfred demande expediteur, destinataire et contenu,
+puis `propose_write` sur `Letter` avec `body_text` ; `sender`, `place`, `signatory` absents sont repris du profil a la creation
+(`Letter#apply_profile_defaults`, champs nil seulement : une chaine vide du formulaire reste vide). Pour relire un brouillon,
+`query_records` renvoie `body_text` en entier (`DataAccess::READABLE_EXTRAS` : champs calcules, ni filtre ni tri, plafond
+`MAX_EXTRA_CHARS`) a la place du JSON `body`, exclu de la lecture. Pas encore dans l'Alfred du dashboard : Downloader, Sentinelle, Voyages (les points
 d'entree existent : `VideoDownload.enqueue!`, `SentinelWeek.run!`, `Trip#generate_plan!` ; les brancher = un outil de
 plus dans `Alfred::Tools::ALL`, avec confirmation pour ce qui coute).
 
@@ -512,6 +521,33 @@ l'est des qu'il est range dans les documents, comme pour les Reunions. Throttle 
 Tests : `video_transcripts_test.rb`, `video_transcript_job_test.rb`, `test/services/video_transcripts/` (transcripteur et
 client Claude factices, ffmpeg desactive).
 
+### Courrier (lettres mises en page)
+```bash
+bin/rails letters:pdf ID=3                 # PDF dans tmp/letters/ (OUT= pour un autre chemin)
+bin/rails letters:docx ID=3                # DOCX, meme logique
+bin/rails letters:save_to_documents ID=3   # range le PDF dans les documents (domaine letters, remplace le precedent)
+```
+Page `LettersPage.vue` (`/letters/:id?`) : formulaire a gauche, apercu A4 a droite (`components/letters/LetterPreview.vue`, feuille
+dessinee en millimetres puis reduite a la largeur disponible). Une lettre enregistree (`Letter`) est un brouillon ; le PDF et le DOCX
+se generent **a la demande, sans enregistrer** (`POST /api/letters/export`, `file_format` = pdf | docx, et pas `format` que Rails lirait
+comme le format de la requete). « Ranger dans les documents » enregistre le brouillon puis `Letter#save_to_documents!` (meme patron que
+`VideoTranscript` : `Document` cree au premier envoi puis remplace, domaine `letters`, categorie `sent`). `GET /api/letters/defaults`
+pre-remplit expediteur, lieu, signataire et signature depuis `PersonalProfile`.
+**Contenu** : JSON Tiptap dans `letters.body` (jsonb). Les extensions sont limitees a ce que les rendus savent traiter
+(`components/letters/letterExtensions.js` : paragraphes alignes, listes, gras, italique, souligne) et `Letters::Body.sanitize` nettoie
+tout JSON recu (noeuds, marques et attributs inconnus ecartes ; un noeud inconnu garde son texte). `Letters::Body.blocks` aplatit le
+document en blocs simples (`paragraph` / `list_item` avec niveau et puce) que parcourent les deux rendus, sans connaitre Tiptap.
+`body_text` / `body_text=` passent par le texte brut : c'est l'entree d'Alfred, des skills et le texte du corpus RAG.
+**Mise en page** : `Letters::Layout` (mm, A4, destinataire dans la fenetre d'une enveloppe DL : 110 mm du bord gauche, 50 mm du haut,
+date jamais au-dessus de 95 mm). Reprise telle quelle par `LAYOUT` dans `letterFormat.js` (apercu) et par le DOCX : **a modifier
+aux trois endroits**. La date a la francaise (« le 1er octobre ») est calculee des deux cotes (`Letter#place_and_date`, `placeAndDate`).
+`Letters::Pdf` (Prawn, DejaVu Sans embarquee comme `VideoTranscripts::ReportPdf` ; Prawn ne decode que `&amp; &lt; &gt;` dans
+`inline_format`, d'ou un echappement maison plutot qu'`html_escape`) : pied de page sur chaque page, numerotation au-dela d'une page,
+bloc signature insecable. `Letters::Docx` : WordprocessingML ecrit a la main et zippe par `rubyzip` (gem explicite du Gemfile), en flux
+sans cadres positionnes (le destinataire est descendu selon le nombre de lignes de l'expediteur), police Arial, signature en image
+inline, pied de page dans `footer1.xml`. L'apercu approxime les sauts de page (le PDF fait foi). Tests : `letter_test.rb`,
+`letters_test.rb`, `test/services/letters/`.
+
 ### Voyages (rapport IA)
 ```bash
 bin/rails trips:plan[ID]       # enfile la generation du rapport IA d'un voyage (GoodJob)
@@ -550,6 +586,8 @@ rails test                          # Run all tests
 rails test test/path/to/file.rb    # Run single test file
 rails test test/path/to/file.rb:42 # Run specific test at line
 ```
+Sous macOS, la suite lancee telle quelle peut se figer sans rien afficher (workers paralleles tues par la protection
+fork d'Objective-C) : lancer `PGGSSENCMODE=disable PARALLEL_WORKERS=1 bin/rails test` (suite complete en quelques secondes).
 
 ### Linting
 ```bash

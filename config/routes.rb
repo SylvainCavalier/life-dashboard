@@ -100,6 +100,15 @@ Rails.application.routes.draw do
         post :save_to_documents
       end
     end
+    # Module Courrier : brouillons de lettres ; PDF / DOCX generes a la demande, sans
+    # enregistrer (POST /export), ou PDF range dans les documents (save_to_documents)
+    resources :letters, only: [:index, :show, :create, :update, :destroy] do
+      collection do
+        get :defaults
+        post :export
+      end
+      member { post :save_to_documents }
+    end
     resources :subscriptions, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre et liens imbriques ; la to-do list et les

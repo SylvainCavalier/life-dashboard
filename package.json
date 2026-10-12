@@ -27,6 +27,11 @@
   "dependencies": {
     "@rails/activestorage": "^7.2.302",
     "@svg-maps/world": "^2.0.0",
+    "@tiptap/core": "^3.31.4",
+    "@tiptap/extension-text-align": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
+    "@tiptap/vue-3": "^3.31.4",
     "axios": "^1.12.2",
     "cropperjs": "^1.6.3",
     "pdf-lib": "^1.17.1",

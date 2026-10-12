@@ -107,6 +107,11 @@ export default [
     component: () => import('../pages/modules/DocumentsPage.vue'),
   },
   {
+    path: '/letters/:id?',
+    name: 'Letters',
+    component: () => import('../pages/modules/LettersPage.vue'),
+  },
+  {
     path: '/transfer',
     name: 'Transfer',
     component: () => import('../pages/modules/TransferPage.vue'),

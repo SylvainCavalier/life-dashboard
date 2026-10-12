@@ -32,7 +32,7 @@ class Document < ApplicationRecord
 
   DOMAINS = %w[
     health real_estate taxes companies general
-    education invoices banking civil_status work leisure projects meetings transcriptions
+    education invoices banking civil_status work leisure projects meetings transcriptions letters
   ].freeze
 
   CATEGORIES = {
@@ -51,7 +51,9 @@ class Document < ApplicationRecord
     # Comptes rendus produits par le module Reunions (Meeting::KINDS)
     "meetings" => %w[in_person visio other],
     # Transcriptions produites par l'outil Videos (page Outils, VideoTranscript)
-    "transcriptions" => %w[video other]
+    "transcriptions" => %w[video other],
+    # Courriers ; ceux mis en page par la page Courrier (Letter) arrivent en `sent`
+    "letters" => %w[sent received other]
   }.freeze
 
   validates :name, presence: true

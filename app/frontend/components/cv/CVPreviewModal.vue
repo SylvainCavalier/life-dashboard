@@ -6,7 +6,7 @@
     <!-- Panel -->
     <div class="relative z-10 w-full h-full flex flex-col md:flex-row bg-gray-100">
       <!-- Sidebar controls -->
-      <aside class="w-full md:w-80 bg-white border-r border-gray-200 overflow-y-auto p-5 flex flex-col gap-5 shadow-sm">
+      <aside class="w-full h-full md:w-80 bg-white border-r border-gray-200 overflow-y-auto p-5 pr-10 md:pr-5 flex flex-col gap-5 shadow-sm">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold">Aperçu CV</h2>
           <button @click="$emit('close')" class="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
@@ -113,32 +113,71 @@
         </div>
       </aside>
 
-      <!-- Preview area -->
-      <div class="flex-1 overflow-auto p-6 bg-gray-300">
-        <div class="cv-preview-viewport mx-auto" :style="{ width: '210mm' }">
-          <!-- Content (flowing, spans both pages) -->
-          <div ref="previewWrap" class="cv-preview-content">
-            <component
-              :is="currentTemplateComponent"
-              :profile="profile"
-              :experiences="filteredExperiences"
-              :formations="filteredFormations"
-              :skills="filteredSkills"
-              :interests="filteredInterests"
-              :photo-data-url="photoDataUrl"
-              :pitch="pitch"
-              :accent-color="accentColor"
-              :interests-detailed="interestsDetailed"
-            />
-          </div>
+      <!-- Bouton d'ouverture du volet Aperçu (mobile uniquement) -->
+      <button
+        type="button"
+        class="md:hidden fixed right-0 top-1/2 z-20 bg-indigo-600 text-white rounded-l-lg shadow-md px-1.5 py-4 text-xs font-medium tracking-wide"
+        style="writing-mode: vertical-rl; transform: translateY(-50%);"
+        aria-label="Ouvrir l'aperçu du CV"
+        :aria-expanded="previewOpen"
+        @click="previewOpen = true"
+      >
+        Aperçu
+      </button>
 
-          <!-- Page overlay (separator lines + labels) -->
-          <div class="cv-preview-overlay" aria-hidden="true">
-            <div class="cv-page-label cv-page-label-1">Page 1</div>
-            <div class="cv-page-break"></div>
-            <div class="cv-page-label cv-page-label-2">Page 2</div>
-            <div class="cv-page-break cv-page-break-limit"></div>
-            <div class="cv-page-label cv-page-label-overflow">⚠ Hors CV (> 2 pages)</div>
+      <!-- Fond assombri derriere le volet (mobile) -->
+      <transition
+        enter-active-class="transition-opacity duration-200"
+        enter-from-class="opacity-0"
+        leave-active-class="transition-opacity duration-200"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="previewOpen" class="md:hidden fixed inset-0 z-30 bg-black/40" @click="previewOpen = false"></div>
+      </transition>
+
+      <!-- Preview area. Sur mobile, volet coulissant depuis la droite ; une seule
+           instance pour que l'export PDF et la detection de debordement restent valables. -->
+      <div
+        class="fixed inset-y-0 right-0 z-40 w-[92vw] flex flex-col bg-gray-300 shadow-xl transition-transform duration-200
+               md:static md:z-auto md:w-auto md:flex-1 md:shadow-none md:translate-x-0"
+        :class="previewOpen ? 'translate-x-0' : 'translate-x-full'"
+      >
+        <div class="md:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-2">
+          <span class="text-sm font-semibold text-gray-800">Aperçu</span>
+          <button type="button" class="text-sm text-gray-500 hover:text-gray-800 px-2 py-1" aria-label="Fermer l'aperçu" @click="previewOpen = false">
+            Fermer ✕
+          </button>
+        </div>
+        <div ref="previewArea" class="flex-1 overflow-auto p-3 md:p-6">
+          <!-- Le CV garde sa largeur A4 (mise en page identique a l'export) et
+               n'est que reduit a l'affichage quand l'ecran est plus etroit. -->
+          <div class="mx-auto" :style="scaledBoxStyle">
+            <div ref="viewport" class="cv-preview-viewport" :style="viewportStyle">
+              <!-- Content (flowing, spans both pages) -->
+              <div ref="previewWrap" class="cv-preview-content">
+                <component
+                  :is="currentTemplateComponent"
+                  :profile="profile"
+                  :experiences="filteredExperiences"
+                  :formations="filteredFormations"
+                  :skills="filteredSkills"
+                  :interests="filteredInterests"
+                  :photo-data-url="photoDataUrl"
+                  :pitch="pitch"
+                  :accent-color="accentColor"
+                  :interests-detailed="interestsDetailed"
+                />
+              </div>
+
+              <!-- Page overlay (separator lines + labels) -->
+              <div class="cv-preview-overlay" aria-hidden="true">
+                <div class="cv-page-label cv-page-label-1">Page 1</div>
+                <div class="cv-page-break"></div>
+                <div class="cv-page-label cv-page-label-2">Page 2</div>
+                <div class="cv-page-break cv-page-break-limit"></div>
+                <div class="cv-page-label cv-page-label-overflow">⚠ Hors CV (> 2 pages)</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -147,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import ClassicTemplate from './templates/ClassicTemplate.vue'
 import ModernTemplate from './templates/ModernTemplate.vue'
 import cvPrintCss from './cv-print.css?raw'
@@ -265,6 +304,57 @@ watch(pitchId, async (id) => {
     const data = await patch('/cv_setting', { cv_setting: { active_pitch_id: id } })
     emit('settings-saved', { active_pitch_id: data.active_pitch_id, pitch: data.pitch })
   } catch (_) { /* non-blocking */ }
+})
+
+// Volet Aperçu sur mobile (sous le breakpoint md, la zone d'aperçu devient un tiroir)
+const previewOpen = ref(false)
+const desktopQuery = window.matchMedia('(min-width: 768px)')
+const onBreakpointChange = (e) => {
+  if (e.matches) previewOpen.value = false
+}
+const onKeydown = (e) => {
+  if (e.key === 'Escape') previewOpen.value = false
+}
+
+// Mise a l'echelle de la feuille A4 (210mm = ~794px) a la largeur disponible.
+// transform ne change pas la boite de mise en page : on dimensionne donc un
+// conteneur a la taille reduite pour que le defilement corresponde.
+const A4_WIDTH_PX = 210 / 0.2646
+const PAGE_LABEL_GUTTER_PX = 70 // etiquettes « Page 1 / 2 » a droite de la feuille
+const previewArea = ref(null)
+const viewport = ref(null)
+const scale = ref(1)
+const viewportHeight = ref(0)
+const measure = () => {
+  if (previewArea.value) {
+    const style = window.getComputedStyle(previewArea.value)
+    const available = previewArea.value.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    scale.value = Math.min(1, available / (A4_WIDTH_PX + PAGE_LABEL_GUTTER_PX))
+  }
+  if (viewport.value) viewportHeight.value = viewport.value.offsetHeight
+}
+const viewportStyle = computed(() => ({
+  width: '210mm',
+  transform: scale.value < 1 ? `scale(${scale.value})` : null,
+  transformOrigin: 'top left',
+}))
+const scaledBoxStyle = computed(() => scale.value < 1
+  ? { width: `${(A4_WIDTH_PX + PAGE_LABEL_GUTTER_PX) * scale.value}px`, height: `${viewportHeight.value * scale.value}px` }
+  : { width: '210mm' })
+
+let resizeObserver = null
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown)
+  desktopQuery.addEventListener('change', onBreakpointChange)
+  resizeObserver = new window.ResizeObserver(measure)
+  if (previewArea.value) resizeObserver.observe(previewArea.value)
+  if (viewport.value) resizeObserver.observe(viewport.value)
+  measure()
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKeydown)
+  desktopQuery.removeEventListener('change', onBreakpointChange)
+  resizeObserver?.disconnect()
 })
 
 // Persist settings

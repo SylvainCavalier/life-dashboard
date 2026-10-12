@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-6">
+  <div class="min-h-screen bg-gray-50 p-3 sm:p-6">
     <div class="max-w-5xl mx-auto">
       <router-link to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">&larr; Retour au dashboard</router-link>
 
       <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div class="flex items-center gap-3">
           <span class="text-3xl">📄</span>
           <div>
@@ -14,15 +14,15 @@
         </div>
         <button
           @click="showPreview = true"
-          class="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+          class="self-start sm:self-auto bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
         >
           👁 Aperçu & export PDF
         </button>
       </div>
 
       <!-- Infos personnelles (lecture seule, depuis PersonalProfile) -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Informations personnelles</h2>
           <router-link to="/profile" class="text-xs text-indigo-600 hover:text-indigo-800">Modifier dans Profil →</router-link>
         </div>
@@ -47,7 +47,7 @@
           </div>
 
           <!-- Profile fields -->
-          <div v-if="profile && (profile.first_name || profile.last_name)" class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm content-start">
+          <div v-if="profile && (profile.first_name || profile.last_name)" class="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm content-start">
             <div>
               <div class="text-xs text-gray-500">Nom complet</div>
               <div class="font-medium text-gray-900">{{ profile.full_name }}</div>
@@ -58,13 +58,13 @@
             </div>
             <div>
               <div class="text-xs text-gray-500">Email</div>
-              <div class="font-medium text-gray-900">{{ profile.email || '—' }}</div>
+              <div class="font-medium text-gray-900 break-all">{{ profile.email || '—' }}</div>
             </div>
             <div>
               <div class="text-xs text-gray-500">Téléphone</div>
               <div class="font-medium text-gray-900">{{ profile.mobile_phone || profile.phone || '—' }}</div>
             </div>
-            <div class="col-span-2 md:col-span-4">
+            <div class="sm:col-span-2 md:col-span-4">
               <div class="text-xs text-gray-500">Adresse</div>
               <div class="font-medium text-gray-900">{{ profile.full_address || '—' }}</div>
             </div>
@@ -76,8 +76,8 @@
       </section>
 
       <!-- Accroches -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-1">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-1">
           <h2 class="text-lg font-semibold text-gray-900">Accroches</h2>
           <button @click="openPitchForm()" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -93,7 +93,7 @@
             placeholder="Ex. Développeur full-stack passionné par les produits utiles. 8 ans d'expérience en Rails/Vue, spécialisé dans les apps à forte logique métier."
             class="w-full border rounded-lg px-3 py-2 text-sm mb-3"
           ></textarea>
-          <div class="flex items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <label v-if="!pitchForm.id" class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
               <input type="checkbox" v-model="pitchForm.activate" class="accent-indigo-600" />
               Afficher sur le CV
@@ -114,22 +114,22 @@
         <ul v-else class="space-y-2">
           <li
             v-for="p in pitches" :key="p.id"
-            class="border rounded-lg p-4 transition cursor-pointer"
+            class="border rounded-lg p-3 sm:p-4 transition cursor-pointer"
             :class="p.id === settings.active_pitch_id ? 'border-indigo-500 bg-indigo-50/40' : 'border-gray-100 hover:bg-gray-50'"
             @click="selectPitch(p.id)"
           >
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex items-start gap-3 flex-1">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+              <div class="flex items-start gap-3 flex-1 min-w-0">
                 <input type="radio" name="active-pitch" :checked="p.id === settings.active_pitch_id" class="mt-1 accent-indigo-600" @click.stop="selectPitch(p.id)" />
-                <div class="flex-1">
-                  <div class="flex items-center gap-2">
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span class="font-semibold text-gray-900">{{ p.title }}</span>
                     <span v-if="p.id === settings.active_pitch_id" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Sur le CV</span>
                   </div>
                   <p class="text-sm text-gray-700 mt-1 whitespace-pre-line">{{ p.content }}</p>
                 </div>
               </div>
-              <div class="flex gap-2 text-xs" @click.stop>
+              <div class="flex gap-3 sm:gap-2 text-xs flex-shrink-0 pl-7 sm:pl-0" @click.stop>
                 <button @click="openPitchForm(p)" class="text-blue-500 hover:text-blue-700">Modifier</button>
                 <button @click="duplicatePitch(p)" class="text-gray-500 hover:text-gray-700">Dupliquer</button>
                 <button @click="deletePitch(p)" class="text-red-400 hover:text-red-600">Supprimer</button>
@@ -149,8 +149,8 @@
       </section>
 
       <!-- Expériences professionnelles -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Expériences professionnelles</h2>
           <button @click="openExperienceForm(null, null)" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -170,7 +170,7 @@
               <input v-model.number="experienceForm.start_year" type="number" min="1900" :max="maxYear" placeholder="Année de début *" class="border rounded-lg px-3 py-2 text-sm" />
               <input v-model.number="experienceForm.end_year" type="number" min="1900" :max="maxYear + 10" placeholder="Année de fin (vide = en cours)" class="border rounded-lg px-3 py-2 text-sm" />
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span class="text-sm text-gray-500">Domaine(s) :</span>
               <label v-for="d in experienceDomains" :key="d.value" class="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input type="checkbox" :value="d.value" v-model="experienceForm.domain" class="accent-indigo-600" />
@@ -191,10 +191,10 @@
           Aucune expérience enregistrée
         </div>
         <ul class="space-y-3">
-          <li v-for="exp in experiencesProf" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
+          <li v-for="exp in experiencesProf" :key="exp.id" class="border border-gray-100 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span class="font-semibold text-gray-900">{{ exp.title }}</span>
                   <span v-if="exp.category" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{{ categoryLabel(exp.category) }}</span>
                   <span v-for="d in (exp.domain || [])" :key="d" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{{ domainLabel(d) }}</span>
@@ -203,7 +203,7 @@
                 <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
                 <p v-if="exp.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ exp.description }}</p>
               </div>
-              <div class="flex gap-2 text-xs">
+              <div class="flex gap-3 sm:gap-2 text-xs flex-shrink-0">
                 <button @click="openExperienceForm(exp)" class="text-blue-500 hover:text-blue-700">Modifier</button>
                 <button @click="deleteExperience(exp.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
               </div>
@@ -213,8 +213,8 @@
       </section>
 
       <!-- Conférences & Interventions -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Conférences & Interventions</h2>
           <button @click="openExperienceForm(null, 'intervention')" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -230,7 +230,7 @@
               <input v-model.number="experienceForm.start_year" type="number" min="1900" :max="maxYear" placeholder="Année *" class="border rounded-lg px-3 py-2 text-sm" />
               <input v-model.number="experienceForm.end_year" type="number" min="1900" :max="maxYear + 10" placeholder="Année de fin (si différente)" class="border rounded-lg px-3 py-2 text-sm" />
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span class="text-sm text-gray-500">Domaine(s) :</span>
               <label v-for="d in experienceDomains" :key="d.value" class="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input type="checkbox" :value="d.value" v-model="experienceForm.domain" class="accent-indigo-600" />
@@ -251,10 +251,10 @@
           Aucune intervention enregistrée
         </div>
         <ul class="space-y-3">
-          <li v-for="exp in experiencesConf" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
+          <li v-for="exp in experiencesConf" :key="exp.id" class="border border-gray-100 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span class="font-semibold text-gray-900">{{ exp.title }}</span>
                   <span v-for="d in (exp.domain || [])" :key="d" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{{ domainLabel(d) }}</span>
                 </div>
@@ -262,7 +262,7 @@
                 <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
                 <p v-if="exp.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ exp.description }}</p>
               </div>
-              <div class="flex gap-2 text-xs">
+              <div class="flex gap-3 sm:gap-2 text-xs flex-shrink-0">
                 <button @click="openExperienceForm(exp)" class="text-blue-500 hover:text-blue-700">Modifier</button>
                 <button @click="deleteExperience(exp.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
               </div>
@@ -272,8 +272,8 @@
       </section>
 
       <!-- Publications -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Publications & Médias</h2>
           <button @click="openExperienceForm(null, 'media')" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -289,7 +289,7 @@
               <input v-model.number="experienceForm.start_year" type="number" min="1900" :max="maxYear" placeholder="Année *" class="border rounded-lg px-3 py-2 text-sm" />
               <input v-model.number="experienceForm.end_year" type="number" min="1900" :max="maxYear + 10" placeholder="Année de fin (si différente)" class="border rounded-lg px-3 py-2 text-sm" />
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span class="text-sm text-gray-500">Domaine(s) :</span>
               <label v-for="d in experienceDomains" :key="d.value" class="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input type="checkbox" :value="d.value" v-model="experienceForm.domain" class="accent-indigo-600" />
@@ -310,10 +310,10 @@
           Aucune publication enregistrée
         </div>
         <ul class="space-y-3">
-          <li v-for="exp in experiencesPub" :key="exp.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
+          <li v-for="exp in experiencesPub" :key="exp.id" class="border border-gray-100 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span class="font-semibold text-gray-900">{{ exp.title }}</span>
                   <span v-for="d in (exp.domain || [])" :key="d" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{{ domainLabel(d) }}</span>
                 </div>
@@ -321,7 +321,7 @@
                 <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(exp.start_year, exp.end_year) }}</div>
                 <p v-if="exp.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ exp.description }}</p>
               </div>
-              <div class="flex gap-2 text-xs">
+              <div class="flex gap-3 sm:gap-2 text-xs flex-shrink-0">
                 <button @click="openExperienceForm(exp)" class="text-blue-500 hover:text-blue-700">Modifier</button>
                 <button @click="deleteExperience(exp.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
               </div>
@@ -331,8 +331,8 @@
       </section>
 
       <!-- Formations -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Formations & travaux</h2>
           <button @click="openFormationForm()" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -365,10 +365,10 @@
           Aucune formation enregistrée
         </div>
         <ul class="space-y-3">
-          <li v-for="f in formations" :key="f.id" class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
+          <li v-for="f in formations" :key="f.id" class="border border-gray-100 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span class="font-semibold text-gray-900">{{ f.title }}</span>
                   <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{{ categoryLabel(f.category) }}</span>
                 </div>
@@ -376,7 +376,7 @@
                 <div class="text-xs text-gray-400 mt-0.5">{{ formatYearRange(f.start_year, f.end_year) }}</div>
                 <p v-if="f.description" class="text-sm text-gray-700 mt-2 whitespace-pre-line">{{ f.description }}</p>
               </div>
-              <div class="flex gap-2 text-xs">
+              <div class="flex gap-3 sm:gap-2 text-xs flex-shrink-0">
                 <button @click="openFormationForm(f)" class="text-blue-500 hover:text-blue-700">Modifier</button>
                 <button @click="deleteFormation(f.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
               </div>
@@ -386,8 +386,8 @@
       </section>
 
       <!-- Compétences -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Compétences</h2>
           <button @click="openSkillForm()" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -433,8 +433,8 @@
       </section>
 
       <!-- Centres d'intérêt -->
-      <section class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
+      <section class="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Activités & centres d'intérêt</h2>
           <button @click="openInterestForm()" class="text-sm bg-black text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
             + Ajouter
@@ -456,12 +456,12 @@
           Aucun centre d'intérêt enregistré
         </div>
         <ul class="space-y-2">
-          <li v-for="int in interests" :key="int.id" class="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition flex items-start justify-between gap-4">
-            <div class="flex-1">
+          <li v-for="int in interests" :key="int.id" class="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+            <div class="flex-1 min-w-0">
               <div class="font-medium text-gray-900">{{ int.name }}</div>
               <p v-if="int.description" class="text-sm text-gray-600 mt-0.5">{{ int.description }}</p>
             </div>
-            <div class="flex gap-2 text-xs">
+            <div class="flex gap-3 sm:gap-2 text-xs flex-shrink-0">
               <button @click="openInterestForm(int)" class="text-blue-500 hover:text-blue-700">Modifier</button>
               <button @click="deleteInterest(int.id)" class="text-red-400 hover:text-red-600">Supprimer</button>
             </div>

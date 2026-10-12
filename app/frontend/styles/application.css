@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/*
+ * Safari iOS zoome sur tout champ dont la police fait moins de 16 px, et ne
+ * dezoome pas apres la saisie. Sur ecran tactile (iPhone, iPad), on force donc
+ * 16 px, quelle que soit la classe Tailwind du champ (d'ou le !important).
+ */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

@@ -15,6 +15,9 @@ const conversation = ref(null)
 const conversations = ref([])
 const sending = ref(false)
 const error = ref(null)
+// Panneau du widget ouvert : partage pour que d'autres pages puissent l'ouvrir
+// sur une conversation (« En parler a Alfred » depuis un rapport du matin).
+const panelOpen = ref(false)
 let timer = null
 
 const rememberedId = () => {
@@ -85,6 +88,12 @@ export function useAlfred() {
     conversation.value = null
     error.value = null
     remember(null)
+  }
+
+  // Ouvre le widget sur une conversation creee ailleurs (rapport du matin).
+  const openInPanel = async (id) => {
+    await open(id)
+    panelOpen.value = true
   }
 
   const loadConversations = async () => {
@@ -173,8 +182,8 @@ export function useAlfred() {
   const deleteMemory = async (id) => (await apiClient.delete(`/alfred_memories/${id}`)).data
 
   return {
-    overview, conversation, conversations, messages, busy, error,
-    loadOverview, resume, open, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
+    overview, conversation, conversations, messages, busy, error, panelOpen,
+    loadOverview, resume, open, openInPanel, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
     saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex,
     loadMemories, createMemory, updateMemory, deleteMemory,
   }

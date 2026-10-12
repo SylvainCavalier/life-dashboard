@@ -25,4 +25,23 @@ class Subscription < ApplicationRecord
 
   scope :ordered, -> { order(:name) }
   scope :active, -> { where(end_date: nil).or(where(end_date: Date.current..)) }
+
+  # Prochain prelevement (aujourd'hui compris), deduit de start_date et du cycle : la
+  # date anniversaire tous les mois ou tous les ans, calculee depuis start_date et non
+  # depuis la precedente (un debut le 31 tombe le 28 fevrier puis de nouveau le 31 mars).
+  # nil sans date de debut, ou si l'abonnement prend fin avant.
+  def next_renewal_on(today = Date.current)
+    return nil if start_date.nil?
+
+    step = billing_cycle == "yearly" ? 12 : 1
+    elapsed = ((today.year * 12) + today.month) - ((start_date.year * 12) + start_date.month)
+    index = [(elapsed / step) - 1, 0].max
+    index += 1 while start_date >> (step * index) < today
+    date = start_date >> (step * index)
+    date unless end_date && date > end_date
+  end
+
+  def as_json(options = {})
+    super.merge("next_renewal_on" => next_renewal_on)
+  end
 end

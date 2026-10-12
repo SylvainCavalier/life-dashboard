@@ -1,4 +1,4 @@
-// Service worker du Life Dashboard : uniquement les notifications push des rappels.
+// Service worker du Life Dashboard : uniquement les notifications push (rappels, rapport du matin).
 // Pas de cache ni d'interception des requetes (le SPA reste servi par Rails).
 // Fichier statique servi tel quel depuis public/ : la portee "/" couvre toute l'app.
 //

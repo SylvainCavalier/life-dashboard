@@ -63,6 +63,11 @@ class Rack::Attack
   end
 
   # Reunions : chaque traitement coute une transcription longue et une synthese.
+  # Chaque rapport du matin coute un appel Claude (et une collecte Gmail).
+  Rack::Attack.throttle('daily reports', limit: 10, period: 10.minutes) do |req|
+    req.ip if req.post? && req.path.match?(%r{^/api/daily_reports(/\d+/regenerate)?$})
+  end
+
   Rack::Attack.throttle('meetings processing', limit: 10, period: 10.minutes) do |req|
     req.ip if req.post? && req.path.match?(%r{^/api/meetings(/\d+/regenerate)?$})
   end

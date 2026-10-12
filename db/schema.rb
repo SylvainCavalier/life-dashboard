@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_12_104150) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_12_111012) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -86,6 +86,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_104150) do
     t.datetime "last_message_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "daily_report_id"
+    t.index ["daily_report_id"], name: "index_alfred_conversations_on_daily_report_id"
     t.index ["last_message_at"], name: "index_alfred_conversations_on_last_message_at"
   end
 
@@ -327,6 +329,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_104150) do
     t.datetime "updated_at", null: false
     t.index ["category"], name: "index_cv_skills_on_category"
     t.index ["position"], name: "index_cv_skills_on_position"
+  end
+
+  create_table "daily_reports", force: :cascade do |t|
+    t.date "report_date", null: false
+    t.boolean "weekend", default: false, null: false
+    t.string "status", default: "pending", null: false
+    t.string "step"
+    t.text "snapshot"
+    t.text "content"
+    t.text "error"
+    t.string "model"
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.datetime "requested_at"
+    t.datetime "finished_at"
+    t.datetime "notified_at"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["report_date"], name: "index_daily_reports_on_report_date", unique: true
   end
 
   create_table "deadlines", force: :cascade do |t|
@@ -1080,6 +1102,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_104150) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "alfred_actions", "alfred_conversations"
   add_foreign_key "alfred_actions", "alfred_messages"
+  add_foreign_key "alfred_conversations", "daily_reports", on_delete: :nullify
   add_foreign_key "alfred_messages", "alfred_conversations"
   add_foreign_key "clients", "companies"
   add_foreign_key "crm_profiles", "contacts"

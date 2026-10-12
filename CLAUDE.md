@@ -16,6 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Messagerie** — Annuaire des comptes mail (`MailAccount`). Les mails eux-memes ne sont pas dans l'application : c'est Alfred (chat) qui lit, trie et redige dans la boite Gmail via l'API, en direct (voir « Gmail pour Alfred »)
 - **SMS/Textos** — Gestion des textos
 - **Rappels** (`/reminders`) — Rappels dates (ponctuels ou recurrents) qui envoient une **notification push** sur l'iPhone (webapp installee sur l'ecran d'accueil) et le Mac a l'heure dite, relancee tant qu'elle n'est pas ouverte, puis doublee d'un mail. Alfred peut en creer (sur confirmation). Voir « Rappels »
+- **Rapports** (`/reports/:id?`) — Rapport du matin d'Alfred : chaque jour a 9 h, il passe en revue mails (moins de 5 jours), agenda, echeances, CRM, anniversaires des proches, projets prioritaires, taches, abonnements (fin ou renouvellement annuel) et rappels, puis redige un rapport dans son style de majordome et previent par notification push. Version allegee le week-end. Bouton « En parler a Alfred ». Voir « Rapport du matin »
 - **Agenda** — Organisation des rendez-vous et événements, miroir bidirectionnel de Google Calendar (compte de service, Google fait foi ; voir « Google Calendar »). Sous le calendrier, module **Échéances notables** (`DeadlinesPanel.vue`, modèle `Deadline`) : crédit, charges trimestrielles, URSSAF, impôts... ponctuelles ou récurrentes (mois, trimestre, semestre, an), liste chronologique sur 12 mois et occurrences posées dans l'agenda. Voir « Échéances notables »
 - **Transfert** — WeTransfer perso : upload direct vers le bucket OVH S3, lien de partage public temporaire, purge automatique après 3 jours
 - **Downloader** — Téléchargement de vidéos depuis YouTube, Dailymotion, X/Twitter, Crowdbunker et tout site géré par yt-dlp, en entier ou sur un extrait (de 0:34 à 0:47), avec les métadonnées de source (auteur, date de publication, vues, plateforme) et une citation prête à coller (`VideoDownload#citation`, bouton « Citer ») (mp4 720p/1080p) ou de leur piste audio (mp3) via `yt-dlp` : fichier récupéré en local (`tmp/video_downloads/<id>/`) ou rangé sur le bucket OVH (Active Storage), classement par dossiers (`VideoFolder`, cloud uniquement) avec lecteur intégré (`/downloader/folders/:id`)
@@ -45,7 +46,7 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `Deadline` (échéances notables, sans `generated_until`) est lisible. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `DailyReport` (rapports du matin, sans `snapshot`) est en lecture seule : un rapport se (re)genere via `bin/rails daily_reports:run_now`. `Deadline` (échéances notables, sans `generated_until`) est lisible. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
 - **Tier 1 (attributs explicites)** : `Event`, `Deadline` (les occurrences d'agenda suivent toutes seules), `Note`, `Task` (dont `project_id`), `Reminder` (`completed_at` en update seulement), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code), `Letter` (contenu par l'attribut virtuel `body_text`, jamais `body` ; rendu par `bin/rails letters:pdf|docx|save_to_documents ID=...`).
@@ -245,6 +246,44 @@ Fenêtre glissante `Deadline::HORIZON` (12 mois) : `generated_until` retient jus
 la supprimer retire les occurrences à venir, les passées restent dans l'agenda (clé étrangère en `nullify`). Une échéance
 ponctuelle n'a qu'un événement, qui part avec elle. La liste chronologique (`GET /api/deadlines`, clé `upcoming`) est
 calculée depuis les échéances, pas depuis les événements. Tests : `deadline_test.rb`, `deadlines_test.rb`.
+
+### Rapport du matin (page Rapports)
+```bash
+bin/rails daily_reports:run_now               # redige le rapport du jour tout de suite (DATE=, FORCE=1 refait la collecte, WEEKEND=1|0)
+bin/rails daily_reports:run                   # enfile (GoodJob)
+bin/rails daily_reports:show DATE=2026-10-12  # le rapport en texte
+```
+Cron `daily_report` : toutes les 15 min de 9 h a 11 h (Europe/Paris). `DailyReport.run!` est le point d'entree unique et
+idempotent (un rapport par `report_date`) : le premier passage le lance, les suivants rattrapent un dyno qui redemarrait a
+9 h pile ou retentent un rapport en echec. `DailyReportJob` enchaine deux etapes reprenables :
+1. `collect` : `DailyReports::Collector`, **Ruby pur**, rassemble tout dans `snapshot` (agenda 7 j hors echeances, `Deadline`
+   14 j, rappels echus ou d'ici demain, anniversaires des proches `CLOSE_RELATIONSHIPS` a 14 j avec `likes` / `dislikes`
+   pour le cadeau, abonnements qui finissent ou se renouvellent chaque annee sous 30 j, taches en retard / proches /
+   priorite 4+, CRM (rendez-vous a 7 j, priorite haute sans contact depuis 30 j), projets `en_cours` et mails). Chaque
+   element porte un `ref` (`Type#id`, ou `Mail#<thread_id>`) decrit dans `snapshot["refs"]` (libelle, page ou lien Gmail).
+   Mails : `in:inbox newer_than:5d` hors promotions et reseaux sociaux, en ecartant les fils dont le dernier message vient
+   d'une adresse de Sylvain (alias d'envoi + `Gmail::MAILBOXES`) ; le dernier message des non-lus du jour et de la veille
+   est lu en entier (8 au plus). Gmail absent ou en panne = un avertissement (`warnings`), pas un echec. Week-end : ni CRM
+   ni projets, mails non lus de moins de 2 jours. Le rapport precedent est joint (`previous`) pour un suivi sans redite.
+2. `write` : `DailyReports::Writer` (sous-classe de `StructuredSummarizer`), **un seul appel Claude** en sortie structuree,
+   sans boucle d'outils (cout fixe, environ 11 000 tokens en entree). Personnage = sections `sylvain` et `tone`
+   d'`Alfred::Prompt` + memoires ; consigne = section `daily_report`, marquee `chat: false` (editable depuis `/alfred`,
+   absente du prompt du chat). Garde anti-hallucination : un `ref` absent de l'instantane est ecarte. Contenu : `headline`
+   (corps de la notification), `opening`, `closing` et six rubriques (`DailyReport::SECTIONS`) d'elements
+   {title, detail, urgent, refs}. Variables facultatives : `DAILY_REPORT_MODEL` (defaut `ALFRED_MODEL`), `DAILY_REPORT_EFFORT`.
+Notification push (`PushNotifications.broadcast`, ouvre `/reports/:id`) une seule fois par rapport (`notified_at`) : une
+regeneration depuis la page ne sonne pas. `snapshot` et `content` sont chiffres (extraits de mails). Ouvrir un rapport le
+marque lu (`read_at`). « En parler a Alfred » (`POST /api/daily_reports/:id/discuss`) cree une conversation rattachee
+(`alfred_conversations.daily_report_id`) : `Alfred::Prompt.system_blocks(conversation)` ajoute le texte du rapport
+(`DailyReport#text`) en dernier bloc, hors cache, pendant toute la conversation ; le widget s'ouvre dessus par
+`useAlfred#openInPanel` (`panelOpen` partage). Pas dans le corpus RAG. Throttle Rack::Attack : 10 lancements / 10 min.
+Ne pas definir de methode (`def`) dans un fichier rake : elle atterrit sur `Object` et ecrase en silence les attributs de
+factory du meme nom (c'est arrive avec `report_date`). Tests : `daily_report_test.rb`, `daily_report_job_test.rb`,
+`daily_reports_test.rb`, `test/services/daily_reports/` (Gmail et client Claude factices).
+
+**Abonnements** : `Subscription#next_renewal_on` calcule le prochain prelevement depuis `start_date` et `billing_cycle`
+(date anniversaire, nul sans date de debut ou apres `end_date`) ; pas de colonne, donc rien a tenir a jour. Affiche sur la
+page Abonnements (en orange si un renouvellement annuel tombe sous 30 jours) et renvoye par `as_json` et `query_records`.
 
 ### Google Calendar (synchronisation de l'agenda)
 ```bash

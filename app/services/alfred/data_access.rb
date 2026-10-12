@@ -13,6 +13,7 @@ module Alfred
     READABLE = {
       "BudgetEntry" => :all, "CalendarSync" => :all, "Client" => :all, "Company" => :all, "Contact" => :all, "CrmProfile" => :all,
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
+      "DailyReport" => { exclude: %w[snapshot content] },
       "Deadline" => { exclude: %w[generated_until] }, "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Letter" => { exclude: %w[body] }, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
@@ -29,7 +30,9 @@ module Alfred
     # Champs calcules renvoyes par query_records en plus des colonnes (ni filtre ni tri) :
     # la forme lisible d'une colonne qui ne l'est pas (JSON de l'editeur d'un courrier).
     READABLE_EXTRAS = {
-      "Letter" => %w[body_text]
+      "DailyReport" => %w[text],
+      "Letter" => %w[body_text],
+      "Subscription" => %w[next_renewal_on]
     }.freeze
 
     # Ce que les colonnes ne disent pas : a quelle partie de l'interface correspond
@@ -45,6 +48,9 @@ module Alfred
                        "suivis (seminaire), certifications (certification), et tout le reste du parcours de formation " \
                        "(autre : concours, prix, travaux universitaires...). institution = établissement ou organisme.",
       "CvSkill" => "Page CV, section « Compétences ».",
+      "DailyReport" => "Page Rapports : ton rapport du matin, un par jour (report_date), redige a 9 h. Le champ text le donne " \
+                       "en entier (rubriques, elements, references Type#id et Mail#thread_id). Lecture seule.",
+      "Subscription" => "next_renewal_on = prochain prelevement, calcule depuis start_date et billing_cycle (nul sans date de debut).",
       "Deadline" => "Page Agenda, module « Échéances notables » : échéances régulières importantes (crédit, charges, " \
                     "URSSAF, impôts, taxe foncière...). due_on = première échéance, recurrence none/monthly/quarterly/" \
                     "semiannual/yearly, ends_on = dernière (fin d'un crédit), category credit/charges/impots/social/" \

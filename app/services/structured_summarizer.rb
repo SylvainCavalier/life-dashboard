@@ -15,6 +15,9 @@ class StructuredSummarizer
     "medium"
   end
 
+  # Tokens du dernier appel : { input:, output: }.
+  attr_reader :usage
+
   def initialize(client: nil)
     @client = client
   end
@@ -31,6 +34,8 @@ class StructuredSummarizer
       output_config: { effort: self.class.effort.to_sym, format_: { type: :json_schema, schema: schema } },
       messages: [{ role: "user", content: prompt }]
     )
+    usage = message.respond_to?(:usage) ? message.usage : nil
+    @usage = { input: usage&.input_tokens.to_i, output: usage&.output_tokens.to_i }
     raise Error, "Synthese refusee par le modele" if message.stop_reason.to_s == "refusal"
     raise Error, "Synthese tronquee (max_tokens)" if message.stop_reason.to_s == "max_tokens"
 

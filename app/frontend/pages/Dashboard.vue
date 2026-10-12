@@ -230,6 +230,24 @@ const remindersSubtitle = computed(() => {
   return `${total} programmé${total > 1 ? 's' : ''}`
 })
 
+// Rapports du matin d'Alfred : le plus recent dit s'il reste a lire
+const dailyReports = ref([])
+
+const fetchDailyReports = async () => {
+  try {
+    dailyReports.value = await get('/daily_reports')
+  } catch {
+    dailyReports.value = []
+  }
+}
+
+const reportsSubtitle = computed(() => {
+  const latest = dailyReports.value[0]
+  if (!latest) return 'Le tour d\'horizon de 9 h'
+  if (latest.status === 'done' && !latest.read) return `Nouveau : ${latest.human_date.replace(/ \d{4}$/, '')}`
+  return `${dailyReports.value.length} rapport${dailyReports.value.length > 1 ? 's' : ''}`
+})
+
 const budgetSubtitle = computed(() => {
   if (monthlyBalance.value === null) return 'Solde du mois indisponible'
   const formatted = monthlyBalance.value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -270,6 +288,7 @@ const modules = computed(() => [
   { name: 'Downloader', icon: '🎬', subtitle: `${counts.value.video_downloads} telechargement${counts.value.video_downloads > 1 ? 's' : ''}`, to: '/downloader' },
   { name: 'Sentinelle', icon: '🛰️', subtitle: 'Veille désinformation et droit du travail', to: '/sentinelle' },
   { name: 'Outils', icon: '🧰', subtitle: 'PDF et images', to: '/tools' },
+  { name: 'Rapports', icon: '🗞️', subtitle: reportsSubtitle.value, to: '/reports' },
   { name: 'Alfred', icon: '🎩', subtitle: 'Intendant IA : instructions, outils, mémoire', to: '/alfred' },
 ])
 
@@ -286,5 +305,6 @@ onMounted(() => {
   fetchBudgetSummary()
   fetchLanguages()
   fetchReminders()
+  fetchDailyReports()
 })
 </script>

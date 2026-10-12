@@ -35,7 +35,7 @@
           <button type="button" class="header-btn" title="Page Alfred : instructions, outils, reglages" @click="openSettingsPage">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>
           </button>
-          <button type="button" class="header-btn" title="Fermer" @click="isOpen = false">
+          <button type="button" class="header-btn" title="Fermer" @click="close">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </header>
@@ -188,11 +188,10 @@ import { insertAtCursor } from '../../composables/useVoiceRecorder'
 
 const router = useRouter()
 const {
-  overview, conversation, conversations, messages, busy, error,
+  overview, conversation, conversations, messages, busy, error, panelOpen: isOpen,
   loadOverview, resume, open, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
 } = useAlfred()
 
-const isOpen = ref(false)
 const view = ref('chat') // chat | history
 const draft = ref('')
 const resolving = ref(null)
@@ -215,14 +214,27 @@ const scrollToBottom = () => nextTick(() => {
   if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight
 })
 
+const close = () => {
+  isOpen.value = false
+}
+
 const toggleOpen = async () => {
-  isOpen.value = !isOpen.value
-  if (!isOpen.value) return
+  if (isOpen.value) {
+    close()
+    return
+  }
+  await resume().catch(() => {})
+  isOpen.value = true
+}
+
+// Ouverture depuis une autre page (useAlfred#openInPanel) : la conversation est deja chargee.
+watch(isOpen, (open) => {
+  if (!open) return
   view.value = 'chat'
-  await Promise.allSettled([loadOverview(), resume()])
+  loadOverview().catch(() => {})
   scrollToBottom()
   nextTick(() => input.value?.focus())
-}
+})
 
 const toggle = async (target) => {
   view.value = view.value === target ? 'chat' : target

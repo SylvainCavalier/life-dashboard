@@ -169,6 +169,7 @@
                 Cout / an {{ sortIndicator('yearly') }}
               </th>
               <th class="pb-3 font-medium">Debut</th>
+              <th class="pb-3 font-medium" title="Calcule depuis la date de debut et le cycle de facturation">Renouvellement</th>
               <th class="pb-3 font-medium">Fin</th>
               <th class="pb-3 font-medium">Site</th>
               <th class="pb-3 font-medium w-24"></th>
@@ -194,6 +195,13 @@
               <td class="py-3 text-sm text-gray-700">{{ monthlyCost(sub).toFixed(2) }} €</td>
               <td class="py-3 text-sm text-gray-700">{{ yearlyCost(sub).toFixed(2) }} €</td>
               <td class="py-3 text-sm text-gray-700">{{ formatDate(sub.start_date) }}</td>
+              <td class="py-3 text-sm text-gray-700">
+                <span v-if="sub.next_renewal_on" :class="renewalSoon(sub) ? 'text-amber-600 font-medium' : ''">
+                  {{ formatDate(sub.next_renewal_on) }}
+                </span>
+                <span v-else-if="!sub.start_date" class="text-gray-400" title="Renseignez la date de debut pour calculer le renouvellement">?</span>
+                <span v-else class="text-gray-400">—</span>
+              </td>
               <td class="py-3 text-sm text-gray-700">
                 <span v-if="sub.end_date" :class="isPast(sub.end_date) ? 'text-red-500' : ''">
                   {{ formatDate(sub.end_date) }}
@@ -430,6 +438,12 @@ const deleteSubscription = async (id) => {
 const formatDate = (date) => {
   if (!date) return '—'
   return new Date(date).toLocaleDateString('fr-FR')
+}
+
+// Renouvellement annuel dans les 30 jours : le moment de resilier ce qui ne sert plus.
+const renewalSoon = (sub) => {
+  if (sub.billing_cycle !== 'yearly' || !sub.next_renewal_on) return false
+  return (new Date(sub.next_renewal_on) - new Date()) / 86400000 <= 30
 }
 
 const isPast = (date) => {

@@ -35,6 +35,13 @@ Rails.application.configure do
       class: "DeadlineEventsJob",
       description: "Prolonge dans l'agenda les occurrences des echeances notables recurrentes (fenetre de 12 mois)"
     },
+    # Toutes les 15 min de 9 h a 11 h : un seul rapport par jour (DailyReport.run! est
+    # idempotent), les passages suivants rattrapent un dyno qui redemarrait a 9 h pile.
+    daily_report: {
+      cron: "*/15 9-10 * * * Europe/Paris",
+      class: "DailyReportJob",
+      description: "Rapport du matin d'Alfred a 9h (rattrapage jusqu'a 11h si le dyno redemarrait)"
+    },
     alfred_reindex: {
       cron: "30 4 * * *",
       class: "AlfredReindexJob",

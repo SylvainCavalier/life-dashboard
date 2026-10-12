@@ -172,6 +172,12 @@ export default [
     props: true,
   },
   {
+    path: '/reports/:id?',
+    name: 'Reports',
+    component: () => import('../pages/modules/ReportsPage.vue'),
+    props: true,
+  },
+  {
     path: '/alfred',
     name: 'Alfred',
     component: () => import('../pages/modules/AlfredPage.vue'),

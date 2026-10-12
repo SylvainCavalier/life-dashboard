@@ -80,6 +80,13 @@ Rails.application.routes.draw do
     resources :push_subscriptions, only: [:index, :create, :destroy] do
       collection { post :test_notification }
     end
+    # Rapports du matin d'Alfred (cron 9 h, DailyReportJob)
+    resources :daily_reports, only: [:index, :show, :create] do
+      member do
+        post :regenerate
+        post :discuss
+      end
+    end
     # Dictee vocale (Voxtral) : audio en entree, texte en sortie, rien n'est stocke
     resources :transcriptions, only: [:create]
     # Module Reunions : audio (direct upload) -> transcription, synthese, PDF dans les documents

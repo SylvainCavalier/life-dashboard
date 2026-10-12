@@ -62,7 +62,7 @@ module Alfred
       stream = @client.messages.stream(
         model: Alfred.model,
         max_tokens: MAX_TOKENS,
-        system_: Prompt.system_blocks,
+        system_: Prompt.system_blocks(@conversation),
         tools: Tools.definitions,
         thinking: { type: "adaptive" },
         output_config: { effort: ENV.fetch("ALFRED_EFFORT", "medium") },

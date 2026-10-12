@@ -5,9 +5,11 @@ class AlfredPromptTest < ActiveSupport::TestCase
     text = Alfred::Prompt.stable_text
 
     assert text.start_with?("Tu es Alfred")
-    Alfred::Prompt::SECTIONS.reject { |s| s[:key] == "role" }.each do |section|
+    Alfred::Prompt::SECTIONS.reject { |s| s[:key] == "role" || s[:chat] == false }.each do |section|
       assert_includes text, "## #{section[:title]}"
     end
+    # La consigne du rapport du matin ne part pas dans le chat (DailyReports::Writer).
+    assert_not_includes text, "## Rapport du matin"
     assert_includes text, "Modeles lisibles : #{Alfred::DataAccess::READABLE.keys.first}"
     assert_includes text, "- SBC : admin@sbclabs.fr"
     assert_includes text, "- CvFormation : Page CV, section « Formations & travaux »"

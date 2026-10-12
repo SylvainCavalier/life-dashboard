@@ -16,9 +16,10 @@ class LettersTest < ActionDispatch::IntegrationTest
     assert_equal "Je donne congé.", letter.body_text
     assert_equal "justify", letter.body["content"][0]["attrs"]["textAlign"]
 
-    patch api_letter_path(letter), params: { letter: { recipient: "Agence Durand" } }, as: :json
+    patch api_letter_path(letter), params: { letter: { recipient: "Agence Durand", window_envelope: true } }, as: :json
     assert_response :success
     assert_equal "Agence Durand", letter.reload.recipient
+    assert letter.window_envelope
     assert_equal "Je donne congé.", letter.body_text, "le contenu n'est pas efface quand il n'est pas envoye"
 
     get api_letters_path, headers: ACCEPT_JSON

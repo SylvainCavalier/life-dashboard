@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_12_111012) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_12_155055) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -620,6 +620,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_111012) do
     t.bigint "document_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "window_envelope", default: false, null: false
     t.index ["document_id"], name: "index_letters_on_document_id"
   end
 

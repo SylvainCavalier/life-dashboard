@@ -90,7 +90,7 @@ module Alfred
                       update: %w[day kind title url notes start_time cost position] },
       "VideoFolder" => { create: %w[name] },
       # body_text : contenu en texte brut, converti en document Tiptap par le modele.
-      "Letter" => { create: %w[sender recipient place letter_date mention reference subject body_text signatory include_signature footer] },
+      "Letter" => { create: %w[sender recipient window_envelope place letter_date mention reference subject body_text signatory include_signature footer] },
       # completed_at en modification seulement : marquer un rappel ponctuel comme traite.
       "Reminder" => { create: %w[title notes remind_at recurrence remindable_type remindable_id],
                       update: %w[title notes remind_at recurrence remindable_type remindable_id completed_at] },

@@ -12,9 +12,10 @@ export const LAYOUT = {
   marginBottom: 25,
   senderWidth: 85,
   recipientLeft: 110,
-  recipientTop: 50,
   recipientWidth: 80,
-  dateTop: 95,
+  windowRecipientTop: 50, // enveloppe a fenetre seulement
+  windowDateTop: 95,
+  blockGap: 6,
   signatureLeft: 110,
   signatureMaxWidth: 50,
   signatureMaxHeight: 22,

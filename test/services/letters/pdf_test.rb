@@ -24,4 +24,14 @@ class Letters::PdfTest < ActiveSupport::TestCase
   test "un courrier vide se genere quand meme" do
     assert Letter.new.to_pdf.start_with?("%PDF")
   end
+
+  test "en mise en page compacte, le contenu commence plus haut qu'avec une enveloppe a fenetre" do
+    top_of = lambda do |letter|
+      receiver = PDF::Reader::PageTextReceiver.new
+      PDF::Reader.new(StringIO.new(letter.to_pdf)).pages.first.walk(receiver)
+      receiver.runs.find { |run| run.text.include?("Objet") }.origin.y
+    end
+
+    assert_operator top_of.call(build(:letter)), :>, top_of.call(build(:letter, window_envelope: true)) + 100
+  end
 end

@@ -30,4 +30,13 @@ class Letters::DocxTest < ActiveSupport::TestCase
     assert_includes files["word/_rels/document.xml.rels"], "media/signature.png"
     assert_not files.key?("word/footer1.xml")
   end
+
+  test "mise en page compacte : les deux adresses cote a cote ; enveloppe a fenetre : destinataire descendu" do
+    compact = entries(build(:letter).to_docx)["word/document.xml"]
+    window = entries(build(:letter, window_envelope: true).to_docx)["word/document.xml"]
+
+    assert_includes compact, "<w:tbl>"
+    assert_not_includes window, "<w:tbl>"
+    assert_includes window, %(w:ind w:left="#{(90 * Letters::Docx::TWIPS_PER_MM).round}")
+  end
 end

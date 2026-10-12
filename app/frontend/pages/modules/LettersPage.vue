@@ -81,6 +81,10 @@
                   </select>
                 </div>
                 <textarea v-model="current.recipient" rows="6" :class="inputClass" placeholder="Nom ou organisme&#10;Service&#10;Adresse&#10;Code postal Ville"></textarea>
+                <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none" title="Descend le destinataire dans la fenêtre d'une enveloppe DL (50 mm du haut) ; prend environ 4 cm de plus en haut de page">
+                  <input v-model="current.window_envelope" type="checkbox" class="rounded" />
+                  <span class="text-xs text-gray-600">Enveloppe à fenêtre</span>
+                </label>
               </div>
             </div>
 
@@ -171,7 +175,7 @@ const route = useRoute()
 const router = useRouter()
 const { get, post, patch, delete: del } = useApi()
 
-const FIELDS = ['sender', 'recipient', 'place', 'letter_date', 'mention', 'reference', 'subject', 'body', 'signatory', 'include_signature', 'footer']
+const FIELDS = ['sender', 'recipient', 'window_envelope', 'place', 'letter_date', 'mention', 'reference', 'subject', 'body', 'signatory', 'include_signature', 'footer']
 
 const letters = ref([])
 const contacts = ref([])
@@ -190,6 +194,7 @@ function blankLetter() {
     document: null,
     sender: '',
     recipient: '',
+    window_envelope: false,
     place: '',
     letter_date: todayIso(),
     mention: '',

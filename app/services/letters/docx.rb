@@ -3,8 +3,9 @@ require "zip"
 module Letters
   # Lettre en DOCX (WordprocessingML ecrit a la main puis zippe avec rubyzip), pour
   # la retoucher dans Word ou LibreOffice. Mise en page en flux, sans cadres
-  # positionnes : le destinataire est decale a droite et descendu jusqu'a la fenetre
-  # de l'enveloppe en fonction du nombre de lignes de l'expediteur. Police Arial,
+  # positionnes : en mode compact, expediteur et destinataire sont les deux colonnes
+  # d'un tableau sans bordure ; en enveloppe a fenetre, le destinataire est decale a
+  # droite et descendu jusqu'a la fenetre selon le nombre de lignes de l'expediteur. Police Arial,
   # presente partout (DejaVu, celle du PDF, est rarement installee).
   class Docx
     include Layout
@@ -61,6 +62,27 @@ module Letters
     end
 
     def addresses
+      return window_addresses if @letter.window_envelope
+
+      @date_spacing = 0
+      return "" if @letter.sender.blank? && @letter.recipient.blank?
+
+      @date_spacing = BLOCK_GAP
+      left = twips(RECIPIENT_LEFT - MARGIN_SIDE)
+      right = twips(CONTENT_WIDTH) - left
+      cell = lambda do |text, width|
+        content = text.present? ? text_runs(text) : ""
+        %(<w:tc><w:tcPr><w:tcW w:w="#{width}" w:type="dxa"/></w:tcPr>#{paragraph(content, spacing_after: 0)}</w:tc>)
+      end
+      <<~XML.squish
+        <w:tbl><w:tblPr><w:tblW w:w="#{left + right}" w:type="dxa"/><w:tblLayout w:type="fixed"/>
+          <w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>
+          <w:tblGrid><w:gridCol w:w="#{left}"/><w:gridCol w:w="#{right}"/></w:tblGrid>
+          <w:tr>#{cell.call(@letter.sender, left)}#{cell.call(@letter.recipient, right)}</w:tr></w:tbl>
+      XML
+    end
+
+    def window_addresses
       xml = +""
       used_mm = 0.0
       if @letter.sender.present?
@@ -68,11 +90,11 @@ module Letters
         used_mm += lines(@letter.sender) * LINE_MM
       end
       if @letter.recipient.present?
-        before = [RECIPIENT_TOP - MARGIN_TOP - used_mm, 8].max
+        before = [WINDOW_RECIPIENT_TOP - MARGIN_TOP - used_mm, BLOCK_GAP].max
         xml << paragraph(text_runs(@letter.recipient), indent: RECIPIENT_LEFT - MARGIN_SIDE, spacing_before: before, spacing_after: 0)
         used_mm += before + (lines(@letter.recipient) * LINE_MM)
       end
-      @date_spacing = [DATE_TOP - MARGIN_TOP - used_mm, used_mm.zero? ? 0 : 8].max
+      @date_spacing = [WINDOW_DATE_TOP - MARGIN_TOP - used_mm, used_mm.zero? ? 0 : BLOCK_GAP].max
       xml
     end
 
@@ -86,7 +108,7 @@ module Letters
       rows << run("Réf. : #{@letter.reference}") if @letter.reference.present?
       rows << run("Objet : #{@letter.subject}", bold: true) if @letter.subject.present?
       rows.each_with_index do |runs, index|
-        xml << paragraph(runs, spacing_before: index.zero? ? 8 : 0, spacing_after: index == rows.size - 1 ? 8 : 0)
+        xml << paragraph(runs, spacing_before: index.zero? ? BLOCK_GAP : 0, spacing_after: index == rows.size - 1 ? BLOCK_GAP : 0)
       end
       xml
     end
@@ -110,9 +132,9 @@ module Letters
 
       indent = SIGNATURE_LEFT - MARGIN_SIDE
       xml = +""
-      xml << paragraph(image_run, indent: indent, spacing_before: 8, spacing_after: 2, keep_next: true) if @signature
+      xml << paragraph(image_run, indent: indent, spacing_before: BLOCK_GAP, spacing_after: 2, keep_next: true) if @signature
       if @letter.signatory.present?
-        xml << paragraph(text_runs(@letter.signatory), indent: indent, spacing_before: @signature ? 0 : 8, spacing_after: 0)
+        xml << paragraph(text_runs(@letter.signatory), indent: indent, spacing_before: @signature ? 0 : BLOCK_GAP, spacing_after: 0)
       end
       xml
     end

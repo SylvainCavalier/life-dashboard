@@ -46,14 +46,16 @@ module Letters
       pdf.default_leading leading(FONT_SIZE)
     end
 
-    # Expediteur en haut a gauche, destinataire dans la fenetre de l'enveloppe ;
-    # le texte reprend sous le plus bas des deux, jamais au-dessus de DATE_TOP.
+    # Expediteur en haut a gauche, destinataire a droite (au meme niveau, ou dans la
+    # fenetre de l'enveloppe) ; le texte reprend sous le plus bas des deux.
     def render_addresses(pdf)
       top = pdf.bounds.top
+      window = @letter.window_envelope
       sender_bottom = address_box(pdf, @letter.sender, x: 0, y: top, width: SENDER_WIDTH.mm)
       recipient_bottom = address_box(pdf, @letter.recipient, x: (RECIPIENT_LEFT - MARGIN_SIDE).mm,
-                                                             y: top - (RECIPIENT_TOP - MARGIN_TOP).mm, width: RECIPIENT_WIDTH.mm)
-      lowest = [sender_bottom, recipient_bottom, top - (DATE_TOP - MARGIN_TOP).mm].min
+                                                             y: top - (Layout.recipient_top(window) - MARGIN_TOP).mm,
+                                                             width: RECIPIENT_WIDTH.mm)
+      lowest = [sender_bottom, recipient_bottom, top - (Layout.date_top(window) - MARGIN_TOP).mm].min
       pdf.move_cursor_to lowest
     end
 
@@ -65,19 +67,21 @@ module Letters
         pdf.text clean(text)
         bottom = y - pdf.bounds.height
       end
-      bottom - 8.mm
+      bottom - BLOCK_GAP.mm
     end
 
     def render_heading(pdf)
-      pdf.text clean(@letter.place_and_date), align: :right if @letter.place_and_date.present?
-      pdf.move_down 8.mm
+      if @letter.place_and_date.present?
+        pdf.text clean(@letter.place_and_date), align: :right
+        pdf.move_down BLOCK_GAP.mm
+      end
 
       pdf.text clean(@letter.mention), style: :bold if @letter.mention.present?
       pdf.text "Réf. : #{clean(@letter.reference)}" if @letter.reference.present?
       if @letter.subject.present?
         pdf.text "<b>Objet : #{escape(@letter.subject)}</b>", inline_format: true
       end
-      pdf.move_down 8.mm if @letter.mention.present? || @letter.reference.present? || @letter.subject.present?
+      pdf.move_down BLOCK_GAP.mm if @letter.mention.present? || @letter.reference.present? || @letter.subject.present?
     end
 
     def render_body(pdf)
@@ -106,9 +110,9 @@ module Letters
       image = @letter.signature_data
       return if image.blank? && @letter.signatory.blank?
 
-      needed = 10.mm + (image ? SIGNATURE_MAX_HEIGHT.mm : 0) + line_height(FONT_SIZE) + 2.mm
+      needed = (BLOCK_GAP + 2).mm + (image ? SIGNATURE_MAX_HEIGHT.mm : 0) + line_height(FONT_SIZE) + 2.mm
       pdf.start_new_page if pdf.cursor < needed
-      pdf.move_down 8.mm
+      pdf.move_down BLOCK_GAP.mm
 
       pdf.indent((SIGNATURE_LEFT - MARGIN_SIDE).mm) do
         if image

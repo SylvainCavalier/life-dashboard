@@ -66,7 +66,7 @@ module Api
 
     def letter_params
       attributes = params.require(:letter).permit(
-        :sender, :recipient, :place, :letter_date, :mention, :reference, :subject, :signatory, :include_signature, :footer
+        :sender, :recipient, :window_envelope, :place, :letter_date, :mention, :reference, :subject, :signatory, :include_signature, :footer
       )
       # Le JSON Tiptap est nettoye par Letters::Body (noeuds et marques connus seulement).
       body = params[:letter][:body]

@@ -589,13 +589,15 @@ pre-remplit expediteur, lieu, signataire et signature depuis `PersonalProfile`.
 tout JSON recu (noeuds, marques et attributs inconnus ecartes ; un noeud inconnu garde son texte). `Letters::Body.blocks` aplatit le
 document en blocs simples (`paragraph` / `list_item` avec niveau et puce) que parcourent les deux rendus, sans connaitre Tiptap.
 `body_text` / `body_text=` passent par le texte brut : c'est l'entree d'Alfred, des skills et le texte du corpus RAG.
-**Mise en page** : `Letters::Layout` (mm, A4, destinataire dans la fenetre d'une enveloppe DL : 110 mm du bord gauche, 50 mm du haut,
-date jamais au-dessus de 95 mm). Reprise telle quelle par `LAYOUT` dans `letterFormat.js` (apercu) et par le DOCX : **a modifier
+**Mise en page** : `Letters::Layout` (mm, A4). Par defaut **compacte** : destinataire a 110 mm du bord gauche, au niveau de
+l'expediteur, 6 mm (`BLOCK_GAP`) entre les blocs, pour garder la place au texte. Case « Enveloppe a fenetre »
+(`letters.window_envelope`) : destinataire descendu dans la fenetre d'une enveloppe DL (50 mm du haut), date jamais au-dessus
+de 95 mm (`Layout.recipient_top` / `date_top`). Le DOCX compact met les deux adresses dans un tableau sans bordure. Reprise telle quelle par `LAYOUT` dans `letterFormat.js` (apercu) et par le DOCX : **a modifier
 aux trois endroits**. La date a la francaise (« le 1er octobre ») est calculee des deux cotes (`Letter#place_and_date`, `placeAndDate`).
 `Letters::Pdf` (Prawn, DejaVu Sans embarquee comme `VideoTranscripts::ReportPdf` ; Prawn ne decode que `&amp; &lt; &gt;` dans
 `inline_format`, d'ou un echappement maison plutot qu'`html_escape`) : pied de page sur chaque page, numerotation au-dela d'une page,
 bloc signature insecable. `Letters::Docx` : WordprocessingML ecrit a la main et zippe par `rubyzip` (gem explicite du Gemfile), en flux
-sans cadres positionnes (le destinataire est descendu selon le nombre de lignes de l'expediteur), police Arial, signature en image
+sans cadres positionnes (en enveloppe a fenetre, le destinataire est descendu selon le nombre de lignes de l'expediteur), police Arial, signature en image
 inline, pied de page dans `footer1.xml`. L'apercu approxime les sauts de page (le PDF fait foi). Tests : `letter_test.rb`,
 `letters_test.rb`, `test/services/letters/`.
 

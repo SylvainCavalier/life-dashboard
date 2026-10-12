@@ -14,6 +14,7 @@
 #  sender            :text
 #  signatory         :string
 #  subject           :string
+#  window_envelope   :boolean          default(FALSE), not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
 #  document_id       :bigint

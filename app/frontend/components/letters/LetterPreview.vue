@@ -5,24 +5,23 @@
       class="letter-sheet bg-white shadow-md origin-top-left relative"
       :style="sheetStyle"
     >
-      <!-- Expediteur a gauche, destinataire dans la fenetre de l'enveloppe -->
-      <div class="flex" :style="{ minHeight: mm(L.dateTop - L.marginTop) }">
-        <div :style="{ width: mm(L.senderWidth), paddingBottom: letter.sender?.trim() ? mm(8) : 0 }" class="whitespace-pre-line">{{ letter.sender?.trim() }}</div>
+      <!-- Expediteur a gauche, destinataire a droite : au meme niveau, ou dans la fenetre de l'enveloppe -->
+      <div class="flex" :style="{ minHeight: mm(dateTop - L.marginTop) }">
+        <div :style="{ width: mm(L.senderWidth), paddingBottom: letter.sender?.trim() ? mm(L.blockGap) : 0 }" class="whitespace-pre-line">{{ letter.sender?.trim() }}</div>
         <div
           class="whitespace-pre-line"
           :style="{
             marginLeft: mm(L.recipientLeft - L.marginSide - L.senderWidth),
             width: mm(L.recipientWidth),
-            paddingTop: mm(L.recipientTop - L.marginTop),
-            paddingBottom: letter.recipient?.trim() ? mm(8) : 0,
+            paddingTop: mm(recipientTop - L.marginTop),
+            paddingBottom: letter.recipient?.trim() ? mm(L.blockGap) : 0,
           }"
         >{{ letter.recipient?.trim() }}</div>
       </div>
 
-      <p v-if="dateLine" class="text-right" :style="{ marginBottom: mm(8) }">{{ dateLine }}</p>
-      <p v-else :style="{ marginBottom: mm(8) }"></p>
+      <p v-if="dateLine" class="text-right" :style="{ marginBottom: mm(L.blockGap) }">{{ dateLine }}</p>
 
-      <div v-if="hasHeading" :style="{ marginBottom: mm(8) }">
+      <div v-if="hasHeading" :style="{ marginBottom: mm(L.blockGap) }">
         <p v-if="letter.mention?.trim()" class="font-bold">{{ letter.mention.trim() }}</p>
         <p v-if="letter.reference?.trim()">Réf. : {{ letter.reference.trim() }}</p>
         <p v-if="letter.subject?.trim()" class="font-bold">Objet : {{ letter.subject.trim() }}</p>
@@ -31,7 +30,7 @@
       <!-- Contenu : HTML genere par Tiptap a partir du JSON (texte echappe par Tiptap) -->
       <div class="letter-body" v-html="bodyHtml"></div>
 
-      <div v-if="signatureImage || letter.signatory?.trim()" class="letter-signature" :style="{ marginLeft: mm(L.signatureLeft - L.marginSide), marginTop: mm(8) }">
+      <div v-if="signatureImage || letter.signatory?.trim()" class="letter-signature" :style="{ marginLeft: mm(L.signatureLeft - L.marginSide), marginTop: mm(L.blockGap) }">
         <img
           v-if="signatureImage"
           :src="signatureImage"
@@ -107,6 +106,9 @@ const sheetStyle = computed(() => ({
   color: '#111827',
 }))
 
+// Letters::Layout.recipient_top / date_top
+const recipientTop = computed(() => (props.letter.window_envelope ? L.windowRecipientTop : L.marginTop))
+const dateTop = computed(() => (props.letter.window_envelope ? L.windowDateTop : L.marginTop))
 const dateLine = computed(() => placeAndDate(props.letter.place, props.letter.letter_date))
 const hasHeading = computed(() => [props.letter.mention, props.letter.reference, props.letter.subject].some(v => v?.trim()))
 const signatureImage = computed(() => (props.letter.include_signature ? props.signatureDataUrl : null))

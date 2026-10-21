@@ -40,6 +40,9 @@ class Project < ApplicationRecord
   has_many :project_links, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :documents, dependent: :destroy
+  has_many :project_entries, dependent: :destroy
+  has_many :project_contacts, dependent: :destroy
+  has_many :contacts, through: :project_contacts
 
   validates :name, presence: true
   validates :status, inclusion: { in: STATUSES }
@@ -48,6 +51,11 @@ class Project < ApplicationRecord
   validates :progress, numericality: { in: 0..100 }, allow_nil: true
 
   scope :ordered, -> { order(priority: :desc, name: :asc) }
+
+  # Date de la derniere entree du journal : ce qui dit si le projet avance.
+  def last_entry_on
+    project_entries.map(&:occurred_on).max
+  end
 
   # JSON shape shared by the index (counters only) and show (full: nested records).
   def api_attributes(full: false)
@@ -58,7 +66,10 @@ class Project < ApplicationRecord
       tasks_count: tasks.size,
       tasks_completed_count: tasks.count(&:completed),
       links_count: project_links.size,
-      documents_count: documents.size
+      documents_count: documents.size,
+      entries_count: project_entries.size,
+      contacts_count: project_contacts.size,
+      last_entry_on: last_entry_on
     )
     return json unless full
 

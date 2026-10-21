@@ -99,8 +99,10 @@
             <span v-if="project.skills_count">Compétences {{ project.skills_acquired_count }}/{{ project.skills_count }}</span>
             <span v-if="project.links_count">{{ project.links_count }} lien{{ project.links_count > 1 ? 's' : '' }}</span>
             <span v-if="project.documents_count">{{ project.documents_count }} document{{ project.documents_count > 1 ? 's' : '' }}</span>
-            <span v-if="!project.tasks_count && !project.skills_count && !project.links_count && !project.documents_count" class="text-gray-400">
-              Ouvrir pour ajouter tâches, compétences, liens...
+            <span v-if="project.contacts_count">{{ project.contacts_count }} contact{{ project.contacts_count > 1 ? 's' : '' }}</span>
+            <span v-if="project.last_entry_on">Journal : {{ formatShortDate(project.last_entry_on) }}</span>
+            <span v-if="!project.tasks_count && !project.skills_count && !project.links_count && !project.documents_count && !project.entries_count && !project.contacts_count" class="text-gray-400">
+              Ouvrir pour ajouter journal, tâches, contacts...
             </span>
           </div>
         </router-link>
@@ -122,6 +124,11 @@ const { list, create } = useCrud('projects')
 const { categoryLabel, categoryBadge, statusLabel, statusBadge, progressColor } = useProjects()
 
 const projects = ref([])
+
+const formatShortDate = (date) => {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 const loaded = ref(false)
 const showForm = ref(false)
 const saving = ref(false)

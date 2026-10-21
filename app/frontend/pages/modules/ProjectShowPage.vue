@@ -22,6 +22,7 @@
                 {{ '★'.repeat(project.priority) }}<span class="text-gray-200">{{ '★'.repeat(5 - project.priority) }}</span>
               </p>
               <p v-if="project.description" class="text-sm text-gray-600 mt-2 whitespace-pre-line">{{ project.description }}</p>
+              <p class="text-xs mt-2" :class="lastEntryClass">{{ lastEntryText }}</p>
               <div v-if="project.github_url || project.site_url" class="flex gap-4 mt-2 text-sm">
                 <a v-if="project.github_url" :href="project.github_url" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-800 underline">GitHub</a>
                 <a v-if="project.site_url" :href="project.site_url" target="_blank" rel="noopener" class="text-blue-500 hover:text-blue-700 underline">Lien principal</a>
@@ -52,8 +53,10 @@
         <ProjectForm v-else :initial="project" :saving="saving" :errors="formErrors" @submit="saveProject" @cancel="editing = false" />
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <!-- Colonne gauche : to-do list + notes -->
+          <!-- Colonne gauche : journal, to-do list, notes -->
           <div class="space-y-6">
+            <ProjectJournal :project-id="project.id" :contacts="linkedContacts" @changed="onEntriesChanged" />
+
             <TodoList :project-id="project.id" title="To-do list du projet" @changed="onTasksChanged" />
 
             <div class="bg-white rounded-xl shadow-sm p-5">
@@ -180,6 +183,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Mini-CRM : contacts du CRM lies au projet -->
+        <ProjectContacts :project-id="project.id" @changed="linkedContacts = $event" />
       </div>
 
       <div v-else-if="notFound" class="bg-white rounded-xl shadow-sm p-12 text-center text-gray-400">Projet introuvable</div>
@@ -196,6 +202,8 @@ import apiClient from '../../plugins/axios'
 import { useProjects, skillStatuses, projectDocCategories } from '../../composables/useProjects'
 import ProjectForm from '../../components/projects/ProjectForm.vue'
 import TodoList from '../../components/TodoList.vue'
+import ProjectJournal from '../../components/projects/ProjectJournal.vue'
+import ProjectContacts from '../../components/projects/ProjectContacts.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -218,6 +226,8 @@ const notesDraft = ref('')
 const notesSaving = ref(false)
 const notesSavedOnce = ref(false)
 const tasks = ref([])
+const entries = ref([])
+const linkedContacts = ref([])
 
 const newSkill = ref('')
 const newLink = reactive({ title: '', url: '' })
@@ -326,6 +336,35 @@ const saveNotes = async () => {
 }
 
 const onTasksChanged = (list) => { tasks.value = list }
+const entriesLoaded = ref(false)
+const onEntriesChanged = (list) => {
+  entries.value = list
+  entriesLoaded.value = true
+}
+
+// Fraicheur du journal : c'est lui qui dit si le projet avance.
+const daysSinceLastEntry = computed(() => {
+  const last = entriesLoaded.value ? entries.value[0]?.occurred_on : project.value?.last_entry_on
+  if (!last) return null
+  const [year, month, day] = last.split('-').map(Number)
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  return Math.round((start - new Date(year, month - 1, day)) / 86400000)
+})
+
+const lastEntryText = computed(() => {
+  const days = daysSinceLastEntry.value
+  if (days === null) return 'Journal vide : rien de consigné sur ce projet.'
+  if (days <= 0) return 'Dernière entrée au journal : aujourd’hui'
+  if (days === 1) return 'Dernière entrée au journal : hier'
+  return `Dernière entrée au journal : il y a ${days} jours`
+})
+
+const lastEntryClass = computed(() => {
+  const days = daysSinceLastEntry.value
+  if (days === null || days > 30) return 'text-orange-500'
+  return 'text-gray-400'
+})
 
 // Competences
 const addSkill = async () => {

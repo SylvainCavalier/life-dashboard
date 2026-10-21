@@ -43,7 +43,12 @@ module Alfred
                    path: ->(r) { "/companies/#{r.company_id}" }, children: { quote_items: %w[description quantity unit unit_price total_ht] } },
       "QuoteItem" => { parent: :quote },
       "Project" => { title: "Projet", label: ->(r) { r.name }, path: ->(r) { "/projects/#{r.id}" },
-                     children: { project_skills: %w[name status], project_links: %w[title url] } },
+                     children: { project_skills: %w[name status], project_links: %w[title url] },
+                     text: ->(r) { Alfred::Corpus.project_contacts_text(r) } },
+      "ProjectContact" => { parent: :project },
+      "ProjectEntry" => { title: "Journal de projet", label: ->(r) { "#{r.project.name} : #{r.title}" }, date: :occurred_on,
+                          path: ->(r) { "/projects/#{r.project_id}" },
+                          text: ->(r) { "Projet : #{r.project.name}" + (r.contact ? "\nAvec : #{[r.contact.first_name, r.contact.last_name].compact_blank.join(' ')}" : "") } },
       "ProjectSkill" => { parent: :project },
       "ProjectLink" => { parent: :project },
       "Document" => { title: "Document", label: ->(r) { r.name }, date: :document_date, path: ->(_) { "/documents" }, file: :file },
@@ -72,6 +77,15 @@ module Alfred
     IGNORED_COLUMNS = %w[id created_at updated_at].freeze
 
     module_function
+
+    # Contacts lies a un projet, par leur nom (ProjectContact n'a que des identifiants).
+    def project_contacts_text(project)
+      lines = project.project_contacts.includes(:contact).map do |link|
+        name = [link.contact.first_name, link.contact.last_name].compact_blank.join(" ")
+        "- #{name}#{" (#{link.role})" if link.role.present?}"
+      end
+      "Contacts du projet :\n#{lines.join("\n")}" if lines.any?
+    end
 
     # Modeles qui ont leur propre fiche dans le corpus (les enfants n'en ont pas).
     def indexed_models

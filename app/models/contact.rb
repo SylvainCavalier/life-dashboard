@@ -40,6 +40,8 @@ class Contact < ApplicationRecord
   RELATIONSHIP_TYPES = %w[ami copine famille collegue connaissance client eleve medias autre].freeze
 
   has_one :crm_profile, dependent: :destroy
+  has_many :project_contacts, dependent: :destroy
+  has_many :projects, through: :project_contacts
 
   validates :first_name, presence: true
   validates :relationship_type, inclusion: { in: RELATIONSHIP_TYPES }

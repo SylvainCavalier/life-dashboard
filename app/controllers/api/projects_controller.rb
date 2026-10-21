@@ -4,7 +4,7 @@ module Api
 
     # GET /api/projects
     def index
-      projects = Project.ordered.includes(:project_skills, :project_links, :tasks, :documents)
+      projects = Project.ordered.includes(:project_skills, :project_links, :tasks, :documents, :project_entries, :project_contacts)
       render json: projects.map(&:api_attributes)
     end
 
@@ -43,7 +43,7 @@ module Api
     private
 
     def set_project
-      @project = Project.includes(:project_skills, :project_links, :tasks, :documents).find(params[:id])
+      @project = Project.includes(:project_skills, :project_links, :tasks, :documents, :project_entries, :project_contacts).find(params[:id])
     end
 
     def project_params

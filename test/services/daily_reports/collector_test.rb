@@ -75,6 +75,31 @@ class DailyReports::CollectorTest < ActiveSupport::TestCase
     assert_not collect(weekend: true)["sections"].key?("projects")
   end
 
+  test "projets : l'activite se lit dans le journal de bord" do
+    travel_to(MONDAY - 120) { @prudo = create(:project, name: "Prudo", priority: 5) }
+    paul = Contact.create!(first_name: "Paul", last_name: "Durand")
+    create(:project_entry, project: @prudo, occurred_on: MONDAY - 2, title: "Pole de competitivite", contact: paul)
+    create(:project_entry, project: @prudo, occurred_on: MONDAY - 90, title: "Ancienne entree")
+    travel_to(MONDAY - 120) { @vide = create(:project, name: "Vide", priority: 4) }
+
+    projects = collect["sections"]["projects"].index_by { |p| p["name"] }
+
+    assert_equal 2, projects["Prudo"]["idle_days"]
+    assert_equal false, projects["Prudo"]["journal_empty"]
+    assert_equal [{ "date" => (MONDAY - 2).iso8601, "kind" => "Rendez-vous", "title" => "Pole de competitivite", "with" => "Paul Durand" }],
+                 projects["Prudo"]["recent_entries"]
+    assert projects["Vide"]["journal_empty"]
+    assert_equal 120, projects["Vide"]["idle_days"]
+  end
+
+  test "CRM : les projets auxquels le contact est lie" do
+    paul = Contact.create!(first_name: "Paul")
+    paul.create_crm_profile!(next_appointment_on: MONDAY + 1)
+    create(:project_contact, contact: paul, project: create(:project, name: "Prudo"))
+
+    assert_equal ["Prudo"], collect["sections"]["crm"].first["projects"]
+  end
+
   test "taches en retard, proches ou prioritaires, avec leur reference" do
     late = Task.create!(description: "En retard", priority: 2, deadline: MONDAY - 2)
     Task.create!(description: "Lointaine", priority: 2, deadline: MONDAY + 30)

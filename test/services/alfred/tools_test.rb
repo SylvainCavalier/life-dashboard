@@ -63,6 +63,25 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal @message, action.message
   end
 
+  test "propose_write : journal de projet et lien d'un contact, confirmes ensemble" do
+    project = create(:project, name: "Prudo")
+    contact = Contact.create!(first_name: "Paul")
+
+    run_tool("propose_write", { "operation" => "create", "model" => "ProjectEntry", "summary" => "Journal",
+                                "attributes" => { "project_id" => project.id, "kind" => "rendez_vous", "title" => "RDV pole",
+                                                  "occurred_on" => "2026-10-21", "contact_id" => contact.id } })
+    run_tool("propose_write", { "operation" => "create", "model" => "ProjectContact", "summary" => "Lien",
+                                "attributes" => { "project_id" => project.id, "contact_id" => contact.id, "role" => "Conseiller" } })
+    _, error = run_tool("propose_write", { "operation" => "update", "model" => "ProjectContact", "summary" => "x",
+                                           "id" => 0, "attributes" => { "project_id" => project.id } })
+    assert error, "project_id ne se modifie pas"
+
+    @conversation.actions.each { |action| Alfred::ActionExecutor.new(action).confirm! }
+
+    assert_equal ["RDV pole"], project.project_entries.pluck(:title)
+    assert_equal [contact], project.contacts.to_a
+  end
+
   test "propose_write refuse un champ hors liste blanche et un modele interdit" do
     result, error = run_tool("propose_write", { "operation" => "create", "model" => "Note", "summary" => "x",
                                                 "attributes" => { "title" => "x", "created_at" => "2020-01-01" } })

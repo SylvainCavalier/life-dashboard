@@ -123,4 +123,70 @@ class ProjectsTest < ActionDispatch::IntegrationTest
     get api_documents_path(project_id: @project.id), headers: ACCEPT_JSON
     assert_equal ["Game design document"], JSON.parse(response.body).map { |d| d["name"] }
   end
+
+  test "journal de bord : creation, ordre chronologique, modification, suppression" do
+    post api_project_project_entries_path(@project),
+         params: { project_entry: { occurred_on: "2026-10-01", kind: "travail", title: "Maquette" } }.to_json, headers: JSON_HEADERS
+    assert_response :created
+    post api_project_project_entries_path(@project),
+         params: { project_entry: { occurred_on: "2026-10-20", kind: "rendez_vous", title: "Pole de competitivite" } }.to_json,
+         headers: JSON_HEADERS
+    entry_id = JSON.parse(response.body)["id"]
+
+    get api_project_project_entries_path(@project), headers: ACCEPT_JSON
+    json = JSON.parse(response.body)
+    assert_equal ["Pole de competitivite", "Maquette"], json.map { |e| e["title"] }
+    assert_equal "Rendez-vous", json.first["kind_label"]
+
+    patch api_project_project_entry_path(@project, entry_id),
+          params: { project_entry: { kind: "inconnu" } }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_entity
+
+    delete api_project_project_entry_path(@project, entry_id), headers: ACCEPT_JSON
+    assert_response :no_content
+  end
+
+  test "une entree du journal d'un autre projet est introuvable" do
+    entry = create(:project_entry, project: create(:project, name: "Autre"))
+
+    delete api_project_project_entry_path(@project, entry), headers: ACCEPT_JSON
+    assert_response :not_found
+  end
+
+  test "lier un contact l'ajoute au CRM ; le delier garde sa fiche CRM" do
+    contact = Contact.create!(first_name: "Paul", last_name: "Durand")
+
+    assert_difference -> { CrmProfile.count } => 1, -> { ProjectContact.count } => 1 do
+      post api_project_project_contacts_path(@project),
+           params: { project_contact: { contact_id: contact.id, role: "Conseiller" } }.to_json, headers: JSON_HEADERS
+    end
+    assert_response :created
+    json = JSON.parse(response.body)
+    assert_equal "Conseiller", json["role"]
+    assert_equal "moyenne", json["crm_profile"]["priority"]
+
+    post api_project_project_contacts_path(@project),
+         params: { project_contact: { contact_id: contact.id } }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_entity
+
+    get api_crm_profiles_path, headers: ACCEPT_JSON
+    profile = JSON.parse(response.body).find { |p| p["contact_id"] == contact.id }
+    assert_equal [@project.name], profile["projects"].map { |p| p["name"] }
+
+    assert_no_difference -> { CrmProfile.count } do
+      delete api_project_project_contact_path(@project, json["id"]), headers: ACCEPT_JSON
+    end
+    assert_response :no_content
+  end
+
+  test "lier un contact deja suivi au CRM ne cree pas de seconde fiche" do
+    contact = Contact.create!(first_name: "Paul")
+    contact.create_crm_profile!(priority: "haute")
+
+    assert_no_difference -> { CrmProfile.count } do
+      post api_project_project_contacts_path(@project),
+           params: { project_contact: { contact_id: contact.id } }.to_json, headers: JSON_HEADERS
+    end
+    assert_equal "haute", JSON.parse(response.body)["crm_profile"]["priority"]
+  end
 end

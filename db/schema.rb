@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_12_155055) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -725,6 +725,31 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_155055) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "project_contacts", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "role"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_project_contacts_on_contact_id"
+    t.index ["project_id", "contact_id"], name: "index_project_contacts_on_project_id_and_contact_id", unique: true
+    t.index ["project_id"], name: "index_project_contacts_on_project_id"
+  end
+
+  create_table "project_entries", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "contact_id"
+    t.date "occurred_on", null: false
+    t.string "kind", default: "travail", null: false
+    t.string "title", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_project_entries_on_contact_id"
+    t.index ["project_id", "occurred_on"], name: "index_project_entries_on_project_id_and_occurred_on"
+    t.index ["project_id"], name: "index_project_entries_on_project_id"
+  end
+
   create_table "project_links", force: :cascade do |t|
     t.bigint "project_id", null: false
     t.string "title", null: false
@@ -1118,6 +1143,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_12_155055) do
   add_foreign_key "language_sessions", "languages"
   add_foreign_key "letters", "documents", on_delete: :nullify
   add_foreign_key "meetings", "documents", on_delete: :nullify
+  add_foreign_key "project_contacts", "contacts"
+  add_foreign_key "project_contacts", "projects"
+  add_foreign_key "project_entries", "contacts", on_delete: :nullify
+  add_foreign_key "project_entries", "projects"
   add_foreign_key "project_links", "projects"
   add_foreign_key "project_skills", "projects"
   add_foreign_key "quote_items", "quotes"

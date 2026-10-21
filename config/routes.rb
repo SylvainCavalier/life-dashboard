@@ -120,12 +120,14 @@ Rails.application.routes.draw do
     end
     resources :subscriptions, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
-    # Module Projets : competences a apprendre et liens imbriques ; la to-do list et les
+    # Module Projets : competences a apprendre, liens, journal et contacts imbriques ; la to-do list et les
     # documents d'un projet passent par /tasks et /documents avec ?project_id=
     resources :projects, only: [:index, :show, :create, :update, :destroy] do
       collection { get :categories }
       resources :project_skills, only: [:create, :update, :destroy]
       resources :project_links, only: [:create, :update, :destroy]
+      resources :project_entries, only: [:index, :create, :update, :destroy]
+      resources :project_contacts, only: [:index, :create, :update, :destroy]
     end
     resources :budget_entries, only: [:index, :create, :update, :destroy] do
       collection do

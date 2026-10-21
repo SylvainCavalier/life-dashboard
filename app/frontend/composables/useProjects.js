@@ -35,6 +35,17 @@ export const projectDocCategories = [
   { value: 'other', label: 'Autre' },
 ]
 
+// Types d'entree du journal de bord, alignes sur ProjectEntry::KINDS.
+export const projectEntryKinds = [
+  { value: 'travail', label: 'Travail', badge: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500' },
+  { value: 'rendez_vous', label: 'Rendez-vous', badge: 'bg-violet-100 text-violet-700', dot: 'bg-violet-500' },
+  { value: 'echange', label: 'Échange', badge: 'bg-sky-100 text-sky-700', dot: 'bg-sky-500' },
+  { value: 'decision', label: 'Décision', badge: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500' },
+  { value: 'jalon', label: 'Jalon', badge: 'bg-green-100 text-green-700', dot: 'bg-green-500' },
+  { value: 'idee', label: 'Idée', badge: 'bg-pink-100 text-pink-700', dot: 'bg-pink-500' },
+  { value: 'autre', label: 'Autre', badge: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
+]
+
 const find = (list, value) => list.find(item => item.value === value)
 
 export function useProjects() {
@@ -45,6 +56,9 @@ export function useProjects() {
   const skillStatusLabel = (value) => find(skillStatuses, value)?.label || value
   const skillStatusBadge = (value) => find(skillStatuses, value)?.badge || 'bg-gray-100 text-gray-600'
   const docCategoryLabel = (value) => find(projectDocCategories, value)?.label || value
+  const entryKindLabel = (value) => find(projectEntryKinds, value)?.label || value
+  const entryKindBadge = (value) => find(projectEntryKinds, value)?.badge || 'bg-gray-100 text-gray-700'
+  const entryKindDot = (value) => find(projectEntryKinds, value)?.dot || 'bg-gray-400'
 
   const progressColor = (progress) => {
     if (progress >= 80) return 'bg-green-500'
@@ -56,5 +70,6 @@ export function useProjects() {
   return {
     categoryLabel, categoryBadge, statusLabel, statusBadge,
     skillStatusLabel, skillStatusBadge, docCategoryLabel, progressColor,
+    entryKindLabel, entryKindBadge, entryKindDot,
   }
 }

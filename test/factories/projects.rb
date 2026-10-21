@@ -42,3 +42,19 @@ FactoryBot.define do
     url { "https://dev.epicgames.com/documentation" }
   end
 end
+
+FactoryBot.define do
+  factory :project_entry do
+    project
+    occurred_on { Date.current }
+    kind { "rendez_vous" }
+    title { "Rendez-vous avec le pôle de compétitivité" }
+    body { "Conseils sur le financement." }
+  end
+
+  factory :project_contact do
+    project
+    contact { Contact.create!(first_name: "Paul", last_name: "Durand") }
+    role { "Conseiller" }
+  end
+end

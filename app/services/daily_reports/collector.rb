@@ -20,6 +20,8 @@ module DailyReports
     CRM_STALE_DAYS = 30
     SUBSCRIPTION_DAYS = 30
     TASK_DAYS = 7
+    # Entrees du journal de bord d'un projet jointes a l'instantane.
+    PROJECT_JOURNAL_DAYS = 30
     MAIL_DAYS = 5
     MAX_MAILS = 40
     # Mails recents et non lus dont on lit le dernier message en entier (un appel chacun).
@@ -199,7 +201,7 @@ module DailyReports
     end
 
     def crm
-      profiles = CrmProfile.includes(:contact)
+      profiles = CrmProfile.includes(contact: :projects)
       soon = profiles.where(next_appointment_on: (@date - 30)..(@date + CRM_DAYS))
       stale = profiles.where(priority: "haute")
                       .where("last_contact_on IS NULL OR last_contact_on < ?", @date - CRM_STALE_DAYS)
@@ -214,15 +216,20 @@ module DailyReports
           "appointment_in_days" => (days_until(profile.next_appointment_on) if profile.next_appointment_on),
           "last_contact_on" => profile.last_contact_on&.iso8601,
           "last_contact_method" => profile.last_contact_method.presence,
-          "notes" => profile.notes.to_s.squish.truncate(300).presence
+          "notes" => profile.notes.to_s.squish.truncate(300).presence,
+          "projects" => contact.projects.map(&:name).presence
         }.compact
       end
     end
 
+    # L'activite se mesure d'abord au journal de bord (ProjectEntry) : la date du
+    # projet ou de ses taches ne bouge pas quand Sylvain avance hors du dashboard.
     def projects
-      Project.where(status: "en_cours").ordered.limit(6).includes(:tasks).map do |project|
+      Project.where(status: "en_cours").ordered.limit(6).includes(:tasks, project_entries: :contact).map do |project|
         open_tasks = project.tasks.reject(&:completed).sort_by { |t| [-t.priority, t.deadline || Date.new(9999)] }
-        last_activity = [project.updated_at, *project.tasks.map(&:updated_at)].max
+        entries = project.project_entries.sort_by { |e| [e.occurred_on, e.created_at] }.reverse
+        last_entry_on = entries.first&.occurred_on
+        last_activity = [last_entry_on, project.updated_at.to_date, *project.tasks.map { |t| t.updated_at.to_date }].compact.max
         {
           "ref" => ref_for(project),
           "name" => project.name,
@@ -232,7 +239,13 @@ module DailyReports
           "description" => project.description.to_s.squish.truncate(200).presence,
           "open_tasks" => open_tasks.size,
           "next_tasks" => open_tasks.first(3).map(&:description),
-          "idle_days" => days_until(last_activity.to_date).abs
+          "idle_days" => days_until(last_activity).abs,
+          "journal_empty" => entries.empty?,
+          "last_entry_on" => last_entry_on&.iso8601,
+          "recent_entries" => entries.select { |e| e.occurred_on >= @date - PROJECT_JOURNAL_DAYS }.first(3).map do |entry|
+            { "date" => entry.occurred_on.iso8601, "kind" => entry.kind_label, "title" => entry.title,
+              "with" => entry.contact && [entry.contact.first_name, entry.contact.last_name].compact_blank.join(" ") }.compact
+          end.presence
         }.compact
       end
     end

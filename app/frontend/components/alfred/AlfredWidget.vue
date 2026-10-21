@@ -99,6 +99,12 @@
 
                   <p v-if="message.status === 'failed'" class="mt-1 text-xs text-red-600">{{ message.error || 'La reponse a echoue.' }}</p>
 
+                  <!-- Plusieurs ecritures proposees d'un coup (journal de projet, taches, CRM...) : confirmation groupee, hors mails -->
+                  <div v-if="bulkActions(message).length > 1" class="mt-2 flex items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+                    <span>{{ bulkActions(message).length }} propositions en attente</span>
+                    <button type="button" class="px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50" :disabled="resolving !== null" @click="confirmAll(message)">Tout confirmer</button>
+                  </div>
+
                   <!-- Ecritures proposees : rien n'est ecrit sans le bouton Confirmer -->
                   <div v-for="action in message.actions" :key="action.id" class="mt-2 rounded-xl border bg-white text-sm overflow-hidden" :class="actionBorder(action)">
                     <div class="px-3 py-2 border-b border-gray-100">
@@ -293,6 +299,18 @@ const resolve = async (action, decision) => {
   resolving.value = action.id
   await resolveAction(action, decision)
   resolving.value = null
+}
+
+// Les mails restent a confirmer un par un : un envoi ne se rattrape pas.
+const MAIL_OPERATIONS = ['send_email', 'draft_email', 'triage_email']
+const bulkActions = (message) =>
+  message.actions.filter((action) => action.status === 'proposed' && !MAIL_OPERATIONS.includes(action.operation))
+
+// Dans l'ordre des cartes, une a la fois : chaque confirmation est reverifiee par le serveur.
+const confirmAll = async (message) => {
+  for (const action of bulkActions(message)) {
+    await resolve(action, 'confirm')
+  }
 }
 
 // Liens internes des reponses (rendus par v-html) : navigation par le routeur,

@@ -17,8 +17,8 @@ module Alfred
       "Deadline" => { exclude: %w[generated_until] }, "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Letter" => { exclude: %w[body] }, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
-      "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all,
-      "Property" => :all, "Quote" => :all, "QuoteItem" => :all, "Reminder" => :all,
+      "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectContact" => :all, "ProjectEntry" => :all,
+      "ProjectLink" => :all, "ProjectSkill" => :all, "Property" => :all, "Quote" => :all, "QuoteItem" => :all, "Reminder" => :all,
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
       "SentinelSource" => :all, "SentinelWeek" => :all, "Subscription" => :all, "Task" => :all,
       "Trip" => :all, "TripItem" => :all, "TripPlan" => :all, "UsefulSite" => :all,
@@ -57,6 +57,16 @@ module Alfred
                     "assurance/loyer/autre, amount facultatif. Chaque occurrence est posée automatiquement dans l'agenda " \
                     "(Event journée entière, event_type echeance, deadline_id) : ne crée pas les Event toi-même. " \
                     "Une échéance d'argent ou administrative récurrente est une Deadline, pas un Reminder.",
+      "ProjectEntry" => "Page du projet, « Journal de bord » : ce que Sylvain a fait, décidé ou appris pour un projet, et " \
+                        "quand (occurred_on). kind travail/rendez_vous/echange/decision/jalon/idee/autre, title court, body = " \
+                        "le récit détaillé, contact_id facultatif = la personne rencontrée ou contactée. C'est le journal qui " \
+                        "dit si un projet avance : voir la section « Projets ».",
+      "ProjectContact" => "Page du projet, « Contacts du projet » (mini-CRM) : lie un Contact à un Project (role = son rôle " \
+                          "pour le projet). Le suivi (priorité, dernier contact, prochain rendez-vous, notes) reste sur le " \
+                          "CrmProfile du contact, partagé avec la page CRM. Un contact ne se lie qu'une fois par projet.",
+      "CrmProfile" => "Page CRM : suivi des contacts (priority basse/moyenne/haute, last_contact_on + last_contact_method " \
+                      "telephone/email/sms/visio/rencontre/autre, next_appointment_on = date à laquelle le rappeler ou le " \
+                      "relancer, notes). Un seul par Contact (contact_id). La page CRM affiche tous les contacts à relancer.",
       "CvInterest" => "Page CV, section « Activités & centres d'intérêt ».",
       "CvPitch" => "Page CV, section « Accroches » : plusieurs accroches enregistrées, celle affichée sur le CV est " \
                    "CvSetting.active_pitch_id.",
@@ -77,6 +87,9 @@ module Alfred
       "Note" => { create: %w[title content note_date important] },
       "Deadline" => { create: %w[title category due_on recurrence ends_on amount notes] },
       "Task" => { create: %w[description priority deadline completed project_id] },
+      "ProjectEntry" => { create: %w[project_id occurred_on kind title body contact_id],
+                          update: %w[occurred_on kind title body contact_id] },
+      "ProjectContact" => { create: %w[project_id contact_id role], update: %w[role] },
       "BudgetEntry" => { create: %w[name entry_type recurrence category amount month year notes] },
       "Contact" => { create: %w[last_name first_name birth_date gender occupation city phone email last_contacted_on
                                relationship_type followed notes likes dislikes loans address met_through met_year

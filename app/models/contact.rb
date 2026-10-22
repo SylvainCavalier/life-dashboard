@@ -37,7 +37,9 @@
 #  index_contacts_on_relationship_type         (relationship_type)
 #
 class Contact < ApplicationRecord
-  RELATIONSHIP_TYPES = %w[ami copine famille collegue connaissance client eleve medias autre].freeze
+  RELATIONSHIP_TYPES = %w[
+    ami copine ex famille collegue connaissance client prospect partenaire prestataire eleve medias autre
+  ].freeze
 
   has_one :crm_profile, dependent: :destroy
   has_many :project_contacts, dependent: :destroy

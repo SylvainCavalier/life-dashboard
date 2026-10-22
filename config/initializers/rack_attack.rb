@@ -62,6 +62,11 @@ class Rack::Attack
     req.ip if req.post? && req.path == '/api/transcriptions'
   end
 
+  # Scan de carte de visite : deux appels Mistral payants (OCR + extraction).
+  Rack::Attack.throttle('business card scans', limit: 10, period: 60.seconds) do |req|
+    req.ip if req.post? && req.path == '/api/business_card_scans'
+  end
+
   # Reunions : chaque traitement coute une transcription longue et une synthese.
   # Chaque rapport du matin coute un appel Claude (et une collecte Gmail).
   Rack::Attack.throttle('daily reports', limit: 10, period: 10.minutes) do |req|

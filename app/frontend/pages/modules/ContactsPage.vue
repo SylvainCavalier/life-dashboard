@@ -50,16 +50,33 @@
             <h1 class="text-2xl font-bold text-gray-900">Contacts</h1>
             <span class="text-sm text-gray-400">({{ contacts.length }})</span>
           </div>
-          <button
-            @click="openForm()"
-            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-          >
-            {{ showForm ? 'Annuler' : '+ Ajouter' }}
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              @click="scannerOpen = true"
+              class="inline-flex items-center gap-1.5 border border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-50 transition-colors text-sm font-medium"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Scan Carte de Visite
+            </button>
+            <button
+              @click="openForm()"
+              class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+            >
+              {{ showForm ? 'Annuler' : '+ Ajouter' }}
+            </button>
+          </div>
         </div>
+
+        <BusinessCardScanner v-if="scannerOpen" @scanned="applyScan" @close="scannerOpen = false" />
 
         <!-- Formulaire d'ajout / édition -->
         <form v-if="showForm" ref="formEl" @submit.prevent="saveContact" class="mb-6 p-5 bg-gray-50 rounded-lg">
+          <div v-if="scanNotice" class="mb-4 px-4 py-3 rounded-lg text-sm border" :class="scanNotice.duplicate ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-indigo-50 border-indigo-200 text-indigo-800'">
+            {{ scanNotice.text }}
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <input
               v-model="form.last_name"
@@ -431,6 +448,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useApi } from '../../composables/useApi'
 import ContactsCrmTabs from '../../components/contacts/ContactsCrmTabs.vue'
+import BusinessCardScanner from '../../components/contacts/BusinessCardScanner.vue'
 
 const { useCrud } = useApi()
 const { list, create, update, destroy } = useCrud('contacts')
@@ -440,6 +458,8 @@ const contacts = ref([])
 const showForm = ref(false)
 const editingId = ref(null)
 const formEl = ref(null)
+const scannerOpen = ref(false)
+const scanNotice = ref(null)
 
 const scrollToForm = () => {
   nextTick(() => {
@@ -594,6 +614,28 @@ const openForm = () => {
   }
   Object.assign(form, defaultForm)
   editingId.value = null
+  scanNotice.value = null
+  showForm.value = true
+  scrollToForm()
+}
+
+// Carte de visite lue : le formulaire de creation arrive pre-rempli, rien n'est
+// enregistre avant relecture. On signale un contact deja connu (meme email ou meme nom).
+const applyScan = (scanned) => {
+  scannerOpen.value = false
+  Object.assign(form, defaultForm)
+  Object.keys(defaultForm).forEach((key) => {
+    if (scanned[key] !== undefined && scanned[key] !== null) form[key] = scanned[key]
+  })
+  editingId.value = null
+  const fold = (value) => (value || '').trim().toLowerCase()
+  const fullName = (c) => `${fold(c.first_name)} ${fold(c.last_name)}`
+  const existing = contacts.value.find(
+    (c) => (form.email && fold(c.email) === fold(form.email)) || (form.last_name && fullName(c) === fullName(form))
+  )
+  scanNotice.value = existing
+    ? { duplicate: true, text: `Attention : ${[existing.first_name, existing.last_name].filter(Boolean).join(' ')} existe déjà dans vos contacts. Vérifiez avant d'enregistrer.` }
+    : { duplicate: false, text: 'Carte lue. Vérifiez les champs avant d\'enregistrer.' }
   showForm.value = true
   scrollToForm()
 }
@@ -626,6 +668,7 @@ const editContact = (contact) => {
     social_youtube: contact.social_youtube || '',
   })
   editingId.value = contact.id
+  scanNotice.value = null
   showForm.value = true
   scrollToForm()
 }
@@ -643,6 +686,7 @@ const saveContact = async () => {
   }
   showForm.value = false
   editingId.value = null
+  scanNotice.value = null
   Object.assign(form, defaultForm)
   await fetchContacts()
 }

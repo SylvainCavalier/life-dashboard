@@ -20,6 +20,8 @@ Rails.application.routes.draw do
   namespace :api do
     get 'test', to: 'test#index'
     resources :contacts, only: [:index, :create, :update, :destroy]
+    # Scan de carte de visite : photo -> OCR Mistral -> champs du formulaire (rien n'est stocke)
+    resources :business_card_scans, only: [:create]
     resources :crm_profiles, only: [:index, :create, :update, :destroy]
     resources :password_entries, only: [:index, :create, :destroy] do
       member { get :reveal }

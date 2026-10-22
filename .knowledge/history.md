@@ -5,6 +5,25 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-22 — Scan de carte de visite
+- [feat] Page Contacts : bouton **« Scan Carte de Visite »** qui ouvre un viseur caméra plein écran dans la page (`BusinessCardScanner.vue`, `getUserMedia`, caméra arrière, cadre au format carte), avec repli « Importer » (photo existante, caméra refusée ou absente) ; on reste dans la webapp iPhone au lieu de passer par l'appareil photo natif, qui fait perdre la session
+- [improve] La carte lue ouvre le formulaire de création pré-rempli (nom, prénom, activité = fonction + entreprise, email, téléphone, adresse, ville, LinkedIn, relation « connaissance », année de rencontre ; site, autres numéros et date du scan dans les notes), à relire avant d'enregistrer, avec un avertissement si l'email ou le nom existe déjà
+- [api] `POST /api/business_card_scans` → `BusinessCards::Scanner` : OCR Mistral (`MistralOcr#read_image`, nouvelle lecture d'image hors Active Storage, délai paramétrable) puis extraction en JSON Schema strict par `mistral-small-latest` (`BUSINESS_CARD_MODEL`) ; synchrone (~3,5 s), rien n'est stocké ; photo réduite à 2000 px et réencodée en JPEG côté navigateur (HEIC, 12 Mpx)
+- [security] Throttle Rack::Attack de 10 scans par minute (deux appels Mistral payants par scan)
+- [chore] Tests d'intégration et du service (scanner et OCR factices) ; `CLAUDE.md` documenté (section « Scan de carte de visite »)
+
+### 2026-10-21 — Journal de bord et contacts des projets
+- [feat] **Journal de bord** sur la page de chaque projet (`ProjectJournal.vue`, au-dessus de la to-do list) : entrées datées avec type (travail, rendez-vous, échange, décision, jalon, idée, autre), titre, détails dictables au micro (Voxtral) et interlocuteur facultatif parmi les contacts du projet ; frise chronologique groupée par mois, édition et suppression
+- [ui] En-tête du projet « Dernière entrée au journal : il y a N jours » (orange au-delà de 30 jours ou si vide) ; la liste des projets affiche le nombre de contacts et la date de la dernière entrée
+- [feat] **Contacts du projet** (`ProjectContacts.vue`) : mini-CRM limité aux contacts liés, avec rôle dans le projet et alertes « à relancer » ; le suivi reste sur le `CrmProfile` unique, partagé avec la page CRM (une modification d'un côté se voit de l'autre) ; lier un contact hors CRM lui crée sa fiche, le délier la conserve
+- [improve] Page CRM : nouvelle colonne « Projets » (liens vers les projets de chaque contact)
+- [refactor] Tableau CRM extrait en composant partagé `CrmProfilesTable.vue` + helpers `useCrm.js`, utilisé par la page CRM et la page projet
+- [db] Tables `project_entries` (projet, contact en nullify, `occurred_on`, `kind`, `title`, `body`) et `project_contacts` (projet, contact, rôle, unique par couple)
+- [feat] Alfred (dashboard) : nouvelle section de prompt « Projets » — quand Sylvain raconte ce qu'il a fait pour un projet, il propose dans le même message l'entrée de journal, les tâches qui en découlent (sans doublon, en cochant ce qui est fait), le lien des contacts cités et la mise à jour de leur fiche CRM ; « penser à rappeler X pour Prudo » = lien au projet + date de relance CRM ; `ProjectEntry` / `ProjectContact` lisibles et proposables (listes blanches, notes de modèle, corpus RAG : fiche du journal, contacts listés dans la fiche du projet)
+- [improve] Widget Alfred : bouton « Tout confirmer » quand plusieurs propositions sont en attente (les mails restent à confirmer un par un)
+- [fix] Rapport du matin : l'avancement d'un projet se mesure désormais au journal (dernière entrée, entrées des 30 derniers jours, inactivité calculée sur journal + tâches + projet) et un journal vide est signalé comme « rien de consigné » au lieu de « rien de fait depuis des mois » ; la rubrique CRM précise les projets de chaque contact
+- [chore] Skills locales `life-dashboard` / `life-dashboard-write`, agent `alfred.md` et `CLAUDE.md` mis à jour ; tests modèle, API, collecteur et outils d'Alfred ajoutés
+
 ### 2026-10-12 — Rapport du matin d'Alfred
 - [feat] Nouvelle page **Rapports** (`/reports/:id?`, tuile 🗞️) : chaque matin à 9 h, Alfred passe en revue mails récents, agenda, échéances notables, rappels, anniversaires des proches, abonnements, tâches, CRM et projets prioritaires, puis rédige un rapport en six rubriques (Aujourd'hui, Courrier, Personnes, Échéances et abonnements, Priorités, Remarques) dans son style de majordome, avec suggestion d'ordre pour la journée, idées de cadeau tirées des goûts du contact, liens vers les fiches et les fils Gmail, archive avec pastille « non lu »
 - [improve] Version allégée le week-end (ni CRM ni projets, seulement les mails non lus des deux derniers jours) et suivi d'un jour à l'autre (le rapport précédent est fourni à Alfred pour signaler ce qui reste en suspens sans se répéter)

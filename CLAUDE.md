@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Life Dashboard** — Application personnelle de gestion de vie quotidienne. Tableau de bord central donnant accès à différents modules :
 
 - **Profil** (`/profile`) — Donnees personnelles (`PersonalProfile`, ligne unique) et **signature manuscrite** (`has_one_attached :signature`, PNG 2 Mo max, `DELETE /api/personal_profile/signature`). Pour signer un document genere : `PersonalProfile.first&.signature_data_url` (data URL integrable telle quelle dans un gabarit HTML/PDF)
-- **Contacts** — Gestion de la liste de contacts personnels et professionnels
+- **Contacts** — Gestion de la liste de contacts personnels et professionnels. Bouton **Scan Carte de Visite** : photo prise dans la page, OCR Mistral, formulaire pre-rempli a relire (voir « Scan de carte de visite »)
 - **Immobilier** — Suivi des biens immobiliers (propriétés, locataires, charges, revenus)
 - **Entreprises** — Gestion d'entreprises avec génération de devis et factures (PDF)
 - **Budget** — Suivi des revenus, dépenses, épargne, investissements
@@ -527,6 +527,19 @@ Chrome envoie du webm/opus, Safari (Mac, iPhone) du mp4/aac : Voxtral accepte le
 Enregistrement borne a 5 min cote client (`maxSeconds`) pour rester sous les 30 s du routeur Heroku. Le micro exige
 HTTPS (ou localhost) : hors contexte securise, le bouton ne s'affiche pas. Multipart via Net::HTTP (pas de
 `faraday-multipart` dans le bundle). Tests : `transcriptions_test.rb`, sur un transcripteur factice.
+
+### Scan de carte de visite (page Contacts)
+`BusinessCardScanner.vue` ouvre un viseur **dans la page** (`getUserMedia`, camera arriere, 1920x1080 demandes : sans
+resolution, Safari iOS livre du 640x480 illisible) plutot que l'appareil photo de l'iPhone, pour rester dans la webapp
+(meme lecon que la skill `qr-scanner-web`). Champ fichier en repli (pas de camera, permission refusee, photo existante).
+La photo est reduite a 2000 px et reencodee en JPEG dans le navigateur (HEIC, 12 Mpx), apercu en `data:` (la CSP
+n'autorise pas `blob:` en `img_src`). `POST /api/business_card_scans` (synchrone, 10 Mo, throttle 10/min) passe a
+`BusinessCards::Scanner` : OCR (`Alfred::Corpus::MistralOcr#read_image`, delai 15 s) puis extraction en JSON Schema strict
+(`/v1/chat/completions`, `BUSINESS_CARD_MODEL`, defaut `mistral-small-latest`, delai 12 s) ; environ 3,5 s mesure le
+22/10/2026. `contact_attributes` range le resultat (activite = fonction + entreprise, autres numeros, site et email
+illisible dans les notes, relation « connaissance », annee de rencontre). **Rien n'est stocke ni enregistre** : le
+formulaire arrive pre-rempli, avec un avertissement si l'email ou le nom existe deja. Tests :
+`business_card_scans_test.rb`, `test/services/business_cards/`.
 
 ### Reunions (comptes rendus)
 Deux entrees : **import d'un fichier** (Dictaphone de l'iPhone, mp3, wav, webm, video Zoom) et **enregistrement en direct**

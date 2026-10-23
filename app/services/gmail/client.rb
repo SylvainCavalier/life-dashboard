@@ -97,9 +97,11 @@ module Gmail
       Parser.reply_headers(raw_thread(id, format: "metadata").messages.to_a.last)
     end
 
+    # Une liste vide est omise et non passee a nil : representable plante en
+    # serialisant une collection explicitement nulle (each_with_index sur nil).
     def modify_thread(id, add: [], remove: [])
-      request = Google::Apis::GmailV1::ModifyThreadRequest.new(add_label_ids: add.presence,
-                                                               remove_label_ids: remove.presence)
+      request = Google::Apis::GmailV1::ModifyThreadRequest.new(**{ add_label_ids: add.presence,
+                                                                   remove_label_ids: remove.presence }.compact)
       call { service.modify_thread(ME, id, request) }
       nil
     end

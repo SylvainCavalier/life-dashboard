@@ -1,12 +1,14 @@
 module Api
   # Dossiers de classement du module Downloader (telechargements cloud uniquement).
   class VideoFoldersController < ApplicationController
+    open_to_friends
+
     before_action :set_folder, only: [:show, :update, :destroy]
 
     # GET /api/video_folders
     def index
-      counts = VideoDownload.where.not(video_folder_id: nil).group(:video_folder_id).count
-      render json: VideoFolder.ordered.map { |folder| folder_json(folder, counts[folder.id] || 0) }
+      counts = current_user.video_downloads.where.not(video_folder_id: nil).group(:video_folder_id).count
+      render json: current_user.video_folders.ordered.map { |folder| folder_json(folder, counts[folder.id] || 0) }
     end
 
     # GET /api/video_folders/:id
@@ -16,7 +18,7 @@ module Api
 
     # POST /api/video_folders
     def create
-      folder = VideoFolder.new(folder_params)
+      folder = current_user.video_folders.new(folder_params)
       if folder.save
         render json: folder_json(folder, 0), status: :created
       else
@@ -43,7 +45,7 @@ module Api
     private
 
     def set_folder
-      @folder = VideoFolder.find(params[:id])
+      @folder = current_user.video_folders.find(params[:id])
     end
 
     def folder_params

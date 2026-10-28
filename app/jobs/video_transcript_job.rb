@@ -6,7 +6,8 @@
 #                   devines ne remplacent jamais ceux que Sylvain a saisis.
 # Pas d'etape PDF : il est genere a la demande (telechargement, ajout aux documents).
 class VideoTranscriptJob < ApplicationJob
-  queue_as :default
+  # File "media" : un seul traitement lourd (yt-dlp, ffmpeg) a la fois, voir good_job.rb.
+  queue_as :media
 
   discard_on ActiveRecord::RecordNotFound
 

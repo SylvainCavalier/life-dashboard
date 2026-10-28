@@ -20,8 +20,8 @@
 #
 # En production, preferer `rails owner:bootstrap`, qui fait la meme chose sans
 # dependre de db:seed.
-if User.exists?
-  puts "Compte deja present (#{User.first.email}) — seed ignoree."
+if User.owner
+  puts "Compte deja present (#{User.owner.email}) — seed ignoree."
 else
   user = User.bootstrap!
   puts "Compte cree :"

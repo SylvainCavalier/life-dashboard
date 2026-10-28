@@ -46,7 +46,7 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `DailyReport` (rapports du matin, sans `snapshot`) est en lecture seule : un rapport se (re)genere via `bin/rails daily_reports:run_now`. `Deadline` (échéances notables, sans `generated_until`) est lisible. `ProjectEntry` (journal de bord) et `ProjectContact` (contacts liés à un projet) sont lisibles. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `DailyReport` (rapports du matin, sans `snapshot`) est en lecture seule : un rapport se (re)genere via `bin/rails daily_reports:run_now`. `Deadline` (échéances notables, sans `generated_until`) est lisible. `ProjectEntry` (journal de bord) et `ProjectContact` (contacts liés à un projet) sont lisibles. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). `FileTransfer`, `VideoDownload`, `VideoFolder` et `VideoTranscript` sont bornés aux lignes du propriétaire (`OWNER_SCOPED`) : jamais celles des comptes d'amis. Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
 - **Tier 1 (attributs explicites)** : `Event`, `Deadline` (les occurrences d'agenda suivent toutes seules), `Note`, `Task` (dont `project_id`), `ProjectEntry` (`project_id` en création seulement), `ProjectContact` (`role` seul en modification), `Reminder` (`completed_at` en update seulement), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code), `Letter` (contenu par l'attribut virtuel `body_text`, jamais `body` ; rendu par `bin/rails letters:pdf|docx|save_to_documents ID=...`).
@@ -75,8 +75,26 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ## Authentification et exposition publique
 
-L'application est **mono-utilisateur** et destinee a etre hebergee sur un
-domaine prive, volontairement non reference. Voir `DEPLOY.md` pour la procedure.
+L'application appartient a **un seul proprietaire** (Sylvain) et est destinee a etre
+hebergee sur un domaine prive, volontairement non reference. Voir `DEPLOY.md` pour la procedure.
+
+- **Comptes d'amis** (`users.role` : `owner` | `friend`, defaut `friend` en base) : acces aux
+  seules pages **Outils, Downloader et Transfert**. Refus par defaut : `restrict_friends!`
+  (`ApplicationController`) renvoie 403 sur l'API et redirige vers `/tools` sinon, sauf dans les
+  controleurs qui appellent `open_to_friends` (`except:` pour fermer une action :
+  `VideoTranscriptsController#save_to_documents`, les documents etant ceux du proprietaire).
+  Un nouveau controleur est donc ferme aux amis sans rien faire. Le SPA lit le role dans
+  `<meta name="dashboard-role">` (`utils/currentUser.js`) : garde du routeur, barre `FriendNav`,
+  pas de widget Alfred, signature du profil remplacee par un import d'image (confort, l'API fait foi).
+  **Donnees separees** : `VideoFolder`, `VideoDownload`, `VideoTranscript` et `FileTransfer` ont un
+  `user_id` (concern `UserOwned`) et les controleurs passent par `current_user.<association>`.
+  Un enregistrement cree hors session (rake, Alfred, skills) revient au proprietaire (`User.owner`).
+  Alfred (dashboard et skills locales) ne lit que les lignes du proprietaire de ces quatre modeles
+  (`DataAccess::OWNER_SCOPED`, `OWNER_SCOPED` de `query.rb`). Gestion :
+  `rails friends:create EMAIL=...` (mot de passe provisoire affiche, a changer a la premiere
+  connexion), `friends:list`, `friends:reset_password`, `friends:unlock`, `friends:destroy CONFIRM=1`
+  (supprime aussi ses fichiers). Les amis consomment les cles API du proprietaire (outil Videos :
+  Voxtral + Claude) et le bucket OVH. Tests : `friend_access_test.rb`.
 
 - **Tout est prive par defaut** : `ApplicationController` porte
   `before_action :authenticate_user!`. Un nouveau controleur est donc protege
@@ -86,7 +104,7 @@ domaine prive, volontairement non reference. Voir `DEPLOY.md` pour la procedure.
 - **Ne jamais remettre `protect_from_forgery with: :null_session`** dans un
   controleur API : le SPA envoie deja le jeton CSRF via `plugins/axios.js`.
 - **Pas d'inscription, pas de mot de passe oublie.** Le compte se cree avec
-  `rails owner:bootstrap` (ou `db:seed` en dev) : identifiants de bootstrap
+  `rails owner:bootstrap` (ou `db:seed` en dev), role `owner` : identifiants de bootstrap
   connus, definis dans `User::BOOTSTRAP_EMAIL` / `BOOTSTRAP_PASSWORD`, poses
   **sans validation** puisque le mot de passe provisoire est plus court que le
   minimum impose ensuite.
@@ -174,7 +192,11 @@ bin/rails downloader:fetch_now URL="https://..." STORAGE=cloud FOLDER=nom  # tel
 ```
 Options : `FORMAT` (mp4 | mp3), `QUALITY` (original | 720p), `STORAGE` (local par defaut | cloud), `FOLDER`,
 `CLIP_START` / `CLIP_END` (extrait ; timecodes `0:34`, `1:02:03` ou secondes ; les deux ou aucun).
-`VideoDownload.enqueue!` est le point d'entree unique (API et rake) ; `VideoDownloadJob` appelle
+`VideoDownload.enqueue!` est le point d'entree unique (API et rake) ; `VideoDownloadJob` et `VideoTranscriptJob` sont
+dans la file GoodJob `media`, limitee a un thread (`config.good_job.queues`, surchargeable par `GOOD_JOB_QUEUES`) pour
+qu'un dyno de 512 Mo n'empile pas plusieurs yt-dlp/ffmpeg ; le reste tourne dans les autres threads.
+En production, `log-runtime-metrics` est active (memoire du dyno dans les logs, a surveiller pour les R14 avant
+d'envisager un worker dedie, qui imposerait de revoir le stockage « local »). `VideoDownloadJob` appelle
 `VideoDownloads::YtDlpService` puis, en cloud, attache le fichier via Active Storage avec une cle
 lisible (`video_downloads/<dossier>/<id>-<nom>`). La table `video_downloads` fait foi pour l'etat
 du job : l'interface la sonde toutes les 3 s tant qu'un telechargement est actif.
@@ -193,12 +215,15 @@ sans lui la coupe tombe sur l'image cle precedente et le debut de l'extrait n'es
 1re image cle a 5,7 s sur 13 s), pour un gain de temps nul. `duration` devient celle de l'extrait, le nom du
 fichier porte `(0m34s-0m47s)`, la citation ajoute « extrait de 0:34 a 0:47 » et, sur YouTube, `&t=34s`.
 Dans le modele et le service, ecrire `Kernel.format` : `format` y est l'attribut mp4/mp3.
-Binaires requis : `yt-dlp` (plus un runtime JS, `deno`, indispensable pour YouTube) et `ffmpeg`. Sur la
+Binaires requis : `yt-dlp` (plus un runtime JS, `deno` en local, `node` sur Heroku via `YT_DLP_JS_RUNTIMES=node`, indispensable pour YouTube) et `ffmpeg`. Sur la
 machine de Sylvain ils vivent dans `~/.local/bin` (binaire officiel autonome de yt-dlp, build statique
 evermeet.cx de ffmpeg/ffprobe) et non dans Homebrew : sous macOS 14, Homebrew n'a plus de bottles et
 recompile llvm/rust/deno depuis les sources pendant des heures. Ne pas lancer `brew upgrade yt-dlp`. Variables : `YT_DLP_BIN`,
-`YT_DLP_COOKIES_FROM_BROWSER` (defaut `chrome` en developpement, vide ailleurs). Sans ces binaires
-(Heroku sans buildpack), `GET /api/video_downloads/availability` le signale et la page affiche un
+`YT_DLP_COOKIES_FROM_BROWSER` (defaut `chrome` en developpement, vide ailleurs). Sur Heroku, ils ne sont pas
+dans le slug (deja pres des 500 Mo) : `.profile.d/downloader.sh` lance `bin/downloader-binaries` au demarrage du dyno
+web, qui les telecharge (sommes de controle verifiees) dans `tmp/downloader-bin`, place devant le PATH. Cookies YouTube en
+production : `YT_DLP_COOKIES` (contenu d'un cookies.txt, ecrit dans `tmp/yt-dlp-cookies.txt`, prioritaire sur
+`YT_DLP_COOKIES_FROM_BROWSER`). Sans binaires, `GET /api/video_downloads/availability` le signale et la page affiche un
 bandeau ; voir `DEPLOY.md`. Ne pas nommer une action de controleur `status` : cela ecrase
 `ActionController::Metal#status`. Le bucket OVH est en `media_src` dans la CSP pour le lecteur.
 

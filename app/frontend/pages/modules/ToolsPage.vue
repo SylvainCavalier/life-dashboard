@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 p-6">
     <div class="max-w-6xl mx-auto">
-      <router-link to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">← Retour au dashboard</router-link>
+      <router-link v-if="!isFriend" to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">← Retour au dashboard</router-link>
 
       <div class="flex items-center gap-3 mb-6">
         <span class="text-3xl">🧰</span>
@@ -35,6 +35,7 @@
 
 <script setup>
 import { computed, defineAsyncComponent } from 'vue'
+import { isFriend } from '../../utils/currentUser'
 
 const props = defineProps({
   tab: { type: String, default: null },

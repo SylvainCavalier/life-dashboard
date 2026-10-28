@@ -2,6 +2,7 @@ require "test_helper"
 
 class VideoTranscriptsTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
+  include VideoDownloadStorageHelper
 
   ACCEPT_JSON = { "Accept" => "application/json" }.freeze
 

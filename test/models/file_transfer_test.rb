@@ -20,7 +20,7 @@ require "test_helper"
 
 class FileTransferTest < ActiveSupport::TestCase
   def build_transfer(attributes = {})
-    transfer = FileTransfer.new(attributes)
+    transfer = FileTransfer.new({ user: User.owner || create(:user) }.merge(attributes))
     transfer.file.attach(
       io: StringIO.new("contenu de test"),
       filename: "rapport.txt",

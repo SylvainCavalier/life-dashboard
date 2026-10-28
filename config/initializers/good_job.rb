@@ -63,6 +63,12 @@ Rails.application.configure do
   
   # Set maximum number of threads
   config.good_job.max_threads = ENV.fetch("GOOD_JOB_MAX_THREADS", 5).to_i
+
+  # Deux reserves de threads. "media" (VideoDownloadJob, VideoTranscriptJob : yt-dlp et
+  # ffmpeg, une centaine de Mo chacun) n'a qu'un thread : sur un dyno de 512 Mo, des
+  # telechargements lances en meme temps (comptes d'amis compris) attendent leur tour
+  # au lieu de s'empiler en memoire. Le reste ne passe jamais derriere eux.
+  config.good_job.queues = ENV.fetch("GOOD_JOB_QUEUES", "media:1;-media:#{config.good_job.max_threads}")
   
   # LISTEN/NOTIFY : les jobs sont pris en charge immediatement plutot qu'au
   # prochain sondage. Utile en mode async ou le process web fait aussi worker.

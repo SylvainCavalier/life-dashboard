@@ -2,7 +2,7 @@ require "test_helper"
 
 class PurgeExpiredFileTransfersJobTest < ActiveJob::TestCase
   def create_transfer(expires_at:)
-    transfer = FileTransfer.new(expires_at: expires_at)
+    transfer = FileTransfer.new(expires_at: expires_at, user: User.owner || create(:user))
     transfer.file.attach(
       io: StringIO.new("contenu de test"),
       filename: "archive.zip",

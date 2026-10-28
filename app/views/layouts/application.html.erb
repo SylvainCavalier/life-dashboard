@@ -8,6 +8,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-title" content="Dashboard">
+    <meta name="dashboard-role" content="<%= current_user&.role %>">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 

@@ -3,7 +3,8 @@
 # le disque. Un echec est consigne sur l'enregistrement (status "failed" +
 # error_message) sans etre releve : la table fait foi, pas GoodJob.
 class VideoDownloadJob < ApplicationJob
-  queue_as :default
+  # File "media" : un seul traitement lourd (yt-dlp, ffmpeg) a la fois, voir good_job.rb.
+  queue_as :media
 
   # Telechargement supprime entre l'enqueue et l'execution.
   discard_on ActiveRecord::RecordNotFound

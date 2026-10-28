@@ -1,6 +1,8 @@
 require "test_helper"
 
 class VideoTranscriptTest < ActiveSupport::TestCase
+  include VideoDownloadStorageHelper
+
   test "exige une video ou un telechargement disponible" do
     transcript = build(:video_transcript)
 

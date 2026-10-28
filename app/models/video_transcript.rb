@@ -5,6 +5,7 @@
 # celle du Downloader n'est jamais touchee. Voir CLAUDE.md, section « Outil Videos ».
 class VideoTranscript < ApplicationRecord
   include SpeakerTranscript
+  include UserOwned
 
   class SourceMissing < StandardError; end
 
@@ -33,6 +34,7 @@ class VideoTranscript < ApplicationRecord
   validates :step, inclusion: { in: STEPS }, allow_nil: true
   validate :video_is_acceptable, if: -> { video.attached? && attachment_changes["video"].present? }
   validate :source_is_available, on: :create
+  validate :download_belongs_to_user
 
   scope :recent, -> { order(created_at: :desc, id: :desc) }
 
@@ -42,7 +44,7 @@ class VideoTranscript < ApplicationRecord
 
   # Transcription d'un telechargement du Downloader : titre et citation repris de la source.
   def self.build_from_download(download, language: "auto")
-    new(video_download: download, language: language,
+    new(video_download: download, user: download.user, language: language,
         title: download.title.presence || download.filename.presence || download.url,
         source_citation: download.citation)
   end
@@ -152,5 +154,11 @@ class VideoTranscript < ApplicationRecord
     return if video_download.file_available? && MEDIA_TYPES.match?(video_download.content_type.to_s)
 
     errors.add(:video_download, "n'a plus de fichier disponible")
+  end
+
+  def download_belongs_to_user
+    return if video_download.nil? || video_download.user_id == user_id
+
+    errors.add(:video_download, "est introuvable")
   end
 end

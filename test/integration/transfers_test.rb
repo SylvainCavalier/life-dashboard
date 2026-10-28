@@ -4,7 +4,7 @@ class TransfersTest < ActionDispatch::IntegrationTest
   # Les pages /t/:token sont publiques, mais l'API de creation d'un transfert
   # est derriere l'authentification comme le reste du dashboard.
   def create_transfer(expires_at: 2.days.from_now, label: nil)
-    transfer = FileTransfer.new(expires_at: expires_at, label: label)
+    transfer = FileTransfer.new(expires_at: expires_at, label: label, user: User.owner || create(:user))
     transfer.file.attach(
       io: StringIO.new("contenu de test"),
       filename: "photo.jpg",

@@ -5,11 +5,14 @@ module Api
     # du fichier avec le service Disk (tests) ; sans effet avec le service S3.
     include ActiveStorage::SetCurrent
 
+    # Ouvert aux amis : chacun ne voit que ses telechargements.
+    open_to_friends
+
     before_action :set_download, only: [:show, :destroy, :file]
 
     # GET /api/video_downloads?status=&video_folder_id=
     def index
-      downloads = VideoDownload.recent.with_attached_file
+      downloads = current_user.video_downloads.recent.with_attached_file
       downloads = downloads.where(status: params[:status]) if params[:status].present?
       downloads = downloads.where(video_folder_id: params[:video_folder_id]) if params[:video_folder_id].present?
       render json: downloads.map { |download| download_json(download) }
@@ -30,7 +33,7 @@ module Api
 
     # POST /api/video_downloads
     def create
-      download = VideoDownload.enqueue!(download_params)
+      download = current_user.video_downloads.enqueue!(download_params)
       render json: download_json(download), status: :created
     rescue ActiveRecord::RecordInvalid => e
       render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
@@ -64,7 +67,7 @@ module Api
     private
 
     def set_download
-      @download = VideoDownload.find(params[:id])
+      @download = current_user.video_downloads.find(params[:id])
     end
 
     def download_params

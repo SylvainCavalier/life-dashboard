@@ -10,13 +10,21 @@
 #  token              :string           not null
 #  created_at         :datetime         not null
 #  updated_at         :datetime         not null
+#  user_id            :bigint           not null
 #
 # Indexes
 #
 #  index_file_transfers_on_expires_at  (expires_at)
 #  index_file_transfers_on_token       (token) UNIQUE
+#  index_file_transfers_on_user_id     (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
 #
 class FileTransfer < ApplicationRecord
+  include UserOwned
+
   has_one_attached :file
 
   # Duree de vie par defaut d'un transfert avant purge automatique

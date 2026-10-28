@@ -38,7 +38,7 @@ module Alfred
         klass = DataAccess.readable_class(name)
         allowed = DataAccess.readable_fields(name)
 
-        relation = apply_where(klass.all, klass, allowed, input["where"] || {})
+        relation = apply_where(DataAccess.readable_relation(name), klass, allowed, input["where"] || {})
         total = relation.count
         return { model: name, count: total } if input["count_only"]
 

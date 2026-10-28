@@ -10,6 +10,7 @@ module Users
     # Sans cette exception, le garde-fou de ApplicationController renverrait
     # cette page vers elle-meme indefiniment.
     skip_before_action :enforce_password_change!
+    open_to_friends
 
     layout "auth"
 

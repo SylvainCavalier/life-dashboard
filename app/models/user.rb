@@ -1,8 +1,10 @@
-# Single-user application: the only account is the owner's, created by
-# `rails owner:bootstrap` (or the development seed). There is deliberately no
+# Two kinds of accounts. The owner's, created by `rails owner:bootstrap` (or the
+# development seed), sees the whole dashboard. Friends' accounts, created by
+# `rails friends:create`, only reach the tools opened to them (Outils, Downloader,
+# Transfert) and only their own records there. There is deliberately no
 # :registerable module (no public sign-up) and no :recoverable module (no
 # password-reset mailer is configured in production; reset with
-# `rails owner:reset_password` instead).
+# `rails owner:reset_password` / `friends:reset_password` instead).
 # == Schema Information
 #
 # Table name: users
@@ -18,6 +20,7 @@
 #  locked_at            :datetime
 #  must_change_password :boolean          default(FALSE), not null
 #  remember_created_at  :datetime
+#  role                 :string           default("friend"), not null
 #  sign_in_count        :integer          default(0), not null
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
@@ -25,10 +28,34 @@
 # Indexes
 #
 #  index_users_on_email  (email) UNIQUE
+#  index_users_on_role   (role)
 #
 class User < ApplicationRecord
   devise :database_authenticatable, :rememberable, :validatable,
          :trackable, :lockable
+
+  ROLES = %w[owner friend].freeze
+
+  # Donnees des outils ouverts aux amis : chaque compte a les siennes.
+  has_many :video_folders, dependent: :destroy
+  has_many :video_downloads, dependent: :destroy
+  has_many :video_transcripts, dependent: :destroy
+  has_many :file_transfers, dependent: :destroy
+
+  validates :role, inclusion: { in: ROLES }
+
+  scope :owners, -> { where(role: "owner") }
+  scope :friends, -> { where(role: "friend") }
+
+  ROLES.each do |value|
+    define_method("#{value}?") { role == value }
+  end
+
+  # Le proprietaire du dashboard : celui a qui reviennent les enregistrements crees
+  # hors session (rake tasks, Alfred, skills locales).
+  def self.owner
+    owners.order(:id).first
+  end
 
   # Identifiants de bootstrap : connus, volontairement simples, et destines a
   # etre remplaces des la premiere connexion (must_change_password). Le mot de
@@ -39,9 +66,16 @@ class User < ApplicationRecord
   BOOTSTRAP_PASSWORD = ENV.fetch("OWNER_PASSWORD", "password!").freeze
 
   def self.bootstrap!(email: BOOTSTRAP_EMAIL, password: BOOTSTRAP_PASSWORD)
-    user = new(email: email, must_change_password: true)
+    user = new(email: email, role: "owner", must_change_password: true)
     user.password = password
     user.save!(validate: false)
     user
+  end
+
+  # Compte d'ami : mot de passe provisoire aleatoire, a remplacer a la premiere connexion.
+  def self.create_friend!(email:)
+    password = SecureRandom.alphanumeric(20)
+    user = create!(email: email, role: "friend", password: password, must_change_password: true)
+    [user, password]
   end
 end

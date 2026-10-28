@@ -1,5 +1,6 @@
 FactoryBot.define do
   factory :video_transcript do
+    user { User.owner || association(:user) }
     title { "Interview sur la desinformation" }
     language { "auto" }
 

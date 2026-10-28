@@ -58,6 +58,7 @@
           <div class="h-20 border border-gray-200 rounded-lg flex items-center justify-center bg-gray-50 mb-2">
             <img v-if="signature" :src="signature.src" alt="Signature" class="max-h-full max-w-full object-contain p-2" />
             <span v-else-if="loadingProfile" class="text-xs text-gray-400">Chargement...</span>
+            <span v-else-if="isFriend" class="text-xs text-gray-400 text-center px-2">Importez l'image de votre signature</span>
             <span v-else class="text-xs text-gray-400 text-center px-2">
               Aucune signature dans
               <router-link to="/profile" class="text-indigo-600 hover:underline">Mon profil</router-link>
@@ -65,7 +66,7 @@
           </div>
           <div class="flex flex-wrap gap-2 text-xs">
             <button @click="fileInput.click()" class="px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200">
-              Utiliser une autre image
+              {{ isFriend ? 'Importer une image' : 'Utiliser une autre image' }}
             </button>
             <button
               v-if="profileSignature && signature?.src !== profileSignature"
@@ -109,6 +110,7 @@ import { useApi } from '../../../composables/useApi'
 import { addImage } from '../pdfOperations'
 import { renderPage } from '../pdfRender'
 import { readAsDataUrl } from '../files'
+import { isFriend } from '../../../utils/currentUser'
 
 defineOptions({ inheritAttrs: false })
 
@@ -228,6 +230,11 @@ const submit = () => {
 }
 
 onMounted(async () => {
+  // Compte d'ami : pas de profil (celui du proprietaire), la signature s'importe.
+  if (isFriend) {
+    loadingProfile.value = false
+    return
+  }
   try {
     const profile = await get('/personal_profile')
     profileSignature.value = profile?.signature_data_url || null

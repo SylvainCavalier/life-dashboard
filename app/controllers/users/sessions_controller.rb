@@ -6,6 +6,8 @@ module Users
     # Sans cette exception, le blocage sur le changement de mot de passe
     # intercepterait aussi la deconnexion : impossible de quitter l'ecran.
     skip_before_action :enforce_password_change!
+    # Les amis doivent pouvoir se deconnecter.
+    open_to_friends
 
     layout "auth"
   end

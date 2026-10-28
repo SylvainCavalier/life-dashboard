@@ -1,14 +1,16 @@
 class Api::FileTransfersController < ApplicationController
+  open_to_friends
+
   # GET /api/file_transfers
   def index
-    transfers = FileTransfer.with_attached_file.recent_first
+    transfers = current_user.file_transfers.with_attached_file.recent_first
     render json: transfers.map { |transfer| transfer_json(transfer) }
   end
 
   # POST /api/file_transfers
   # Attend un signed_id issu du direct upload Active Storage (ou un fichier multipart)
   def create
-    transfer = FileTransfer.new(label: params[:label])
+    transfer = current_user.file_transfers.new(label: params[:label])
     transfer.expires_at = expiry_from_params
     transfer.file.attach(params[:file]) if params[:file].present?
 
@@ -21,7 +23,7 @@ class Api::FileTransfersController < ApplicationController
 
   # DELETE /api/file_transfers/:id
   def destroy
-    transfer = FileTransfer.find(params[:id])
+    transfer = current_user.file_transfers.find(params[:id])
     transfer.destroy
     head :no_content
   end

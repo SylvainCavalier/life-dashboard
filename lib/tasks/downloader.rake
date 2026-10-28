@@ -11,7 +11,7 @@ namespace :downloader do
     url = ENV["URL"].presence || abort("URL manquante : rake downloader:fetch URL=https://...")
     format = ENV.fetch("FORMAT", "mp4")
     folder = ENV["FOLDER"].presence && (
-      VideoFolder.find_by("lower(name) = ?", ENV["FOLDER"].downcase) || abort("Dossier inconnu : #{ENV['FOLDER']}")
+      VideoFolder.where(user: User.owner).find_by("lower(name) = ?", ENV["FOLDER"].downcase) || abort("Dossier inconnu : #{ENV['FOLDER']}")
     )
 
     {

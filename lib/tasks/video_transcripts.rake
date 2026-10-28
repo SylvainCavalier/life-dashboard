@@ -7,7 +7,7 @@
 namespace :video_transcripts do
   build_from_env = lambda do
     id = ENV["DOWNLOAD_ID"].presence || abort("DOWNLOAD_ID manquant : rake video_transcripts:run DOWNLOAD_ID=12")
-    download = VideoDownload.find_by(id: id) || abort("Telechargement ##{id} introuvable")
+    download = VideoDownload.where(user: User.owner).find_by(id: id) || abort("Telechargement ##{id} introuvable")
     transcript = VideoTranscript.build_from_download(download, language: ENV.fetch("LANGUAGE", "auto"))
     transcript.title = ENV["TITLE"] if ENV["TITLE"].present?
     transcript

@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 p-6">
     <div class="max-w-3xl mx-auto">
       <!-- Retour -->
-      <router-link to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">&larr; Retour au dashboard</router-link>
+      <router-link v-if="!isFriend" to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">&larr; Retour au dashboard</router-link>
 
       <!-- Header -->
       <div class="mb-6">
@@ -152,6 +152,7 @@
 import { ref, onMounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 import { useDirectUpload } from '../../composables/useDirectUpload'
+import { isFriend } from '../../utils/currentUser'
 
 const { useCrud } = useApi()
 const { list, create, destroy } = useCrud('file_transfers')

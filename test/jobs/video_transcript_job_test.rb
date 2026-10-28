@@ -2,6 +2,8 @@ require "test_helper"
 require "minitest/mock"
 
 class VideoTranscriptJobTest < ActiveJob::TestCase
+  include VideoDownloadStorageHelper
+
   class FakeTranscriber
     attr_reader :calls, :languages, :content_types
 

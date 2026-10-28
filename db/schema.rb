@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_28_171938) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -420,8 +420,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
     t.datetime "last_downloaded_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
     t.index ["expires_at"], name: "index_file_transfers_on_expires_at"
     t.index ["token"], name: "index_file_transfers_on_token", unique: true
+    t.index ["user_id"], name: "index_file_transfers_on_user_id"
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1059,7 +1061,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "must_change_password", default: false, null: false
+    t.string "role", default: "friend", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["role"], name: "index_users_on_role"
   end
 
   create_table "video_downloads", force: :cascade do |t|
@@ -1088,8 +1092,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
     t.bigint "view_count"
     t.integer "clip_start"
     t.integer "clip_end"
+    t.bigint "user_id", null: false
     t.index ["created_at"], name: "index_video_downloads_on_created_at"
     t.index ["status"], name: "index_video_downloads_on_status"
+    t.index ["user_id"], name: "index_video_downloads_on_user_id"
     t.index ["video_folder_id"], name: "index_video_downloads_on_video_folder_id"
   end
 
@@ -1097,7 +1103,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index "lower((name)::text)", name: "index_video_folders_on_lower_name", unique: true
+    t.bigint "user_id", null: false
+    t.index "user_id, lower((name)::text)", name: "index_video_folders_on_user_and_lower_name", unique: true
+    t.index ["user_id"], name: "index_video_folders_on_user_id"
   end
 
   create_table "video_transcripts", force: :cascade do |t|
@@ -1119,8 +1127,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
     t.bigint "document_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
     t.index ["created_at"], name: "index_video_transcripts_on_created_at"
     t.index ["document_id"], name: "index_video_transcripts_on_document_id"
+    t.index ["user_id"], name: "index_video_transcripts_on_user_id"
     t.index ["video_download_id"], name: "index_video_transcripts_on_video_download_id"
   end
 
@@ -1136,6 +1146,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
   add_foreign_key "documents", "companies"
   add_foreign_key "documents", "projects"
   add_foreign_key "events", "deadlines", on_delete: :nullify
+  add_foreign_key "file_transfers", "users"
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "companies"
@@ -1156,7 +1167,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_123537) do
   add_foreign_key "tasks", "projects"
   add_foreign_key "trip_items", "trips"
   add_foreign_key "trip_plans", "trips"
+  add_foreign_key "video_downloads", "users"
   add_foreign_key "video_downloads", "video_folders"
+  add_foreign_key "video_folders", "users"
   add_foreign_key "video_transcripts", "documents", on_delete: :nullify
+  add_foreign_key "video_transcripts", "users"
   add_foreign_key "video_transcripts", "video_downloads", on_delete: :nullify
 end

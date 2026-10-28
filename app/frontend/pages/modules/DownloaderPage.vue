@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 p-6">
     <div class="max-w-4xl mx-auto">
       <!-- Retour -->
-      <router-link to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">&larr; Retour au dashboard</router-link>
+      <router-link v-if="!isFriend" to="/" class="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-block">&larr; Retour au dashboard</router-link>
 
       <!-- Header -->
       <div class="mb-6">
@@ -262,6 +262,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../composables/useApi'
+import { isFriend } from '../../utils/currentUser'
 import {
   useVideoDownloads, formatOptions, qualityOptions, storageOptions,
   statusLabel, statusBadge, formatSize, formatDuration, formatDate, formatCount, sourceOf,

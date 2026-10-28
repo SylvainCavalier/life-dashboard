@@ -7,6 +7,8 @@ class TransfersController < ApplicationController
 
   # Seul point d'entree public de l'application : le token du lien fait foi.
   skip_before_action :authenticate_user!
+  # Un ami connecte qui ouvre un lien de partage doit le voir comme tout le monde.
+  open_to_friends
 
   layout "transfer"
 

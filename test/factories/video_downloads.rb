@@ -27,6 +27,7 @@
 #  view_count      :bigint
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
+#  user_id         :bigint           not null
 #  video_folder_id :bigint
 #
 # Indexes
@@ -42,9 +43,11 @@
 FactoryBot.define do
   factory :video_folder do
     sequence(:name) { |n| "Conferences #{n}" }
+    user { User.owner || association(:user) }
   end
 
   factory :video_download do
+    user { User.owner || association(:user) }
     url { "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
     format { "mp4" }
     quality { "original" }

@@ -5,6 +5,19 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-28 — Comptes d'amis et Downloader en production
+- [feat] **Comptes d'amis** (`users.role` : `owner` | `friend`) : un ami se connecte et n'accède qu'aux pages Outils, Downloader et Transfert, avec une barre de navigation dédiée (`FriendNav.vue`), sans widget Alfred ; la signature du profil est remplacée par un import d'image dans l'outil PDF, et le rangement d'une transcription vidéo dans les Documents lui est fermé
+- [security] Refus par défaut côté serveur : `ApplicationController#restrict_friends!` répond 403 sur l'API (et redirige vers `/tools` ailleurs) pour tout contrôleur qui n'appelle pas `open_to_friends` ; un contrôleur ajouté plus tard est donc fermé aux amis sans rien faire ; garde du routeur Vue en complément (rôle lu dans `<meta name="dashboard-role">`)
+- [db] `user_id` obligatoire sur `video_folders`, `video_downloads`, `video_transcripts` et `file_transfers` (concern `UserOwned`, existant attribué au propriétaire, enregistrements créés hors session rattachés à `User.owner`) ; unicité des noms de dossiers par compte
+- [security] Données séparées : chaque contrôleur passe par `current_user.<association>`, un dossier ou un téléchargement d'un autre compte est refusé ; Alfred (dashboard et skills locales `query.rb` / `write.rb`) ne lit et ne modifie que les lignes du propriétaire (`OWNER_SCOPED`)
+- [feat] Gestion des amis en ligne de commande : `friends:create` (mot de passe provisoire à changer à la première connexion), `friends:list` (dernière connexion, place occupée sur le bucket), `friends:reset_password`, `friends:unlock`, `friends:destroy CONFIRM=1` (données et fichiers compris) ; tâches `owner:*` recentrées sur le compte propriétaire
+- [fix] Downloader en production : yt-dlp et ffmpeg/ffprobe, absents d'Heroku, sont téléchargés au démarrage du dyno web (`.profile.d/downloader.sh` → `bin/downloader-binaries`, sommes de contrôle vérifiées, disque éphémère) faute de place dans le slug (447 Mo sur 500) ; yt-dlp est ainsi à jour à chaque redémarrage
+- [improve] yt-dlp : moteur JavaScript configurable (`YT_DLP_JS_RUNTIMES=node` sur Heroku, Node étant déjà présent) et cookies fournis par variable (`YT_DLP_COOKIES`, contenu d'un cookies.txt) pour passer le contrôle anti-bot de YouTube sur un serveur sans navigateur
+- [infra] File GoodJob `media` limitée à un thread pour `VideoDownloadJob` et `VideoTranscriptJob` (pas plusieurs yt-dlp/ffmpeg en parallèle sur un dyno de 512 Mo) ; `log-runtime-metrics` activé sur Heroku pour mesurer la mémoire avant d'envisager un worker dédié
+- [security] `SpaController` renvoie aussi côté serveur un ami vers `/tools` dès qu'il demande une autre page que Outils, Downloader ou Transfert (`FRIEND_PATHS`)
+- [fix] Tests de l'outil Vidéos isolés dans un dossier temporaire (`VideoDownloadStorageHelper`) : ils écrivaient dans `tmp/video_downloads`, le vrai dossier des téléchargements locaux de développement
+- [chore] Tests d'accès des amis (`friend_access_test.rb`, toutes les routes API vérifiées), tests du service yt-dlp, factories adaptées ; `CLAUDE.md` et `DEPLOY.md` documentés
+
 ### 2026-10-22 — Scan de carte de visite
 - [feat] Page Contacts : bouton **« Scan Carte de Visite »** qui ouvre un viseur caméra plein écran dans la page (`BusinessCardScanner.vue`, `getUserMedia`, caméra arrière, cadre au format carte), avec repli « Importer » (photo existante, caméra refusée ou absente) ; on reste dans la webapp iPhone au lieu de passer par l'appareil photo natif, qui fait perdre la session
 - [improve] La carte lue ouvre le formulaire de création pré-rempli (nom, prénom, activité = fonction + entreprise, email, téléphone, adresse, ville, LinkedIn, relation « connaissance », année de rencontre ; site, autres numéros et date du scan dans les notes), à relire avant d'enregistrer, avec un avertissement si l'email ou le nom existe déjà

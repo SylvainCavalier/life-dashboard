@@ -4,10 +4,13 @@ module Api
   # Downloader (`video_download_id`). La table `video_transcripts` fait foi pour l'etat
   # du traitement : l'interface la sonde tant que `in_progress` est vrai.
   class VideoTranscriptsController < ApplicationController
+    # Ouvert aux amis, sauf le rangement dans les documents (ceux du proprietaire).
+    open_to_friends except: :save_to_documents
+
     before_action :set_transcript, only: [:show, :update, :destroy, :regenerate, :pdf, :save_to_documents]
 
     def index
-      render json: VideoTranscript.recent.includes(:document).map { |transcript| transcript_json(transcript) }
+      render json: current_user.video_transcripts.recent.includes(:document).map { |transcript| transcript_json(transcript) }
     end
 
     # Ce que l'interface doit savoir avant de proposer l'outil.
@@ -23,7 +26,7 @@ module Api
 
     # Telechargements du Downloader dont le fichier est encore recuperable.
     def sources
-      downloads = VideoDownload.recent.where(status: "completed").with_attached_file.limit(200).select(&:file_available?)
+      downloads = current_user.video_downloads.recent.where(status: "completed").with_attached_file.limit(200).select(&:file_available?)
       render json: downloads.map { |download|
         download.slice(:id, :title, :format, :storage, :platform, :uploader, :duration, :created_at).merge(clip_label: download.clip_label)
       }
@@ -92,17 +95,17 @@ module Api
     private
 
     def set_transcript
-      @transcript = VideoTranscript.find(params[:id])
+      @transcript = current_user.video_transcripts.find(params[:id])
     end
 
     def build_transcript
       language = params.dig(:video_transcript, :language).presence || "auto"
       if params[:video_download_id].present?
-        transcript = VideoTranscript.build_from_download(VideoDownload.find(params[:video_download_id]), language: language)
+        transcript = VideoTranscript.build_from_download(current_user.video_downloads.find(params[:video_download_id]), language: language)
         transcript.title = params.dig(:video_transcript, :title) if params.dig(:video_transcript, :title).present?
         transcript
       elsif params[:video].present?
-        transcript = VideoTranscript.new(transcript_params.merge(language: language))
+        transcript = current_user.video_transcripts.new(transcript_params.merge(language: language))
         transcript.video.attach(params[:video])
         transcript
       end

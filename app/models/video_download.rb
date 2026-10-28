@@ -27,21 +27,26 @@
 #  view_count      :bigint
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
+#  user_id         :bigint           not null
 #  video_folder_id :bigint
 #
 # Indexes
 #
 #  index_video_downloads_on_created_at       (created_at)
 #  index_video_downloads_on_status           (status)
+#  index_video_downloads_on_user_id          (user_id)
 #  index_video_downloads_on_video_folder_id  (video_folder_id)
 #
 # Foreign Keys
 #
+#  fk_rails_...  (user_id => users.id)
 #  fk_rails_...  (video_folder_id => video_folders.id)
 #
 # La table fait foi pour l'etat du job : VideoDownloadJob met a jour `status`
 # directement, l'interface sonde /api/video_downloads sans regarder GoodJob.
 class VideoDownload < ApplicationRecord
+  include UserOwned
+
   FORMATS = %w[mp4 mp3].freeze
   QUALITIES = %w[original 720p].freeze
   STORAGES = %w[local cloud].freeze
@@ -68,6 +73,7 @@ class VideoDownload < ApplicationRecord
   validate :quality_required_for_mp4
   validate :clip_bounds_consistent
   validate :folder_only_for_cloud
+  validate :folder_belongs_to_user
 
   before_validation :drop_quality_for_audio
   after_destroy_commit :remove_local_files
@@ -231,6 +237,12 @@ class VideoDownload < ApplicationRecord
     return if video_folder_id.blank?
 
     errors.add(:video_folder, "n'est possible que pour le stockage cloud") unless cloud?
+  end
+
+  def folder_belongs_to_user
+    return if video_folder.nil? || video_folder.user_id == user_id
+
+    errors.add(:video_folder, "est introuvable")
   end
 
   def remove_local_files

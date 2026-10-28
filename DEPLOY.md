@@ -230,27 +230,42 @@ permanent, sans rien casser.
 
 ### Module Downloader
 
-Le module a besoin des binaires `yt-dlp` et `ffmpeg`, absents d'Heroku par
-defaut. Sans eux rien ne casse : la page affiche un bandeau « Module
-indisponible sur ce serveur » (`GET /api/video_downloads/availability`) et les
-telechargements lances passent en echec. Pour l'activer, ajouter un buildpack
-ffmpeg et un buildpack (ou un `bin/` embarque) fournissant `yt-dlp`, puis
-verifier avec `heroku run rails downloader:check`.
+Le module a besoin de `yt-dlp` et `ffmpeg`/`ffprobe`. Le slug etant deja pres de
+la limite de 500 Mo (Chrome compris), ils ne sont **pas** dans le slug : le dyno
+web les telecharge a chaque demarrage, en arriere-plan, sur son disque ephemere
+(`.profile.d/downloader.sh` -> `bin/downloader-binaries` : binaire autonome
+officiel de yt-dlp, build statique johnvansickle.com de ffmpeg, sommes de
+controle verifiees). Une vingtaine de secondes apres le demarrage, le module est
+disponible ; avant, la page affiche « module indisponible ». Bonus : yt-dlp est
+en derniere version a chaque redemarrage (au moins quotidien sur Heroku).
 
-Limites a connaitre avant de s'y fier en production :
+```bash
+# YouTube exige un moteur JavaScript : Node est deja dans le slug (buildpack nodejs).
+heroku config:set YT_DLP_JS_RUNTIMES=node --app life-dashboard-prive
+
+# Verification (dans un one-off, les binaires ne sont pas installes d'office)
+heroku run 'bin/downloader-binaries && rails downloader:check' --app life-dashboard-prive
+heroku logs --tail --app life-dashboard-prive | grep downloader-binaries   # installation au boot
+```
+
+Limites a connaitre :
 
 - **YouTube bloque souvent les IP de datacenter** (« Sign in to confirm you're
-  not a bot »). En local, `YT_DLP_COOKIES_FROM_BROWSER=chrome` contourne le
-  probleme en empruntant les cookies du navigateur ; sur un dyno il n'y a pas de
-  navigateur, la variable reste vide.
-- **Le stockage « local » n'a de sens qu'en local** : le disque d'un dyno est
-  ephemere, le fichier disparait au redemarrage (l'interface l'indique alors
-  comme supprime). En production, utiliser le stockage cloud.
-- GoodJob tourne dans le process web (dyno Basic, 512 Mo) : un long
-  telechargement plus le remux ffmpeg occupent ce process pendant ce temps.
-
-L'usage nominal reste donc la machine locale, comme pour l'ancien projet
-`video-downloader`.
+  not a bot »). Parade : `YT_DLP_COOKIES`, contenu d'un `cookies.txt` (format
+  Netscape) exporte depuis un navigateur connecte a YouTube, **idealement avec un
+  compte Google jetable** (un compte utilise par un serveur peut etre restreint).
+  Exporter depuis une fenetre privee qu'on ferme ensuite, pour que YouTube ne
+  fasse pas tourner les cookies :
+  `heroku config:set YT_DLP_COOKIES="$(cat cookies.txt)" --app life-dashboard-prive`
+  (32 Ko max pour l'ensemble des variables : ne garder que les lignes youtube.com).
+  Les autres sites (Dailymotion, X avec cookies, Crowdbunker...) ne sont pas concernes.
+- **Le stockage « local »** est le disque ephemere du dyno : le fichier reste
+  recuperable jusqu'au prochain redemarrage, puis l'interface l'indique comme
+  supprime. Pour garder un fichier, utiliser le stockage cloud.
+- **Memoire** : GoodJob tourne dans le process web (dyno Basic, 512 Mo). yt-dlp
+  (binaire PyInstaller, ~100 Mo en marche) puis ffmpeg s'y ajoutent pendant un
+  telechargement. Surveiller les R14 dans les logs ; au besoin, passer a un dyno
+  Standard-2X ou a un worker dedie (voir le Procfile).
 
 ## 5. Premier deploiement
 

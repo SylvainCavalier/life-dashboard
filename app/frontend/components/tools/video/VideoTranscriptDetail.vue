@@ -39,6 +39,7 @@
       <div v-if="transcript.transcribed" class="mt-4 flex flex-wrap items-center gap-2">
         <a :href="transcript.pdf_url" class="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition">Télécharger le PDF</a>
         <button
+          v-if="!isFriend"
           class="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
           :disabled="busy || transcript.in_progress"
           @click="saveToDocuments"
@@ -148,6 +149,7 @@
 // tourne), resume, intervenants a nommer, transcription, PDF et rangement dans les documents.
 import { ref, computed, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue'
 import apiClient from '../../../plugins/axios'
+import { isFriend } from '../../../utils/currentUser'
 import { STEP_LABELS, errorOf, formatDateTime, formatDuration, statusClass, statusLabel, timecode } from './videoTranscriptFormat'
 
 const props = defineProps({ id: { type: Number, required: true } })

@@ -27,6 +27,10 @@ module Alfred
 
     SYSTEM_FIELDS = %w[id created_at updated_at].freeze
 
+    # Modeles des outils ouverts aux amis (concern UserOwned) : Alfred ne lit que les
+    # lignes du proprietaire, jamais les telechargements ou transferts d'un ami.
+    OWNER_SCOPED = %w[FileTransfer VideoDownload VideoFolder VideoTranscript].freeze
+
     # Champs calcules renvoyes par query_records en plus des colonnes (ni filtre ni tri) :
     # la forme lisible d'une colonne qui ne l'est pas (JSON de l'editeur d'un courrier).
     READABLE_EXTRAS = {
@@ -121,6 +125,11 @@ module Alfred
       raise Denied, "Modele '#{name}' non accessible en lecture" unless READABLE.key?(name.to_s)
 
       name.to_s.constantize
+    end
+
+    def readable_relation(name)
+      klass = readable_class(name)
+      OWNER_SCOPED.include?(name.to_s) ? klass.where(user_id: User.owner&.id) : klass.all
     end
 
     def readable_fields(name)

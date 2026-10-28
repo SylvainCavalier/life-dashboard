@@ -33,6 +33,14 @@ class VideoDownloads::YtDlpServiceTest < ActiveSupport::TestCase
     Open3.stub(:capture3, fake, &)
   end
 
+  def with_env(values)
+    previous = values.keys.to_h { |key| [ key, ENV[key] ] }
+    values.each { |key, value| ENV[key] = value }
+    yield
+  ensure
+    previous.each { |key, value| ENV[key] = value }
+  end
+
   def download_call
     @calls.find { |command| command.include?("-o") }
   end
@@ -48,6 +56,40 @@ class VideoDownloads::YtDlpServiceTest < ActiveSupport::TestCase
     assert_equal "vcodec:h264,res:720,acodec:aac", args[args.index("-S") + 1]
     assert_not args.join(" ").include?("height<="), "un filtre sur la hauteur degrade les videos verticales"
     assert_equal [ "--", "https://x.com/a/status/1" ], args.last(2)
+  end
+
+  test "en production : cookies tires de YT_DLP_COOKIES et moteur JavaScript impose, aux deux passes" do
+    cookies_path = Pathname.new(File.join(@dir, "cookies.txt"))
+    env = { "YT_DLP_COOKIES" => "# Netscape HTTP Cookie File", "YT_DLP_JS_RUNTIMES" => "node",
+            "YT_DLP_COOKIES_FROM_BROWSER" => "chrome" }
+    with_env(env) do
+      VideoDownloads::YtDlpService.stub(:cookies_path, cookies_path) do
+        with_fake_binaries(metadata_stdout: { title: "Une video" }.to_json, extension: "mp4") do
+          VideoDownloads::YtDlpService.new(url: "https://youtu.be/abc", format: "mp4",
+                                           quality: "720p", output_dir: @dir).call
+        end
+      end
+    end
+
+    yt_dlp_calls = @calls.reject { |command| command.first == "ffmpeg" }
+    assert_equal 2, yt_dlp_calls.size
+    yt_dlp_calls.each do |args|
+      assert_equal cookies_path.to_s, args[args.index("--cookies") + 1]
+      assert_equal "node", args[args.index("--js-runtimes") + 1]
+      assert_not_includes args, "--cookies-from-browser"
+    end
+    assert_equal "# Netscape HTTP Cookie File\n", File.read(cookies_path)
+  end
+
+  test "sans variable, ni fichier de cookies ni moteur JavaScript impose" do
+    with_env("YT_DLP_COOKIES" => nil, "YT_DLP_JS_RUNTIMES" => nil, "YT_DLP_COOKIES_FROM_BROWSER" => "") do
+      with_fake_binaries(metadata_stdout: { title: "Une video" }.to_json, extension: "mp3") do
+        VideoDownloads::YtDlpService.new(url: "https://youtu.be/abc", format: "mp3", output_dir: @dir).call
+      end
+    end
+
+    assert_not download_call.include?("--cookies")
+    assert_not download_call.include?("--js-runtimes")
   end
 
   test "la qualite originale plafonne a 1080 sur la plus petite dimension" do

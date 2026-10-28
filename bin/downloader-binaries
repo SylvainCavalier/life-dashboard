@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Installe yt-dlp et ffmpeg/ffprobe (binaires statiques officiels) dans DOWNLOADER_BIN_DIR.
+#
+# Sur Heroku, le slug est deja pres de sa limite (500 Mo, Chrome compris) : les binaires
+# sont donc telecharges au demarrage du dyno web par .profile.d/downloader.sh, sur le
+# disque ephemere. Avantage : yt-dlp est en derniere version a chaque redemarrage (au
+# moins quotidien), ce qui suit les changements de YouTube sans redeployer.
+# Idempotent : un binaire deja present et fonctionnel n'est pas retelecharge.
+# Sommes de controle verifiees (SHA2-256SUMS de yt-dlp, .md5 de johnvansickle.com).
+set -euo pipefail
+
+dir="${DOWNLOADER_BIN_DIR:-$HOME/tmp/downloader-bin}"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+mkdir -p "$dir"
+
+log() { echo "[downloader-binaries] $*"; }
+fetch() { curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 15 -o "$2" "$1"; }
+
+if "$dir/yt-dlp" --version > /dev/null 2>&1; then
+  log "yt-dlp deja present ($("$dir/yt-dlp" --version))"
+else
+  base="https://github.com/yt-dlp/yt-dlp/releases/latest/download"
+  fetch "$base/yt-dlp_linux" "$work/yt-dlp_linux"
+  fetch "$base/SHA2-256SUMS" "$work/SUMS"
+  (cd "$work" && grep ' yt-dlp_linux$' SUMS | sha256sum -c --quiet -)
+  install -m 755 "$work/yt-dlp_linux" "$dir/yt-dlp"
+  log "yt-dlp $("$dir/yt-dlp" --version) installe"
+fi
+
+if "$dir/ffmpeg" -version > /dev/null 2>&1 && "$dir/ffprobe" -version > /dev/null 2>&1; then
+  log "ffmpeg deja present"
+else
+  archive="ffmpeg-release-amd64-static.tar.xz"
+  fetch "https://johnvansickle.com/ffmpeg/releases/$archive" "$work/$archive"
+  fetch "https://johnvansickle.com/ffmpeg/releases/$archive.md5" "$work/$archive.md5"
+  (cd "$work" && md5sum -c --quiet "$archive.md5")
+  tar -xJf "$work/$archive" -C "$work" --wildcards --strip-components=1 '*/ffmpeg' '*/ffprobe'
+  install -m 755 "$work/ffmpeg" "$work/ffprobe" "$dir/"
+  log "$("$dir/ffmpeg" -version | head -1) installe"
+fi

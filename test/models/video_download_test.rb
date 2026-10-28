@@ -80,7 +80,7 @@ class VideoDownloadTest < ActiveSupport::TestCase
   test "enqueue! cree un telechargement en attente et enfile le job" do
     download = nil
     assert_enqueued_with(job: VideoDownloadJob) do
-      download = VideoDownload.enqueue!(url: "https://youtu.be/abc", format: "mp3", storage: "local")
+      download = VideoDownload.enqueue!(url: "https://youtu.be/abc", format: "mp3", storage: "local", user: create(:user))
     end
 
     assert download.pending?

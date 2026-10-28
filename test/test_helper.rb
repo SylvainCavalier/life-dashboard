@@ -45,6 +45,6 @@ class ActionDispatch::IntegrationTest
   # Toute l'application est privee : la plupart des tests ont besoin d'une
   # session ouverte.
   def sign_in_owner
-    sign_in(create(:user))
+    sign_in(User.owner || create(:user))
   end
 end

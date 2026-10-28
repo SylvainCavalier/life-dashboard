@@ -13,6 +13,12 @@ module VideoDownloads
   # - YT_DLP_COOKIES_FROM_BROWSER : navigateur dont yt-dlp emprunte les cookies
   #   pour passer les controles anti-bot de YouTube. Defaut `chrome` en
   #   developpement, rien ailleurs (aucun navigateur sur un serveur).
+  # - YT_DLP_COOKIES : contenu d'un fichier cookies.txt (format Netscape), pour un
+  #   serveur sans navigateur. Ecrit une fois dans tmp/ (sur Heroku, changer la
+  #   variable redemarre le dyno, donc repart d'un fichier neuf ; yt-dlp y
+  #   reporte les cookies rafraichis) ; prioritaire sur YT_DLP_COOKIES_FROM_BROWSER.
+  # - YT_DLP_JS_RUNTIMES : moteur JavaScript que yt-dlp doit utiliser pour YouTube
+  #   (`node` sur Heroku, ou Node est deja la ; vide = deno, celui de la machine locale).
   class YtDlpService
     class Error < StandardError; end
 
@@ -21,7 +27,8 @@ module VideoDownloads
       /No video formats found/i => "aucun flux video a cette adresse (direct programme ou jamais enregistre, video retiree ?)",
       /Unsupported URL/i => "ce site n'est pas gere par yt-dlp",
       /Sign in to confirm|login required|authentication|NSFW|age.restricted|not authorized/i =>
-        "le site exige d'etre connecte : verifier la session dans Chrome (cookies empruntes par yt-dlp)",
+        "le site exige d'etre connecte : verifier la session dans Chrome en local (cookies empruntes par yt-dlp), " \
+        "renouveler YT_DLP_COOKIES en production",
       /page needs to be reloaded|HTTP Error 403|nsig|Requested format is not available/i =>
         "extraction cassee par un changement du site : lancer `bin/rails downloader:update`",
       /Private video|Video unavailable|has been removed|does not exist/i => "video privee, supprimee ou indisponible"
@@ -38,6 +45,22 @@ module VideoDownloads
 
     def self.cookies_from_browser
       ENV.fetch("YT_DLP_COOKIES_FROM_BROWSER") { Rails.env.development? ? "chrome" : "" }
+    end
+
+    def self.cookies_path
+      Rails.root.join("tmp", "yt-dlp-cookies.txt")
+    end
+
+    # Fichier de cookies tire de YT_DLP_COOKIES, nil sans la variable. Pas reecrit s'il
+    # existe deja : yt-dlp y a peut-etre enregistre des cookies plus frais.
+    def self.cookies_file
+      content = ENV["YT_DLP_COOKIES"].presence or return nil
+      path = cookies_path
+      unless path.exist?
+        FileUtils.mkdir_p(path.dirname)
+        File.write(path, content.end_with?("\n") ? content : "#{content}\n", perm: 0o600)
+      end
+      path.to_s
     end
 
     # Binaires absents ou hors d'etat de demarrer : permet a l'interface
@@ -91,7 +114,7 @@ module VideoDownloads
     private
 
     def fetch_metadata
-      stdout, stderr, status = capture(self.class.binary, *cookies_args, *playlist_args,
+      stdout, stderr, status = capture(self.class.binary, *access_args, *playlist_args,
                                        "--dump-json", "--no-warnings", "--", @url)
       raise Error, "Impossible de lire les metadonnees : #{with_hint(stderr)}" unless status.success?
 
@@ -130,7 +153,7 @@ module VideoDownloads
 
     def run_download
       output_template = File.join(@output_dir, "%(title).150B [%(id)s]#{clip_suffix}.%(ext)s")
-      args = cookies_args + base_args + format_args + clip_args + [ "-o", output_template, "--", @url ]
+      args = access_args + base_args + format_args + clip_args + [ "-o", output_template, "--", @url ]
       stdout, stderr, status = capture(self.class.binary, *args)
       raise Error, "yt-dlp a echoue : #{with_hint(stderr.presence || stdout)}" unless status.success?
 
@@ -154,11 +177,24 @@ module VideoDownloads
       [ "--no-playlist", "--playlist-items", "1" ]
     end
 
+    # Session (cookies) et moteur JavaScript : ce dont YouTube a besoin pour livrer ses flux.
+    def access_args
+      cookies_args + js_runtime_args
+    end
+
     def cookies_args
+      file = self.class.cookies_file
+      return [ "--cookies", file ] if file
+
       browser = self.class.cookies_from_browser
       return [] if browser.blank?
 
       [ "--cookies-from-browser", browser ]
+    end
+
+    def js_runtime_args
+      runtimes = ENV["YT_DLP_JS_RUNTIMES"].presence
+      runtimes ? [ "--js-runtimes", runtimes ] : []
     end
 
     def format_args

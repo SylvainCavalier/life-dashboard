@@ -241,6 +241,8 @@ en derniere version a chaque redemarrage (au moins quotidien sur Heroku).
 
 ```bash
 # YouTube exige un moteur JavaScript : Node est deja dans le slug (buildpack nodejs).
+# yt-dlp exige Node 22 au minimum (engines.node de package.json) : en Node 20, il le
+# declare « unsupported » et YouTube ne livre que des images (« Requested format is not available »).
 heroku config:set YT_DLP_JS_RUNTIMES=node --app life-dashboard-prive
 
 # Verification (dans un one-off, les binaires ne sont pas installes d'office)

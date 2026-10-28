@@ -18,7 +18,8 @@ module VideoDownloads
   #   variable redemarre le dyno, donc repart d'un fichier neuf ; yt-dlp y
   #   reporte les cookies rafraichis) ; prioritaire sur YT_DLP_COOKIES_FROM_BROWSER.
   # - YT_DLP_JS_RUNTIMES : moteur JavaScript que yt-dlp doit utiliser pour YouTube
-  #   (`node` sur Heroku, ou Node est deja la ; vide = deno, celui de la machine locale).
+  #   (`node` sur Heroku, ou Node est deja la, en 22 au minimum sinon yt-dlp le refuse ;
+  #   vide = deno, celui de la machine locale).
   class YtDlpService
     class Error < StandardError; end
 

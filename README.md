@@ -17,7 +17,7 @@ SKIP_DB_CHECKS=true rails server
 
 Open http://localhost:3000 to see the dashboard with Axios + Pinia examples!
 
-> Requirement: Node 20 (Vite 5)
+> Requirement: Node 22 (Vite 5)
 
 ## 🛠️ Tech Stack
 

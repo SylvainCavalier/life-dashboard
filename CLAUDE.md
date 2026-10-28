@@ -215,13 +215,13 @@ sans lui la coupe tombe sur l'image cle precedente et le debut de l'extrait n'es
 1re image cle a 5,7 s sur 13 s), pour un gain de temps nul. `duration` devient celle de l'extrait, le nom du
 fichier porte `(0m34s-0m47s)`, la citation ajoute « extrait de 0:34 a 0:47 » et, sur YouTube, `&t=34s`.
 Dans le modele et le service, ecrire `Kernel.format` : `format` y est l'attribut mp4/mp3.
-Binaires requis : `yt-dlp` (plus un runtime JS, `deno`, en local comme sur Heroku, indispensable pour YouTube : le Node 20 du slug Heroku est refuse par yt-dlp, « unsupported ») et `ffmpeg`. Sur la
+Binaires requis : `yt-dlp` (plus un runtime JS, `deno` en local, `node` sur Heroku via `YT_DLP_JS_RUNTIMES=node`, indispensable pour YouTube) et `ffmpeg`. Sur la
 machine de Sylvain ils vivent dans `~/.local/bin` (binaire officiel autonome de yt-dlp, build statique
 evermeet.cx de ffmpeg/ffprobe) et non dans Homebrew : sous macOS 14, Homebrew n'a plus de bottles et
 recompile llvm/rust/deno depuis les sources pendant des heures. Ne pas lancer `brew upgrade yt-dlp`. Variables : `YT_DLP_BIN`,
 `YT_DLP_COOKIES_FROM_BROWSER` (defaut `chrome` en developpement, vide ailleurs). Sur Heroku, ils ne sont pas
 dans le slug (deja pres des 500 Mo) : `.profile.d/downloader.sh` lance `bin/downloader-binaries` au demarrage du dyno
-web, qui telecharge yt-dlp, ffmpeg/ffprobe et deno (sommes de controle verifiees) dans `tmp/downloader-bin`, place devant le PATH. Cookies YouTube en
+web, qui les telecharge (sommes de controle verifiees) dans `tmp/downloader-bin`, place devant le PATH. Cookies YouTube en
 production : `YT_DLP_COOKIES` (contenu d'un cookies.txt, ecrit dans `tmp/yt-dlp-cookies.txt`, prioritaire sur
 `YT_DLP_COOKIES_FROM_BROWSER`). Sans binaires, `GET /api/video_downloads/availability` le signale et la page affiche un
 bandeau ; voir `DEPLOY.md`. Ne pas nommer une action de controleur `status` : cela ecrase

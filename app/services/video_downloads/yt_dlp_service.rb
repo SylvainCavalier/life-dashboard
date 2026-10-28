@@ -17,9 +17,8 @@ module VideoDownloads
   #   serveur sans navigateur. Ecrit une fois dans tmp/ (sur Heroku, changer la
   #   variable redemarre le dyno, donc repart d'un fichier neuf ; yt-dlp y
   #   reporte les cookies rafraichis) ; prioritaire sur YT_DLP_COOKIES_FROM_BROWSER.
-  # - YT_DLP_JS_RUNTIMES : moteur JavaScript que yt-dlp doit utiliser pour YouTube.
-  #   Vide = deno, installe en local comme sur Heroku (bin/downloader-binaries) ; le
-  #   Node 20 du slug Heroku est refuse par yt-dlp (« unsupported »).
+  # - YT_DLP_JS_RUNTIMES : moteur JavaScript que yt-dlp doit utiliser pour YouTube
+  #   (`node` sur Heroku, ou Node est deja la ; vide = deno, celui de la machine locale).
   class YtDlpService
     class Error < StandardError; end
 

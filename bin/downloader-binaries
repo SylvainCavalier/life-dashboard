@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-# Installe yt-dlp, ffmpeg/ffprobe et deno (binaires officiels autonomes) dans DOWNLOADER_BIN_DIR.
-# deno : moteur JavaScript dont yt-dlp a besoin pour les defis de YouTube (le Node 20 du
-# slug est refuse par yt-dlp, « unsupported » : sans moteur, YouTube ne livre que des images).
+# Installe yt-dlp et ffmpeg/ffprobe (binaires statiques officiels) dans DOWNLOADER_BIN_DIR.
 #
 # Sur Heroku, le slug est deja pres de sa limite (500 Mo, Chrome compris) : les binaires
 # sont donc telecharges au demarrage du dyno web par .profile.d/downloader.sh, sur le
 # disque ephemere. Avantage : yt-dlp est en derniere version a chaque redemarrage (au
 # moins quotidien), ce qui suit les changements de YouTube sans redeployer.
 # Idempotent : un binaire deja present et fonctionnel n'est pas retelecharge.
-# Sommes de controle verifiees (SHA2-256SUMS de yt-dlp, .md5 de johnvansickle.com, .sha256sum de deno).
+# Sommes de controle verifiees (SHA2-256SUMS de yt-dlp, .md5 de johnvansickle.com).
 set -euo pipefail
 
 dir="${DOWNLOADER_BIN_DIR:-$HOME/tmp/downloader-bin}"
@@ -40,16 +38,4 @@ else
   tar -xJf "$work/$archive" -C "$work" --wildcards --strip-components=1 '*/ffmpeg' '*/ffprobe'
   install -m 755 "$work/ffmpeg" "$work/ffprobe" "$dir/"
   log "$("$dir/ffmpeg" -version | head -1) installe"
-fi
-
-if "$dir/deno" --version > /dev/null 2>&1; then
-  log "deno deja present"
-else
-  archive="deno-x86_64-unknown-linux-gnu.zip"
-  fetch "https://github.com/denoland/deno/releases/latest/download/$archive" "$work/$archive"
-  fetch "https://github.com/denoland/deno/releases/latest/download/$archive.sha256sum" "$work/$archive.sha256sum"
-  (cd "$work" && sha256sum -c --quiet "$archive.sha256sum")
-  unzip -q -o "$work/$archive" deno -d "$work"
-  install -m 755 "$work/deno" "$dir/deno"
-  log "$("$dir/deno" --version | head -1) installe"
 fi

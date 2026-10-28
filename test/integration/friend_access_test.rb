@@ -156,3 +156,17 @@ class FriendAccessTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 end
+
+class FriendAccountTest < ActiveSupport::TestCase
+  test "sans mot de passe fourni, il est provisoire et doit etre change ; fourni, il est garde tel quel" do
+    provisional, password = User.create_friend!(email: "un@example.test")
+    assert provisional.must_change_password?
+    assert provisional.valid_password?(password)
+
+    chosen, = User.create_friend!(email: "deux@example.test", password: "Treize-caract")
+    assert_not chosen.must_change_password?
+    assert chosen.friend?
+
+    assert_raises(ActiveRecord::RecordInvalid) { User.create_friend!(email: "trois@example.test", password: "a" * 12) }
+  end
+end

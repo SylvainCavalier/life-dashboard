@@ -59,7 +59,7 @@ class User < ApplicationRecord
 
   # Identifiants de bootstrap : connus, volontairement simples, et destines a
   # etre remplaces des la premiere connexion (must_change_password). Le mot de
-  # passe ne passe pas les validations Devise (14 caracteres minimum), ce qui
+  # passe ne passe pas les validations Devise (13 caracteres minimum), ce qui
   # est assume : la contrainte s'applique aux mots de passe que l'utilisateur
   # choisit, pas a celui qui sert uniquement a ouvrir la porte une fois.
   BOOTSTRAP_EMAIL = "sylv.cavalier@gmail.com".freeze
@@ -72,10 +72,12 @@ class User < ApplicationRecord
     user
   end
 
-  # Compte d'ami : mot de passe provisoire aleatoire, a remplacer a la premiere connexion.
-  def self.create_friend!(email:)
-    password = SecureRandom.alphanumeric(20)
-    user = create!(email: email, role: "friend", password: password, must_change_password: true)
+  # Compte d'ami. Sans mot de passe fourni : provisoire et aleatoire, a remplacer a la
+  # premiere connexion. Avec : celui choisi par le proprietaire, garde tel quel.
+  def self.create_friend!(email:, password: nil)
+    provisional = password.blank?
+    password = SecureRandom.alphanumeric(20) if provisional
+    user = create!(email: email, role: "friend", password: password, must_change_password: provisional)
     [user, password]
   end
 end

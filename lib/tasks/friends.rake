@@ -8,13 +8,17 @@ namespace :friends do
     User.friends.find_by("lower(email) = ?", email.downcase) || abort("Aucun compte d'ami pour #{email}")
   end
 
-  desc "Cree un compte d'ami avec un mot de passe provisoire : rails friends:create EMAIL=ami@example.com"
+  desc "Cree un compte d'ami : rails friends:create EMAIL=ami@example.com [PASSWORD=...] (sans PASSWORD : provisoire aleatoire)"
   task create: :environment do
     email = ENV["EMAIL"].presence || abort("EMAIL manquant : rails friends:create EMAIL=ami@example.com")
-    user, password = User.create_friend!(email: email)
+    user, password = User.create_friend!(email: email, password: ENV["PASSWORD"].presence)
     puts "Compte d'ami cree : #{user.email}"
-    puts "Mot de passe provisoire : #{password}"
-    puts "A transmettre par un canal sur ; il devra le changer a la premiere connexion."
+    if user.must_change_password?
+      puts "Mot de passe provisoire : #{password}"
+      puts "A transmettre par un canal sur ; il devra le changer a la premiere connexion."
+    else
+      puts "Mot de passe : celui fourni (PASSWORD), sans changement impose a la connexion."
+    end
   rescue ActiveRecord::RecordInvalid => e
     abort "Echec : #{e.record.errors.full_messages.to_sentence}"
   end

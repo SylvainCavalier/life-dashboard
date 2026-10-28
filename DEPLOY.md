@@ -276,7 +276,7 @@ git push heroku master
 ```
 
 Le `release:` du Procfile joue les migrations automatiquement. Ensuite, creer le
-compte unique (mot de passe de 14 caracteres minimum) :
+compte unique (mot de passe de 13 caracteres minimum) :
 
 ```bash
 heroku run rails owner:bootstrap --app life-dashboard-prive
@@ -293,7 +293,7 @@ provisoire connu, **volontairement faible**, et pose le drapeau
 
 A la premiere connexion, l'application bloque sur `/account/password` : toutes
 les pages y redirigent et l'API repond `403`. Le mot de passe provisoire ne peut
-donc servir qu'une fois. Le nouveau mot de passe doit faire 14 caracteres
+donc servir qu'une fois. Le nouveau mot de passe doit faire 13 caracteres
 minimum.
 
 Ensuite, il se change a tout moment depuis le bouton **Mot de passe** dans

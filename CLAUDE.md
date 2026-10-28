@@ -91,8 +91,8 @@ hebergee sur un domaine prive, volontairement non reference. Voir `DEPLOY.md` po
   Un enregistrement cree hors session (rake, Alfred, skills) revient au proprietaire (`User.owner`).
   Alfred (dashboard et skills locales) ne lit que les lignes du proprietaire de ces quatre modeles
   (`DataAccess::OWNER_SCOPED`, `OWNER_SCOPED` de `query.rb`). Gestion :
-  `rails friends:create EMAIL=...` (mot de passe provisoire affiche, a changer a la premiere
-  connexion), `friends:list`, `friends:reset_password`, `friends:unlock`, `friends:destroy CONFIRM=1`
+  `rails friends:create EMAIL=... [PASSWORD=...]` (sans PASSWORD : provisoire aleatoire affiche, a changer a
+  la premiere connexion ; avec : garde tel quel, 13 caracteres minimum), `friends:list`, `friends:reset_password`, `friends:unlock`, `friends:destroy CONFIRM=1`
   (supprime aussi ses fichiers). Les amis consomment les cles API du proprietaire (outil Videos :
   Voxtral + Claude) et le bucket OVH. Tests : `friend_access_test.rb`.
 

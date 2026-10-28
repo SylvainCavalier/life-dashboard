@@ -234,19 +234,21 @@ Le module a besoin de `yt-dlp` et `ffmpeg`/`ffprobe`. Le slug etant deja pres de
 la limite de 500 Mo (Chrome compris), ils ne sont **pas** dans le slug : le dyno
 web les telecharge a chaque demarrage, en arriere-plan, sur son disque ephemere
 (`.profile.d/downloader.sh` -> `bin/downloader-binaries` : binaire autonome
-officiel de yt-dlp, build statique johnvansickle.com de ffmpeg, sommes de
+officiel de yt-dlp, build statique johnvansickle.com de ffmpeg, deno, sommes de
 controle verifiees). Une vingtaine de secondes apres le demarrage, le module est
 disponible ; avant, la page affiche « module indisponible ». Bonus : yt-dlp est
 en derniere version a chaque redemarrage (au moins quotidien sur Heroku).
 
 ```bash
-# YouTube exige un moteur JavaScript : Node est deja dans le slug (buildpack nodejs).
-heroku config:set YT_DLP_JS_RUNTIMES=node --app life-dashboard-prive
-
 # Verification (dans un one-off, les binaires ne sont pas installes d'office)
 heroku run 'bin/downloader-binaries && rails downloader:check' --app life-dashboard-prive
 heroku logs --tail --app life-dashboard-prive | grep downloader-binaries   # installation au boot
 ```
+
+YouTube exige un moteur JavaScript pour ses defis (signature, parametre `n`) : le script
+installe **deno**. Le Node 20 du slug ne convient pas, yt-dlp le declare « unsupported »
+et YouTube ne livre alors que des images (« Requested format is not available »).
+Ne pas poser `YT_DLP_JS_RUNTIMES=node`.
 
 Limites a connaitre :
 

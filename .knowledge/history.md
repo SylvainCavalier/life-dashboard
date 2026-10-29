@@ -5,6 +5,18 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-29 — Gestionnaire d'assurances et import IA
+- [feat] Nouvelle page **Assurances** (`/insurances`, tuile sur le dashboard) : liste des contrats filtrable par type et par recherche, avec synthèse (contrats en cours, cotisations annuelles et mensuelles, prochaine échéance en orange sous 60 jours) ; création, modification et suppression d'un contrat
+- [feat] Page d'un contrat (`/insurances/:id`) : assureur, n° de contrat, dates, échéance principale, cotisation, conditions importantes, n° sinistre, conseiller, espace client ; gestion en place des **garanties** (couverte ou exclue, plafond, franchise, conditions, suggestions selon le type de contrat), de **ce qui est assuré** (logement lié à un bien de la page Immobilier, véhicule, personne, animal, objet) et des **documents** du contrat
+- [db] Tables `insurances`, `insurance_coverages` et `insured_items` (bien immobilier en `nullify`) ; `documents.insurance_id` (`nullify` : supprimer un contrat garde ses documents) et nouveau domaine de documents `insurance` (conditions particulières, conditions générales, attestation, avis d'échéance, sinistre, correspondance, résiliation)
+- [feat] **Import d'un contrat par l'IA** (bouton « Importer un contrat (IA) ») : PDF ou photo envoyé en direct upload, texte extrait (pdf-reader ou OCR Mistral pour un scan), puis Mistral (`mistral-medium-latest`, JSON Schema strict) remplit la fiche, les garanties et les biens ; formulaire pré-rempli à relire, rien n'est créé avant validation, le fichier est alors rangé dans les documents du contrat
+- [db] Table `insurance_imports` (état du job, brouillon jsonb, fichier attaché) ; traitement en tâche de fond (`InsuranceImportJob`) sondé par la page, pour ne pas buter sur les 30 s du routeur Heroku avec un long contrat ou un scan ; import abandonné purgé au bout d'un jour
+- [improve] Valeurs extraites revérifiées en Ruby avant d'arriver dans le formulaire (dates, montants « 1 234,56 € », listes fermées, email, URL) et bien immobilier deviné par code postal ou ville
+- [feat] Alfred (dashboard) : les trois modèles sont lisibles et modifiables sur proposition ; la fiche du corpus RAG décrit garanties et biens en français, un document lié pointe vers son contrat, et une section « Assurances » du prompt lui apprend à répondre à « suis-je couvert contre... et à quelles conditions » en lisant le contrat, qui fait foi
+- [improve] Le rapport du matin signale les assurances actives dont l'échéance principale (date limite de résiliation) tombe sous 60 jours
+- [chore] Skills locales d'Alfred (`query.rb`, `write.rb`, `SKILL.md`, `alfred.md`) mises à jour ; tâche `bin/rails insurances:import FILE=... [CREATE=1]` pour importer un contrat hors interface ; throttle Rack::Attack sur les imports
+- [chore] Tests (modèle, API, import avec extracteur factice, rapport du matin) et documentation dans `CLAUDE.md`
+
 ### 2026-10-28 — Comptes d'amis et Downloader en production
 - [feat] **Comptes d'amis** (`users.role` : `owner` | `friend`) : un ami se connecte et n'accède qu'aux pages Outils, Downloader et Transfert, avec une barre de navigation dédiée (`FriendNav.vue`), sans widget Alfred ; la signature du profil est remplacée par un import d'image dans l'outil PDF, et le rangement d'une transcription vidéo dans les Documents lui est fermé
 - [security] Refus par défaut côté serveur : `ApplicationController#restrict_friends!` répond 403 sur l'API (et redirige vers `/tools` ailleurs) pour tout contrôleur qui n'appelle pas `open_to_friends` ; un contrôleur ajouté plus tard est donc fermé aux amis sans rien faire ; garde du routeur Vue en complément (rôle lu dans `<meta name="dashboard-role">`)

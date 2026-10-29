@@ -19,6 +19,8 @@ module DailyReports
     # Contact CRM de priorite haute sans nouvelles depuis ce delai : a relancer.
     CRM_STALE_DAYS = 30
     SUBSCRIPTION_DAYS = 30
+    # Echeance principale d'une assurance : deux mois, le preavis de resiliation le plus courant.
+    INSURANCE_DAYS = 60
     TASK_DAYS = 7
     # Entrees du journal de bord d'un projet jointes a l'instantane.
     PROJECT_JOURNAL_DAYS = 30
@@ -44,6 +46,7 @@ module DailyReports
         "reminders" => reminders,
         "birthdays" => birthdays,
         "subscriptions" => subscriptions,
+        "insurances" => insurances,
         "tasks" => tasks
       }
       unless @weekend
@@ -178,6 +181,23 @@ module DailyReports
           "ends_in_days" => (days_until(subscription.end_date) if ending),
           "renews_on" => (renewal.iso8601 if renewing),
           "renews_in_days" => (days_until(renewal) if renewing)
+        }.compact
+      end
+    end
+
+    # Assurances dont l'echeance principale (date limite pour resilier) approche.
+    def insurances
+      Insurance.where(status: "active").ordered.filter_map do |insurance|
+        renewal = insurance.next_renewal_on(@date)
+        next unless renewal && days_until(renewal) <= INSURANCE_DAYS
+
+        {
+          "ref" => ref_for(insurance),
+          "name" => insurance.name,
+          "insurer" => insurance.insurer,
+          "annual_premium" => (insurance.annual_premium && "#{format('%.2f', insurance.annual_premium).tr('.', ',')} € / an"),
+          "renews_on" => renewal.iso8601,
+          "renews_in_days" => days_until(renewal)
         }.compact
       end
     end

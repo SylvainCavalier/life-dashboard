@@ -33,6 +33,8 @@
 #
 class Property < ApplicationRecord
   has_many_attached :photos
+  has_many :insured_items, dependent: :nullify
+  has_many :insurances, -> { distinct }, through: :insured_items
 
   PROPERTY_TYPES = %w[appartement maison studio terrain commercial parking cave autre].freeze
 

@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Profil** (`/profile`) — Donnees personnelles (`PersonalProfile`, ligne unique) et **signature manuscrite** (`has_one_attached :signature`, PNG 2 Mo max, `DELETE /api/personal_profile/signature`). Pour signer un document genere : `PersonalProfile.first&.signature_data_url` (data URL integrable telle quelle dans un gabarit HTML/PDF)
 - **Contacts** — Gestion de la liste de contacts personnels et professionnels. Bouton **Scan Carte de Visite** : photo prise dans la page, OCR Mistral, formulaire pre-rempli a relire (voir « Scan de carte de visite »)
 - **Immobilier** — Suivi des biens immobiliers (propriétés, locataires, charges, revenus)
+- **Assurances** (`/insurances/:id?`) — Contrats d'assurance (`Insurance`) avec leurs garanties (`InsuranceCoverage` : couverte ou non, plafond, franchise, conditions), ce qu'ils couvrent (`InsuredItem`, lie a un `Property` pour un logement) et leurs documents (`Document` avec `insurance_id`, domaine `insurance`). Creation a la main ou par **import du contrat** (PDF ou photo -> extraction Mistral -> formulaire pre-rempli a relire). Alfred repond aux questions de couverture. Voir « Assurances »
 - **Entreprises** — Gestion d'entreprises avec génération de devis et factures (PDF)
 - **Budget** — Suivi des revenus, dépenses, épargne, investissements
 - **Réseaux sociaux** — Agrégation et gestion des comptes sociaux
@@ -46,11 +47,11 @@ Ce dashboard est piloté à distance par le subagent global **Alfred** (`~/.clau
 
 ### Périmètre actuel d'Alfred sur les modèles
 
-**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `DailyReport` (rapports du matin, sans `snapshot`) est en lecture seule : un rapport se (re)genere via `bin/rails daily_reports:run_now`. `Deadline` (échéances notables, sans `generated_until`) est lisible. `ProjectEntry` (journal de bord) et `ProjectContact` (contacts liés à un projet) sont lisibles. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). `FileTransfer`, `VideoDownload`, `VideoFolder` et `VideoTranscript` sont bornés aux lignes du propriétaire (`OWNER_SCOPED`) : jamais celles des comptes d'amis. Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
+**Lecture** : tous les modèles sauf `PasswordEntry` (totalement exclu), y compris `ProjectSkill`, `ProjectLink`, `Trip`, `TripItem`, `TripPlan` (rapport IA en JSON dans `content`), `VideoDownload`, `VideoFolder`, `SentinelSource`, `SentinelWeek` (synthèse hebdo en JSON dans `digest`), `SentinelDocument` (sans `raw_content` ni `raw_metadata`, trop lourds), `Meeting` (transcription et synthese en JSON, lecture seule : le traitement se relance depuis la page), `VideoTranscript` (outil Videos, meme logique, lecture seule : une transcription se lance via `bin/rails video_transcripts:run_now DOWNLOAD_ID=...`) `Reminder` (rappels, colonnes de livraison comprises) et `CalendarSync` (état de la synchronisation Google Calendar, lecture seule : elle se lance via `bin/rails google_calendar:sync_now`). `Letter` (courriers, `body` en JSON Tiptap, texte par `body_text`) est lisible. `DailyReport` (rapports du matin, sans `snapshot`) est en lecture seule : un rapport se (re)genere via `bin/rails daily_reports:run_now`. `Deadline` (échéances notables, sans `generated_until`) est lisible. `Insurance`, `InsuranceCoverage` et `InsuredItem` (assurances) sont lisibles. `ProjectEntry` (journal de bord) et `ProjectContact` (contacts liés à un projet) sont lisibles. `FileTransfer` est exposé en lecture (Alfred peut retrouver un lien de partage encore actif). `FileTransfer`, `VideoDownload`, `VideoFolder` et `VideoTranscript` sont bornés aux lignes du propriétaire (`OWNER_SCOPED`) : jamais celles des comptes d'amis. Champs sensibles masqués côté lecture : `social_security_number`, `passport_number`, `national_id_number`, `driver_license_number`, `iban`, `bic`, `tax_id`, et les credentials de `MailAccount`.
 
 **Écriture** :
 - **Tier 1 (attributs explicites)** : `Event`, `Deadline` (les occurrences d'agenda suivent toutes seules), `Note`, `Task` (dont `project_id`), `ProjectEntry` (`project_id` en création seulement), `ProjectContact` (`role` seul en modification), `Reminder` (`completed_at` en update seulement), `BudgetEntry`, `Contact`, `LanguageSession`, `UsefulSite`, `Subscription`, `Trip`, `TripItem`, `VideoFolder`, `SentinelSource` (sans `adapter`, qui désigne du code), `Letter` (contenu par l'attribut virtuel `body_text`, jamais `body` ; rendu par `bin/rails letters:pdf|docx|save_to_documents ID=...`).
-- **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvPitch`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
+- **Tier 2 (toutes colonnes sauf id/timestamps)** : `PersonalProfile`, `HealthProfile`, `Property`, `Insurance`, `InsuranceCoverage`, `InsuredItem`, `Document`, `Project`, `ProjectSkill`, `ProjectLink`, `Company`, `CrmProfile`, `CvExperience`, `CvFormation`, `CvInterest`, `CvPitch`, `CvSetting`, `CvSkill`, `Invoice`, `InvoiceItem`, `Quote`, `QuoteItem`.
 - **Interdits** : `PasswordEntry`, `MailAccount`, `Language`, `PushSubscription` (abonnements des appareils, ni lu ni ecrit), `FileTransfer` (la création exige un upload de fichier réel, impossible depuis un script). `TripPlan` est en lecture seule : le rapport IA se (re)génère via `bin/rails trips:plan[ID]` (asynchrone) ou `trips:plan_now[ID]` (synchrone). `VideoDownload` est en lecture seule : un téléchargement se lance via `bin/rails downloader:fetch URL=...` (asynchrone) ou `downloader:fetch_now` (synchrone), car créer l'enregistrement à la main n'enfilerait pas le job. Alfred utilise `fetch_now` : en développement, un job enfilé depuis une rake task ne s'exécute que si le serveur tourne (GoodJob en mode async). `SentinelWeek` et `SentinelDocument` sont en lecture seule : une veille se lance via `bin/rails sentinel:run DOMAIN=... MONDAY=...` (asynchrone) ou `sentinel:run_now` (synchrone, celui qu'utilise Alfred, pour la même raison que `fetch_now`). Le mode d'emploi du Downloader pour Alfred est dans `~/.claude/agents/alfred.md` (section Downloader) : à tenir à jour si les options de la rake task changent.
 
 ### Implications pour toute évolution du code
@@ -271,6 +272,42 @@ Fenêtre glissante `Deadline::HORIZON` (12 mois) : `generated_until` retient jus
 la supprimer retire les occurrences à venir, les passées restent dans l'agenda (clé étrangère en `nullify`). Une échéance
 ponctuelle n'a qu'un événement, qui part avec elle. La liste chronologique (`GET /api/deadlines`, clé `upcoming`) est
 calculée depuis les échéances, pas depuis les événements. Tests : `deadline_test.rb`, `deadlines_test.rb`.
+
+### Assurances
+`Insurance` : `name`, `insurance_type` (`TYPES`, libelles `TYPE_LABELS`), `status` (active | suspendue | resiliee), `insurer`,
+`policy_number`, `start_date` / `end_date`, `renewal_date` (echeance principale), `premium` + `premium_frequency` (monthly |
+quarterly | semiannual | yearly, `annual_premium` calcule), `conditions` (conditions importantes resumees), `notes`, contacts
+(`advisor_*`, `claims_phone`, `website_url`). `next_renewal_on` = prochaine date anniversaire de `renewal_date` (nulle si resilie
+ou apres `end_date`) : pas de colonne, comme `Subscription#next_renewal_on`. Enfants : `InsuranceCoverage` (`included` faux =
+garantie exclue ou non souscrite, `ceiling` / `deductible` en texte libre, `conditions`) et `InsuredItem` (`kind` dans
+`KINDS`, `property_id` en `nullify`, `Property#insurances`). Les documents du contrat sont des `Document` (`insurance_id`,
+domaine `insurance`, categories `special_terms`, `general_terms`...) : supprimer le contrat les garde (`nullify`).
+API `/api/insurances` (+ `options`), garanties et biens imbriques ; documents par `/api/documents?insurance_id=`.
+Pages `InsurancesPage.vue` (synthese : cotisations annuelles, prochaine echeance en orange a 60 jours) et `InsuranceShowPage.vue`
+(`components/insurances/`, garanties usuelles proposees par type dans `useInsurances.js`).
+**Alfred** : la fiche du corpus (`Alfred::Corpus.insurance_text`) rend biens et garanties en francais (« Degats des eaux :
+couverte ; plafond... ; franchise... ; conditions... ») ; un `Document` lie dit « Contrat d'assurance : ... » et pointe vers
+la page du contrat. Section `insurances` du prompt : pour « suis-je couvert contre... », bien -> contrat -> garanties ->
+lecture integrale des conditions generales/particulieres (`read_document`), le contrat faisant foi sur la fiche. Le rapport du
+matin signale les assurances actives dont l'echeance principale tombe sous 60 jours (`Collector#insurances`).
+**Import d'un contrat par l'IA** (bouton « Importer un contrat (IA) », `components/insurances/InsuranceImport.vue`) :
+```bash
+bin/rails insurances:import FILE=contrat.pdf            # extrait et affiche le brouillon (Alfred, debogage)
+bin/rails insurances:import FILE=contrat.pdf CREATE=1   # cree l'assurance telle qu'extraite, fichier range dans ses documents
+```
+Le PDF ou la photo part en **direct upload**, `POST /api/insurance_imports` (`signed_id`) cree un `InsuranceImport` et enfile
+`InsuranceImportJob` ; la page sonde `GET /api/insurance_imports/:id` toutes les 2 s (la table fait foi, meme patron que
+Reunions : un contrat de 60 pages ou un scan depasserait les 30 s du routeur). `InsuranceImports::Extractor` : texte par
+`Alfred::Corpus::TextExtractor` (pdf-reader, OCR Mistral pour un scan ou une image ; `ALFRED_OCR=0` coupe aussi l'OCR ici),
+tronque a 120 000 caracteres, puis un appel de chat Mistral en JSON Schema strict (`INSURANCE_IMPORT_MODEL`, defaut
+`mistral-medium-latest` ; environ 4 s sur des conditions particulieres, mesure le 29/10/2026). `normalize` revalide tout en
+Ruby (dates, montants « 1 234,56 € », listes fermees, email, URL) et devine le `Property` d'un logement (code postal ou ville,
+sinon le seul bien enregistre). **Rien n'est cree avant relecture** : le formulaire arrive pre-rempli, garanties et biens a
+cocher ; `POST /confirm` (`InsuranceImport#confirm!`, transaction) cree contrat, garanties, biens et le `Document` qui
+reprend le blob (detache de l'import sans purge), puis supprime l'import. Abandon = `DELETE` ; un import de plus d'un jour est
+purge a la creation du suivant (`purge_stale!`). Throttle Rack::Attack : 10 imports / 10 min.
+Tests : `insurance_test.rb`, `insurances_test.rb`, `insurance_imports_test.rb`, `test/services/insurance_imports/`
+(extracteur factice), `collector_test.rb`.
 
 ### Journal et contacts des projets
 **Journal de bord** (`ProjectEntry` : `occurred_on`, `kind` (`KINDS`), `title`, `body`, `contact_id` facultatif, en `nullify`) :

@@ -15,6 +15,7 @@ module Alfred
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "DailyReport" => { exclude: %w[snapshot content] },
       "Deadline" => { exclude: %w[generated_until] }, "Document" => :all, "Event" => :all, "FileTransfer" => :all, "HealthProfile" => :all,
+      "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Letter" => { exclude: %w[body] }, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
       "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectContact" => :all, "ProjectEntry" => :all,
@@ -35,6 +36,7 @@ module Alfred
     # la forme lisible d'une colonne qui ne l'est pas (JSON de l'editeur d'un courrier).
     READABLE_EXTRAS = {
       "DailyReport" => %w[text],
+      "Insurance" => %w[next_renewal_on annual_premium],
       "Letter" => %w[body_text],
       "Subscription" => %w[next_renewal_on]
     }.freeze
@@ -75,6 +77,20 @@ module Alfred
       "CvPitch" => "Page CV, section « Accroches » : plusieurs accroches enregistrées, celle affichée sur le CV est " \
                    "CvSetting.active_pitch_id.",
       "CvSetting" => "Réglages du CV (ligne unique) : template, couleur, accroche affichée (active_pitch_id).",
+      "Insurance" => "Page Assurances (/insurances/ID) : un contrat d'assurance. insurance_type habitation/auto/moto/sante/" \
+                     "prevoyance/vie/emprunteur/responsabilite_civile/protection_juridique/professionnelle/voyage/animaux/" \
+                     "scolaire/autre, status active/suspendue/resiliee, insurer = compagnie, policy_number = numéro de contrat, " \
+                     "premium = cotisation par échéance de premium_frequency (monthly/quarterly/semiannual/yearly), " \
+                     "renewal_date = échéance principale (date anniversaire, à laquelle on résilie ; next_renewal_on = la " \
+                     "prochaine), conditions = conditions importantes résumées par Sylvain (exclusions, résiliation...), " \
+                     "claims_phone = numéro sinistre / assistance. Garanties : InsuranceCoverage ; biens couverts : " \
+                     "InsuredItem ; contrat, conditions générales et attestations : Document (domaine insurance, insurance_id). " \
+                     "Voir la section « Assurances ».",
+      "InsuranceCoverage" => "Garantie d'une Insurance (insurance_id) : name (dégâts des eaux, vol, incendie, bris de glace, " \
+                             "responsabilité civile...), included faux = garantie exclue ou non souscrite, ceiling = plafond, " \
+                             "deductible = franchise, conditions = conditions et exclusions propres à la garantie (texte libre).",
+      "InsuredItem" => "Ce que couvre une Insurance (insurance_id) : kind logement/vehicule/personne/animal/objet/autre, " \
+                       "name, description, value, property_id = le bien de la page Immobilier quand c'est un logement.",
       "Letter" => "Page Courrier : lettres mises en page (brouillons), voir la section « Courriers ». Le contenu se lit et " \
                   "s'écrit dans body_text, en texte brut " \
                   "(paragraphes séparés par une ligne vide, formules d'appel et de politesse comprises), jamais dans body " \
@@ -116,7 +132,8 @@ module Alfred
       "PersonalProfile" => :all, "HealthProfile" => :all, "Property" => :all, "Document" => :all,
       "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all, "Company" => :all, "CrmProfile" => :all,
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
-      "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all
+      "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all,
+      "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all
     }.freeze
 
     module_function

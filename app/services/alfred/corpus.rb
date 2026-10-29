@@ -34,6 +34,12 @@ module Alfred
       "BudgetEntry" => { title: "Ligne de budget", label: ->(r) { r.name }, path: ->(_) { "/budget" } },
       "Subscription" => { title: "Abonnement", label: ->(r) { r.name }, path: ->(_) { "/subscriptions" } },
       "Property" => { title: "Bien immobilier", label: ->(r) { r.name }, path: ->(_) { "/properties" } },
+      # Garanties et biens assures rendus en francais dans la fiche (« Degats des eaux : couverte,
+      # franchise... ») : c'est elle que retrouve « mon appartement est-il assure contre... ».
+      "Insurance" => { title: "Assurance", label: ->(r) { [r.name, r.insurer].compact_blank.join(" - ") },
+                       path: ->(r) { "/insurances/#{r.id}" }, text: ->(r) { Alfred::Corpus.insurance_text(r) } },
+      "InsuranceCoverage" => { parent: :insurance },
+      "InsuredItem" => { parent: :insurance },
       "Company" => { title: "Entreprise", label: ->(r) { r.trade_name.presence || "Entreprise ##{r.id}" }, path: ->(r) { "/companies/#{r.id}" } },
       "Client" => { title: "Client", label: ->(r) { r.name }, path: ->(r) { "/companies/#{r.company_id}" } },
       "Invoice" => { title: "Facture", label: ->(r) { "Facture #{r.number} - #{r.client_name}" }, date: :issue_date,
@@ -51,7 +57,9 @@ module Alfred
                           text: ->(r) { "Projet : #{r.project.name}" + (r.contact ? "\nAvec : #{[r.contact.first_name, r.contact.last_name].compact_blank.join(' ')}" : "") } },
       "ProjectSkill" => { parent: :project },
       "ProjectLink" => { parent: :project },
-      "Document" => { title: "Document", label: ->(r) { r.name }, date: :document_date, path: ->(_) { "/documents" }, file: :file },
+      "Document" => { title: "Document", label: ->(r) { r.name }, date: :document_date, file: :file,
+                      path: ->(r) { r.insurance_id ? "/insurances/#{r.insurance_id}" : "/documents" },
+                      text: ->(r) { "Contrat d'assurance : #{r.insurance.name}" if r.insurance } },
       "PersonalProfile" => { title: "Profil personnel", label: ->(_) { "Profil personnel (etat civil, coordonnees, famille)" }, path: ->(_) { "/profile" } },
       "HealthProfile" => { title: "Profil sante", label: ->(_) { "Profil sante" }, path: ->(_) { "/health" } },
       "CvExperience" => { title: "Experience (CV)", label: ->(r) { [r.title, r.company].compact_blank.join(" - ") }, path: ->(_) { "/cv" }, except: %w[position] },
@@ -85,6 +93,26 @@ module Alfred
         "- #{name}#{" (#{link.role})" if link.role.present?}"
       end
       "Contacts du projet :\n#{lines.join("\n")}" if lines.any?
+    end
+
+    # Biens assures et garanties d'un contrat d'assurance, en francais.
+    def insurance_text(insurance)
+      items = insurance.insured_items.map do |item|
+        details = [item.kind, item.property && "bien immobilier : #{item.property.name}",
+                   item.value && "valeur #{item.value.to_s('F')} EUR", item.description].compact_blank
+        "- #{item.name}#{" (#{details.join(' ; ')})" if details.any?}"
+      end
+      coverages = insurance.insurance_coverages.map do |coverage|
+        details = [coverage.included ? "couverte" : "NON couverte (exclue ou non souscrite)",
+                   coverage.ceiling.presence && "plafond : #{coverage.ceiling}",
+                   coverage.deductible.presence && "franchise : #{coverage.deductible}",
+                   coverage.conditions.presence && "conditions : #{coverage.conditions}"].compact
+        "- #{coverage.name} : #{details.join(' ; ')}"
+      end
+      parts = []
+      parts << "Biens et personnes assures :\n#{items.join("\n")}" if items.any?
+      parts << "Garanties :\n#{coverages.join("\n")}" if coverages.any?
+      parts.join("\n").presence
     end
 
     # Modeles qui ont leur propre fiche dans le corpus (les enfants n'en ont pas).

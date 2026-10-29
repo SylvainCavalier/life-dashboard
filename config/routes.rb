@@ -121,6 +121,18 @@ Rails.application.routes.draw do
       member { post :save_to_documents }
     end
     resources :subscriptions, only: [:index, :create, :update, :destroy]
+    # Module Assurances : garanties et biens assures imbriques ; les documents d'un contrat
+    # passent par /documents avec ?insurance_id= (domaine insurance)
+    resources :insurances, only: [:index, :show, :create, :update, :destroy] do
+      collection { get :options }
+      resources :insurance_coverages, only: [:create, :update, :destroy]
+      resources :insured_items, only: [:create, :update, :destroy]
+    end
+    # Import d'un contrat (PDF ou photo) : extraction Mistral en tache de fond, puis
+    # creation apres relecture (POST /confirm)
+    resources :insurance_imports, only: [:create, :show, :destroy] do
+      member { post :confirm }
+    end
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre, liens, journal et contacts imbriques ; la to-do list et les
     # documents d'un projet passent par /tasks et /documents avec ?project_id=

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_28_171938) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_29_154315) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -375,9 +375,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_28_171938) do
     t.datetime "updated_at", null: false
     t.bigint "company_id"
     t.bigint "project_id"
+    t.bigint "insurance_id"
     t.index ["company_id"], name: "index_documents_on_company_id"
     t.index ["domain", "category"], name: "index_documents_on_domain_and_category"
     t.index ["domain"], name: "index_documents_on_domain"
+    t.index ["insurance_id"], name: "index_documents_on_insurance_id"
     t.index ["project_id"], name: "index_documents_on_project_id"
   end
 
@@ -533,6 +535,65 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_28_171938) do
     t.datetime "updated_at", null: false
     t.integer "height_cm"
     t.decimal "weight_kg", precision: 5, scale: 1
+  end
+
+  create_table "insurance_coverages", force: :cascade do |t|
+    t.bigint "insurance_id", null: false
+    t.string "name", null: false
+    t.boolean "included", default: true, null: false
+    t.string "ceiling"
+    t.string "deductible"
+    t.text "conditions"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["insurance_id"], name: "index_insurance_coverages_on_insurance_id"
+  end
+
+  create_table "insurance_imports", force: :cascade do |t|
+    t.string "status", default: "pending", null: false
+    t.jsonb "draft"
+    t.string "extractor"
+    t.text "error"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "insurances", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "insurance_type", null: false
+    t.string "insurer"
+    t.string "policy_number"
+    t.string "status", default: "active", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.date "renewal_date"
+    t.decimal "premium", precision: 10, scale: 2
+    t.string "premium_frequency", default: "yearly", null: false
+    t.text "conditions"
+    t.text "notes"
+    t.string "advisor_name"
+    t.string "advisor_phone"
+    t.string "advisor_email"
+    t.string "claims_phone"
+    t.string "website_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["insurance_type"], name: "index_insurances_on_insurance_type"
+  end
+
+  create_table "insured_items", force: :cascade do |t|
+    t.bigint "insurance_id", null: false
+    t.bigint "property_id"
+    t.string "name", null: false
+    t.string "kind", default: "autre", null: false
+    t.text "description"
+    t.decimal "value", precision: 12, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["insurance_id"], name: "index_insured_items_on_insurance_id"
+    t.index ["property_id"], name: "index_insured_items_on_property_id"
   end
 
   create_table "invoice_items", force: :cascade do |t|
@@ -1144,9 +1205,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_28_171938) do
   add_foreign_key "crm_profiles", "contacts"
   add_foreign_key "cv_settings", "cv_pitches", column: "active_pitch_id", on_delete: :nullify
   add_foreign_key "documents", "companies"
+  add_foreign_key "documents", "insurances", on_delete: :nullify
   add_foreign_key "documents", "projects"
   add_foreign_key "events", "deadlines", on_delete: :nullify
   add_foreign_key "file_transfers", "users"
+  add_foreign_key "insurance_coverages", "insurances"
+  add_foreign_key "insured_items", "insurances"
+  add_foreign_key "insured_items", "properties", on_delete: :nullify
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "companies"

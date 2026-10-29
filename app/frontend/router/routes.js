@@ -67,6 +67,16 @@ export default [
     component: () => import('../pages/modules/SubscriptionsPage.vue'),
   },
   {
+    path: '/insurances',
+    name: 'Insurances',
+    component: () => import('../pages/modules/InsurancesPage.vue'),
+  },
+  {
+    path: '/insurances/:id',
+    name: 'InsuranceShow',
+    component: () => import('../pages/modules/InsuranceShowPage.vue'),
+  },
+  {
     path: '/mails',
     name: 'Mails',
     component: () => import('../pages/modules/MailsPage.vue'),

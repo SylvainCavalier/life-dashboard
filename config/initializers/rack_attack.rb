@@ -67,6 +67,11 @@ class Rack::Attack
     req.ip if req.post? && req.path == '/api/business_card_scans'
   end
 
+  # Import d'un contrat d'assurance : OCR eventuel et extraction Mistral sur un long texte.
+  Rack::Attack.throttle('insurance imports', limit: 10, period: 10.minutes) do |req|
+    req.ip if req.post? && req.path == '/api/insurance_imports'
+  end
+
   # Reunions : chaque traitement coute une transcription longue et une synthese.
   # Chaque rapport du matin coute un appel Claude (et une collecte Gmail).
   Rack::Attack.throttle('daily reports', limit: 10, period: 10.minutes) do |req|

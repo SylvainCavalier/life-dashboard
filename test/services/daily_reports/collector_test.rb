@@ -62,6 +62,18 @@ class DailyReports::CollectorTest < ActiveSupport::TestCase
     assert_equal 22, subscriptions["Logiciel"]["ends_in_days"]
   end
 
+  test "assurances actives dont l'echeance principale tombe sous deux mois" do
+    soon = Insurance.create!(name: "Habitation", insurance_type: "habitation", renewal_date: Date.new(2024, 12, 1), premium: 20, premium_frequency: "monthly")
+    Insurance.create!(name: "Auto", insurance_type: "auto", renewal_date: Date.new(2024, 3, 1))
+    Insurance.create!(name: "Ancienne", insurance_type: "auto", renewal_date: Date.new(2024, 11, 1), status: "resiliee")
+
+    insurances = collect["sections"]["insurances"]
+
+    assert_equal ["Habitation"], insurances.map { |i| i["name"] }
+    assert_equal({ "ref" => "Insurance##{soon.id}", "renews_in_days" => 50, "annual_premium" => "240,00 € / an" },
+                 insurances.first.slice("ref", "renews_in_days", "annual_premium"))
+  end
+
   test "CRM : rendez-vous proches et priorites hautes sans nouvelles ; absent le week-end" do
     soon = Contact.create!(first_name: "Rdv")
     soon.create_crm_profile!(next_appointment_on: MONDAY + 3)

@@ -21,7 +21,8 @@ module Alfred
       "Loan" => :all, "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectContact" => :all, "ProjectEntry" => :all,
       "ProjectLink" => :all, "ProjectSkill" => :all, "Property" => :all, "Quote" => :all, "QuoteItem" => :all, "Reminder" => :all,
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
-      "SentinelSource" => :all, "SentinelWeek" => :all, "Subscription" => :all, "Task" => :all,
+      "SentinelSource" => :all, "SentinelWeek" => :all, "ShoppingItem" => :all, "ShoppingPreset" => :all,
+      "Subscription" => :all, "Task" => :all,
       "Trip" => :all, "TripItem" => :all, "TripPlan" => :all, "UsefulSite" => :all,
       "VideoDownload" => :all, "VideoFolder" => :all, "VideoTranscript" => :all, "Warranty" => :all
     }.freeze
@@ -112,12 +113,18 @@ module Alfred
                 "amount = somme prêtée (ou valeur de l'objet), repaid_amount = déjà remboursé, started_on = début du prêt, " \
                 "due_on = retour prévu (facultatif), returned_on = rendu ou remboursé (vide = en cours ; un prêt d'argent " \
                 "remboursé en entier se clôt seul). status (calculé) ongoing/due_soon (retour sous 7 jours)/overdue/returned, " \
-                "days_until_due, remaining_amount = reste dû. Voir la section « Prêts »."
+                "days_until_due, remaining_amount = reste dû. Voir la section « Prêts ».",
+      "ShoppingItem" => "Page Courses (/shopping) : la liste de courses, unique. name = l'article, checked_at = mis dans " \
+                        "le caddie (coché en magasin). Ne s'écrit pas par propose_write : ajouter, retirer ou vider la " \
+                        "liste passe par propose_shopping. Voir la section « Courses ».",
+      "ShoppingPreset" => "Page Courses (/shopping) : carte d'un article habituel (name, icon = emoji facultatif), qui " \
+                          "l'ajoute à la liste en un clic. Ce n'est pas la liste elle-même (ShoppingItem)."
     }.freeze
 
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
     # Pas de suppression. Interdits : PasswordEntry, MailAccount, Language, FileTransfer,
     # TripPlan, VideoDownload, VideoTranscript, SentinelWeek, SentinelDocument (voir CLAUDE.md).
+    # ShoppingItem passe par son propre outil (propose_shopping), qui sait aussi vider la liste.
     WRITABLE = {
       "Event" => { create: %w[title description event_type start_time end_time location color all_day reminder_minutes] },
       "Note" => { create: %w[title content note_date important] },
@@ -150,7 +157,7 @@ module Alfred
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all,
       "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
-      "Warranty" => :all, "Loan" => :all
+      "Warranty" => :all, "Loan" => :all, "ShoppingPreset" => :all
     }.freeze
 
     module_function

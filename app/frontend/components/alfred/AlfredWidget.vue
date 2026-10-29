@@ -118,7 +118,7 @@
                         <dt class="w-28 flex-shrink-0 text-gray-400 truncate">{{ field }}</dt>
                         <dd class="min-w-0 break-words whitespace-pre-line">
                           <span v-if="['update', 'revise_memory'].includes(action.operation)" class="text-gray-400 line-through mr-1">{{ display(action.before[field]) }}</span>
-                          <span :class="action.operation === 'forget' ? 'text-gray-400 line-through' : 'text-gray-900'">{{ display(value) }}</span>
+                          <span :class="STRUCK_OPERATIONS.includes(action.operation) ? 'text-gray-400 line-through' : 'text-gray-900'">{{ display(value) }}</span>
                         </dd>
                       </div>
                     </dl>
@@ -330,7 +330,10 @@ const display = (value) => {
   return typeof value === 'object' ? JSON.stringify(value) : String(value)
 }
 
-// Ecritures en base (create / update), actions Gmail et memoire d'Alfred, confirmees par la meme carte.
+// Ce qui disparait (memoire oubliee, articles retires de la liste de courses) : barre sur la carte.
+const STRUCK_OPERATIONS = ['forget', 'shopping_remove', 'shopping_clear']
+
+// Ecritures en base (create / update), actions Gmail, memoire d'Alfred et liste de courses, confirmees par la meme carte.
 const operationLabel = (action) => ({
   create: 'Creation',
   update: 'Modification',
@@ -340,9 +343,13 @@ const operationLabel = (action) => ({
   remember: 'A retenir',
   revise_memory: 'Correction',
   forget: 'A oublier',
+  shopping_add: 'Ajout',
+  shopping_remove: 'Retrait',
+  shopping_clear: 'Remise a zero',
 }[action.operation] || action.operation)
 
-const targetLabel = (action) => (action.target_model === 'AlfredMemory' ? 'Memoire d\'Alfred' : action.target_model)
+const TARGET_LABELS = { AlfredMemory: 'Memoire d\'Alfred', ShoppingItem: 'Liste de courses' }
+const targetLabel = (action) => TARGET_LABELS[action.target_model] || action.target_model
 
 const actionBorder = (action) => ({
   proposed: 'border-indigo-200',

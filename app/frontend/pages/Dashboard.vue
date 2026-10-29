@@ -137,6 +137,7 @@ const counts = ref({
   insurances: 0,
   warranties: 0,
   loans: 0,
+  shopping: 0,
   notes: 0,
   useful_sites: 0,
   projects: 0,
@@ -161,6 +162,8 @@ const fetchCounts = async () => {
     { key: 'warranties', resource: 'warranties' },
     // Prets en cours seulement : les prets rendus restent dans l'historique de la page.
     { key: 'loans', resource: 'loans', count: (list) => list.filter(l => l.status !== 'returned').length },
+    // Articles restant a acheter : ceux deja dans le caddie ne comptent plus.
+    { key: 'shopping', resource: 'shopping_items', count: (list) => list.filter(i => !i.checked).length },
     { key: 'notes', resource: 'notes' },
     { key: 'useful_sites', resource: 'useful_sites' },
     { key: 'projects', resource: 'projects' },
@@ -229,6 +232,11 @@ const fetchReminders = async () => {
   }
 }
 
+const shoppingSubtitle = computed(() => {
+  const n = counts.value.shopping
+  return n ? `${n} article${n > 1 ? 's' : ''} à acheter` : 'Liste vide'
+})
+
 const remindersSubtitle = computed(() => {
   const now = new Date()
   const due = activeReminders.value.filter(r => new Date(r.remind_at) <= now).length
@@ -283,6 +291,7 @@ const modules = computed(() => [
   { name: 'Abonnements', icon: '🔄', subtitle: `${counts.value.subscriptions} abonnement${counts.value.subscriptions > 1 ? 's' : ''}`, to: '/subscriptions' },
   { name: 'Assurances', icon: '🛡️', subtitle: `${counts.value.insurances} contrat${counts.value.insurances > 1 ? 's' : ''}`, to: '/insurances' },
   { name: 'Garanties', icon: '🧾', subtitle: `${counts.value.warranties} garantie${counts.value.warranties > 1 ? 's' : ''}`, to: '/warranties' },
+  { name: 'Courses', icon: '🛒', subtitle: shoppingSubtitle.value, to: '/shopping' },
   { name: 'Prets', icon: '🤝', subtitle: `${counts.value.loans} prêt${counts.value.loans > 1 ? 's' : ''} en cours`, to: '/loans' },
   { name: 'Reunions', icon: '🎙️', subtitle: `${counts.value.meetings} compte${counts.value.meetings > 1 ? 's' : ''} rendu${counts.value.meetings > 1 ? 's' : ''}`, to: '/meetings' },
   { name: 'Rappels', icon: '⏰', subtitle: remindersSubtitle.value, to: '/reminders' },

@@ -5,6 +5,13 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-29 — Liste de courses
+- [feat] Nouvelle page **Courses** (`/shopping`, tuile sur le dashboard avec le nombre d'articles à acheter) : une liste unique, saisie d'un article (ou de plusieurs séparés par des virgules), case à cocher en magasin (articles passés dans « Dans le caddie »), retrait d'un article, bouton « Réinitialiser » qui vide tout ; pensée pour l'iPhone
+- [feat] Cartes d'**articles habituels** (emoji + nom) : un clic ajoute l'article, la carte passe en vert s'il est déjà dans la liste ; création depuis « Gérer » ou par l'étoile d'un article de la liste
+- [db] Tables `shopping_items` et `shopping_presets` (noms uniques sans tenir compte de la casse)
+- [feat] Alfred (dashboard) : nouvel outil `propose_shopping` (ajout d'un lot d'articles sans doublon, retrait, remise à zéro de la liste) sur une seule carte à confirmer, section « Courses » du prompt, cartes habituelles par `propose_write` ; la page se met à jour quand une carte est confirmée dans le widget (événement `alfred:action-resolved`)
+- [chore] Tâches `shopping:list|add|remove|clear` pour l'Alfred local, skills (`query.rb`, `write.rb`, `SKILL.md`, `alfred.md`) mises à jour ; tests (modèle, API, outil d'Alfred) et documentation dans `CLAUDE.md`
+
 ### 2026-10-29 — Gestionnaire de prêts
 - [feat] Nouvelle page **Prêts** (`/loans`, tuile sur le dashboard avec les prêts en cours) : objets et argent prêtés ou empruntés, personne choisie dans les contacts ou saisie librement, objet ou montant (avec motif), date de début, retour prévu, date de retour, notes ; synthèse (prêté, emprunté, sommes à récupérer et à rembourser, retards), filtres par statut et par sens, recherche, bouton « rendu / remboursé » en un clic
 - [feat] Prêts d'argent : remboursements partiels (`repaid_amount`, barre de progression, reste dû), clôture automatique une fois remboursé en entier ; retour prévu signalé en orange sous 7 jours, en rouge une fois dépassé

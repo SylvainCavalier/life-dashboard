@@ -115,6 +115,49 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal "returned", loan.reload.status
   end
 
+  test "propose_shopping : ajout groupe sans doublon, retrait, puis remise a zero" do
+    ShoppingItem.create!(name: "Lait")
+
+    result, error = run_tool("propose_shopping", { "operation" => "add", "items" => %w[lait Oeufs Pain], "summary" => "Courses" })
+    assert_not error
+    assert_equal ["Lait"], result[:already_listed]
+    action = @conversation.actions.last
+    assert_equal "shopping_add", action.operation
+    assert_equal({ "articles" => %w[Oeufs Pain] }, action.new_attributes)
+    assert_equal 1, ShoppingItem.count, "rien n'est ecrit avant la confirmation"
+
+    Alfred::ActionExecutor.new(action).confirm!
+    assert_equal "executed", action.reload.status
+    assert_equal %w[Lait Oeufs Pain], ShoppingItem.ordered.pluck(:name)
+
+    pain = ShoppingItem.find_by!(name: "Pain")
+    _, error = run_tool("propose_shopping", { "operation" => "remove", "ids" => [pain.id], "summary" => "Sans pain" })
+    assert_not error
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+    assert_not ShoppingItem.exists?(pain.id)
+
+    _, error = run_tool("propose_shopping", { "operation" => "clear", "summary" => "Courses faites" })
+    assert_not error
+    assert_equal %w[Lait Oeufs], @conversation.actions.last.new_attributes["articles"]
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+    assert_equal 0, ShoppingItem.count
+    assert_match "videe", @conversation.messages.where(role: "event").last.content
+
+    result, error = run_tool("propose_shopping", { "operation" => "clear", "summary" => "Encore" })
+    assert_not error
+    assert_match "deja vide", result[:error]
+  end
+
+  test "ShoppingItem ne passe pas par propose_write, ShoppingPreset si" do
+    _, error = run_tool("propose_write", { "operation" => "create", "model" => "ShoppingItem", "summary" => "x",
+                                           "attributes" => { "name" => "Lait" } })
+    assert error
+
+    _, error = run_tool("propose_write", { "operation" => "create", "model" => "ShoppingPreset", "summary" => "Carte cafe",
+                                           "attributes" => { "name" => "Cafe", "icon" => "☕" } })
+    assert_not error
+  end
+
   test "propose_write refuse un champ hors liste blanche et un modele interdit" do
     result, error = run_tool("propose_write", { "operation" => "create", "model" => "Note", "summary" => "x",
                                                 "attributes" => { "title" => "x", "created_at" => "2020-01-01" } })

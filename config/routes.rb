@@ -137,6 +137,11 @@ Rails.application.routes.draw do
     resources :warranties, only: [:index, :create, :update, :destroy]
     # Module Prets : objets et argent pretes ou empruntes, lies ou non a un contact
     resources :loans, only: [:index, :create, :update, :destroy]
+    # Module Courses : une liste unique, videe apres les courses, et les cartes d'articles habituels
+    resources :shopping_items, only: [:index, :create, :update, :destroy] do
+      delete :clear, on: :collection
+    end
+    resources :shopping_presets, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre, liens, journal et contacts imbriques ; la to-do list et les
     # documents d'un projet passent par /tasks et /documents avec ?project_id=

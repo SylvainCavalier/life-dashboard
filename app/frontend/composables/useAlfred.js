@@ -146,6 +146,8 @@ export function useAlfred() {
     error.value = null
     try {
       await apiClient.post(`/alfred_actions/${action.id}/${decision}`)
+      // Une page ouverte sous le widget peut se relire (ex. liste de courses) sans rechargement.
+      window.dispatchEvent(new window.CustomEvent('alfred:action-resolved', { detail: { targetModel: action.target_model, decision } }))
     } catch (err) {
       error.value = messageOf(err)
     }

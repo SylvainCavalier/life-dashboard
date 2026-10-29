@@ -38,6 +38,8 @@ module Alfred
         help: "Dire si un objet est encore sous garantie, préparer un recours au SAV, enregistrer un nouvel achat." },
       { key: "loans", title: "Prêts",
         help: "Noter ce que vous prêtez ou empruntez (objets, argent), dire qui a quoi, clore un prêt rendu." },
+      { key: "shopping", title: "Courses",
+        help: "Ajouter des articles à la liste de courses, en retirer, la vider après les courses." },
       { key: "accuracy", title: "Exactitude",
         help: "Ce qu'il a le droit d'affirmer, comment il cite ses sources." },
       { key: "writes", title: "Ecritures",
@@ -152,12 +154,13 @@ module Alfred
         - describe_models : colonnes et valeurs autorisees d'un modele. A appeler avant d'interroger ou de modifier un modele dont tu ne connais pas les champs.
         - propose_write : proposer une creation ou une modification.
         - propose_memory : proposer de retenir, corriger ou oublier un fait dans ta memoire (voir « Memoire »).
+        - propose_shopping : proposer d'ajouter des articles a la liste de courses, d'en retirer ou de la vider (voir « Courses »).
         - search_mails, read_mail_thread, list_mail_labels : la boite Gmail de Sylvain, en direct (voir « Mails »).
         - propose_email, propose_mail_triage : proposer un mail (envoi ou brouillon) ou un tri de la boite.
         Quand la question designe deja l'endroit, va droit au but au lieu de chercher dans tout le dashboard. « Mes dernieres analyses », « mon bail », « mon avis d'imposition » : query_records sur Document filtre par domaine (et categorie), trie par document_date decroissante, puis read_document sur le bon. Les domaines et categories de Document sont listes plus bas. La recherche large (search_corpus sans filtre) sert quand tu ne sais pas ou chercher.
         N'hesite pas a enchainer plusieurs appels, et a en lancer plusieurs en parallele quand ils sont independants. Si une premiere recherche ne donne rien, reformule une fois (synonymes, autre angle) avant de conclure.
 
-        Reperes : Event = agenda du dashboard, miroir de l'agenda Google de Sylvain (tout ce qu'il y met arrive ici, tout Event cree ici part dans Google Agenda) ; Task sans project_id = to-do generale, avec project_id = to-do du projet ; ProjectEntry = journal de bord d'un projet (voir « Projets ») ; CrmProfile = suivi d'un contact (page CRM), ProjectContact = contact lie a un projet ; Reminder = rappel qui envoie une notification sur l'iPhone de Sylvain a remind_at (heure de Paris), relancee puis doublee d'un mail s'il ne reagit pas, recurrence none/daily/weekly/monthly/yearly, remindable_type + remindable_id pour le rattacher a une fiche (Contact, Task, Project...) : « rappelle-moi de... » appelle un Reminder, pas une Task ni un Event ; Deadline = échéance notable régulière (crédit, charges, URSSAF, impôts, taxe foncière), dont chaque occurrence est posée automatiquement dans l'agenda : ne crée pas ces Event toi-même ; BudgetEntry = revenus et depenses ; Insurance = contrat d'assurance, avec ses garanties (InsuranceCoverage) et ses biens assures (InsuredItem), voir « Assurances » ; Warranty = garantie d'un objet achete (page Garanties), a ne pas confondre avec InsuranceCoverage, voir « Garanties » ; Loan = objet ou argent prêté par Sylvain ou qu'on lui a prêté (page Prêts), voir « Prêts » ; Document = documents administratifs classes par domaine (sante, immobilier, impots, banque, etat civil, travail...) ; Invoice / Quote = facturation freelance ; PersonalProfile et HealthProfile = fiches uniques.
+        Reperes : Event = agenda du dashboard, miroir de l'agenda Google de Sylvain (tout ce qu'il y met arrive ici, tout Event cree ici part dans Google Agenda) ; Task sans project_id = to-do generale, avec project_id = to-do du projet ; ProjectEntry = journal de bord d'un projet (voir « Projets ») ; CrmProfile = suivi d'un contact (page CRM), ProjectContact = contact lie a un projet ; Reminder = rappel qui envoie une notification sur l'iPhone de Sylvain a remind_at (heure de Paris), relancee puis doublee d'un mail s'il ne reagit pas, recurrence none/daily/weekly/monthly/yearly, remindable_type + remindable_id pour le rattacher a une fiche (Contact, Task, Project...) : « rappelle-moi de... » appelle un Reminder, pas une Task ni un Event ; Deadline = échéance notable régulière (crédit, charges, URSSAF, impôts, taxe foncière), dont chaque occurrence est posée automatiquement dans l'agenda : ne crée pas ces Event toi-même ; BudgetEntry = revenus et depenses ; Insurance = contrat d'assurance, avec ses garanties (InsuranceCoverage) et ses biens assures (InsuredItem), voir « Assurances » ; Warranty = garantie d'un objet achete (page Garanties), a ne pas confondre avec InsuranceCoverage, voir « Garanties » ; Loan = objet ou argent prêté par Sylvain ou qu'on lui a prêté (page Prêts), voir « Prêts » ; ShoppingItem = un article de la liste de courses (page Courses), ShoppingPreset = carte d'un article habituel, voir « Courses » ; Document = documents administratifs classes par domaine (sante, immobilier, impots, banque, etat civil, travail...) ; Invoice / Quote = facturation freelance ; PersonalProfile et HealthProfile = fiches uniques.
       TEXT
 
       "mails" => <<~TEXT.strip,
@@ -212,6 +215,15 @@ module Alfred
         - Rendu ou remboursé (« Paul m'a rendu la perceuse ») : lis le prêt puis propose une modification avec returned_on (aujourd'hui sauf date donnée). Remboursement partiel : propose repaid_amount = cumul déjà remboursé (lis la valeur actuelle et additionne) ; remboursé en entier, le prêt se clôt seul. Plusieurs prêts possibles : demande lequel.
         - Pour se souvenir de réclamer ou de rendre quelque chose à une date, propose aussi un Reminder rattaché au prêt (remindable_type Loan, remindable_id).
         - Tu ne supprimes pas de prêt : un prêt rendu se clôt (returned_on) et reste dans l'historique ; pour en effacer un, Sylvain le fait depuis la page.
+      TEXT
+
+      "shopping" => <<~TEXT.strip,
+        Sylvain a une seule liste de courses (page Courses) : ShoppingItem, un article par ligne (name), checked_at rempli = déjà dans le caddie. Il la vide après chaque passage au magasin.
+        - « Ajoute du lait et des œufs à la liste », « il faut racheter du café » : propose_shopping, operation add, avec tous les articles de la demande dans un seul appel. Nomme chaque article simplement, avec une majuscule, sans article ni quantité sauf si Sylvain en donne une (« Lait », « Œufs », « Café en grains x2 »). Une recette ou un repas (« de quoi faire une raclette ») : propose les ingrédients, il retirera ce qu'il a déjà. Ce qui est déjà dans la liste est ignoré : l'outil te le signale, dis-le simplement.
+        - « Qu'est-ce qu'il y a sur ma liste ? » : query_records sur ShoppingItem (trié par created_at), en distinguant ce qui reste à acheter de ce qui est coché.
+        - « Retire le pain » : lis la liste pour trouver l'id, puis propose_shopping remove.
+        - « Réinitialise la liste », « vide la liste », « j'ai fait les courses » : propose_shopping clear. La liste est vidée entièrement, rien n'est archivé.
+        - Les articles habituels (ShoppingPreset, cartes de la page) ne sont pas la liste : n'en ajoute un que si Sylvain demande d'en faire une carte (propose_write sur ShoppingPreset, name et icon = un emoji facultatif). « Ajoute mes habituels » : lis les ShoppingPreset et propose-les en add.
       TEXT
 
       "accuracy" => <<~TEXT.strip,

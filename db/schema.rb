@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_29_161052) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1041,6 +1041,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_161052) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["domain", "monday"], name: "index_sentinel_weeks_on_domain_and_monday", unique: true
+  end
+
+  create_table "shopping_items", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "checked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_shopping_items_on_lower_name", unique: true
+  end
+
+  create_table "shopping_presets", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "icon"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_shopping_presets_on_lower_name", unique: true
   end
 
   create_table "subscriptions", force: :cascade do |t|

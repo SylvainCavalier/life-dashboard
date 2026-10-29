@@ -87,6 +87,11 @@ export default [
     component: () => import('../pages/modules/LoansPage.vue'),
   },
   {
+    path: '/shopping',
+    name: 'Shopping',
+    component: () => import('../pages/modules/ShoppingPage.vue'),
+  },
+  {
     path: '/mails',
     name: 'Mails',
     component: () => import('../pages/modules/MailsPage.vue'),

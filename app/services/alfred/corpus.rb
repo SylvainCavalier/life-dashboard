@@ -43,6 +43,8 @@ module Alfred
       # La facture jointe est indexee comme le fichier d'un Document (OCR pour une photo).
       "Warranty" => { title: "Garantie", label: ->(r) { [r.name, r.brand].compact_blank.join(" - ") }, date: :purchased_on,
                       file: :receipt, path: ->(_) { "/warranties" }, text: ->(r) { Alfred::Corpus.warranty_text(r) } },
+      "Loan" => { title: "Pret", label: ->(r) { "#{r.label} - #{r.person_name}" }, date: :started_on,
+                  path: ->(_) { "/loans" }, text: ->(r) { Alfred::Corpus.loan_text(r) } },
       "Company" => { title: "Entreprise", label: ->(r) { r.trade_name.presence || "Entreprise ##{r.id}" }, path: ->(r) { "/companies/#{r.id}" } },
       "Client" => { title: "Client", label: ->(r) { r.name }, path: ->(r) { "/companies/#{r.company_id}" } },
       "Invoice" => { title: "Facture", label: ->(r) { "Facture #{r.number} - #{r.client_name}" }, date: :issue_date,
@@ -127,6 +129,19 @@ module Alfred
         warranty.ends_on && "Fin de garantie : #{warranty.ends_on.strftime('%d/%m/%Y')}" \
                             "#{" (garantie de #{warranty.duration_months} mois)" if warranty.duration_months}"
       ].compact.join("\n")
+    end
+
+    # Sens du pret en toutes lettres (« Prete par Sylvain a Paul ») : c'est ce que retrouve
+    # « qui a ma perceuse ? ». Pas d'etat date-dependant, comme pour les garanties.
+    def loan_text(loan)
+      who = loan.direction == "lent" ? "Prêté par Sylvain à #{loan.person_name}" : "Prêté à Sylvain par #{loan.person_name}"
+      [
+        "#{who} : #{loan.money? ? "argent, #{loan.label}" : loan.item}",
+        "Depuis le #{loan.started_on.strftime('%d/%m/%Y')}",
+        loan.due_on && "Retour prévu le #{loan.due_on.strftime('%d/%m/%Y')}",
+        loan.returned_on ? "#{loan.money? ? 'Remboursé' : 'Rendu'} le #{loan.returned_on.strftime('%d/%m/%Y')}" : "En cours",
+        loan.money? && loan.repaid_amount.to_d.positive? && !loan.returned? && "Déjà remboursé : #{loan.repaid_amount.to_s('F')} EUR"
+      ].compact_blank.join("\n")
     end
 
     # Modeles qui ont leur propre fiche dans le corpus (les enfants n'en ont pas).

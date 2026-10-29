@@ -23,6 +23,8 @@ module DailyReports
     INSURANCE_DAYS = 60
     # Garantie d'un objet qui se termine : le dernier mois pour faire jouer le SAV.
     WARRANTY_DAYS = 30
+    # Pret dont le retour prevu tombe dans ce delai (ou est depasse) : a reclamer ou a rendre.
+    LOAN_DAYS = Loan::DUE_SOON_DAYS
     TASK_DAYS = 7
     # Entrees du journal de bord d'un projet jointes a l'instantane.
     PROJECT_JOURNAL_DAYS = 30
@@ -50,6 +52,7 @@ module DailyReports
         "subscriptions" => subscriptions,
         "insurances" => insurances,
         "warranties" => warranties,
+        "loans" => loans,
         "tasks" => tasks
       }
       unless @weekend
@@ -215,6 +218,22 @@ module DailyReports
           "store" => warranty.store.presence,
           "ends_on" => warranty.ends_on.iso8601,
           "ends_in_days" => days_until(warranty.ends_on)
+        }.compact
+      end
+    end
+
+    # Prets en cours dont le retour prevu est depasse ou tombe sous LOAN_DAYS jours.
+    def loans
+      Loan.outstanding.where(due_on: ..(@date + LOAN_DAYS)).order(:due_on).map do |loan|
+        {
+          "ref" => ref_for(loan),
+          "direction" => loan.direction,
+          "person" => loan.person_name,
+          "what" => loan.label,
+          "remaining" => (loan.money? && "#{format('%.2f', loan.remaining_amount).tr('.', ',')} €"),
+          "started_on" => loan.started_on.iso8601,
+          "due_on" => loan.due_on.iso8601,
+          "due_in_days" => days_until(loan.due_on)
         }.compact
       end
     end

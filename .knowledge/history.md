@@ -5,6 +5,14 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-29 — Gestionnaire de prêts
+- [feat] Nouvelle page **Prêts** (`/loans`, tuile sur le dashboard avec les prêts en cours) : objets et argent prêtés ou empruntés, personne choisie dans les contacts ou saisie librement, objet ou montant (avec motif), date de début, retour prévu, date de retour, notes ; synthèse (prêté, emprunté, sommes à récupérer et à rembourser, retards), filtres par statut et par sens, recherche, bouton « rendu / remboursé » en un clic
+- [feat] Prêts d'argent : remboursements partiels (`repaid_amount`, barre de progression, reste dû), clôture automatique une fois remboursé en entier ; retour prévu signalé en orange sous 7 jours, en rouge une fois dépassé
+- [feat] Lien avec les contacts : nom repris de la fiche (et conservé si le contact est supprimé), vue filtrée `/loans?contact=ID` accessible depuis le formulaire du contact ; l'ancien champ texte « Prêts » de la fiche contact n'apparaît plus que s'il a du contenu
+- [db] Table `loans` (`contact_id` en nullify, `returned_on` indexée)
+- [feat] Alfred (dashboard) : `Loan` lisible (statut, jours avant retour, reste dû) et modifiable sur proposition, fiche RAG, section « Prêts » du prompt (noter un prêt, qui a quoi, rendu, remboursement partiel), rappel rattachable à un prêt ; le rapport du matin signale les prêts en retard ou à rendre sous 7 jours
+- [chore] Skills locales d'Alfred (`query.rb`, `write.rb`, `SKILL.md`, `alfred.md`) mises à jour ; tests (modèle, API, propositions d'Alfred, rapport du matin) et documentation dans `CLAUDE.md`
+
 ### 2026-10-29 — Gestionnaire de garanties
 - [feat] Nouvelle page **Garanties** (`/warranties`, tuile sur le dashboard) : objets achetés avec marque, référence, catégorie, n° de série, vendeur, n° de commande, prix, contact SAV et notes ; création, modification et suppression ; synthèse (objets sous garantie, valeur couverte, prochaine fin de garantie), filtres par statut (sous garantie, expirent bientôt, expirées) et catégorie, recherche, barre de temps écoulé
 - [feat] Fin de garantie calculée depuis la date d'achat et la durée (boutons 6 mois à 5 ans, rappel de la garantie légale), modifiable à la main pour une extension ; signalée en orange sous 60 jours

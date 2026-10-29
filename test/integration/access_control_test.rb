@@ -27,6 +27,7 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/budget_entries
       /api/trips
       /api/warranties
+      /api/loans
       /api/projects
       /api/tasks
       /api/reminders

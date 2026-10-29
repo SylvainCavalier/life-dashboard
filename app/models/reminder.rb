@@ -44,7 +44,7 @@ class Reminder < ApplicationRecord
   }.freeze
 
   # Fiches du dashboard auxquelles un rappel peut renvoyer.
-  REMINDABLE_TYPES = %w[Contact Task Project Event Document Property Subscription Trip Company Note].freeze
+  REMINDABLE_TYPES = %w[Contact Task Project Event Document Property Subscription Trip Company Note Loan].freeze
 
   # Une notification, deux relances espacees de RETRY_INTERVAL, puis le mail.
   MAX_PUSHES = 3

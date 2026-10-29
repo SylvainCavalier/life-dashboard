@@ -135,6 +135,8 @@ Rails.application.routes.draw do
     end
     # Module Garanties : objets achetes, fin de garantie, facture jointe (multipart)
     resources :warranties, only: [:index, :create, :update, :destroy]
+    # Module Prets : objets et argent pretes ou empruntes, lies ou non a un contact
+    resources :loans, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre, liens, journal et contacts imbriques ; la to-do list et les
     # documents d'un projet passent par /tasks et /documents avec ?project_id=

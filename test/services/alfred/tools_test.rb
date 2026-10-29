@@ -95,6 +95,26 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal "active", result[:records].first["status"]
   end
 
+  test "propose_write : un pret a un contact, puis son retour" do
+    contact = Contact.create!(first_name: "Paul", last_name: "Reboh")
+    _, error = run_tool("propose_write", { "operation" => "create", "model" => "Loan", "summary" => "Perceuse prêtée à Paul",
+                                           "attributes" => { "direction" => "lent", "kind" => "object", "contact_id" => contact.id,
+                                                             "item" => "Perceuse", "started_on" => "2026-10-28" } })
+    assert_not error
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+
+    loan = Loan.find_by!(item: "Perceuse")
+    assert_equal "Paul Reboh", loan.person_name
+    result, = run_tool("query_records", { "model" => "Loan", "where" => { "returned_on" => { "is_null" => true } } })
+    assert_equal "ongoing", result[:records].first["status"]
+
+    _, error = run_tool("propose_write", { "operation" => "update", "model" => "Loan", "id" => loan.id, "summary" => "Perceuse rendue",
+                                           "attributes" => { "returned_on" => "2026-10-29" } })
+    assert_not error
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+    assert_equal "returned", loan.reload.status
+  end
+
   test "propose_write refuse un champ hors liste blanche et un modele interdit" do
     result, error = run_tool("propose_write", { "operation" => "create", "model" => "Note", "summary" => "x",
                                                 "attributes" => { "title" => "x", "created_at" => "2020-01-01" } })

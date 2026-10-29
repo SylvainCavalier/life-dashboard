@@ -18,7 +18,7 @@ module Alfred
       "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Language" => :all, "LanguageSession" => :all, "Letter" => { exclude: %w[body] }, "Meeting" => :all,
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
-      "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectContact" => :all, "ProjectEntry" => :all,
+      "Loan" => :all, "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectContact" => :all, "ProjectEntry" => :all,
       "ProjectLink" => :all, "ProjectSkill" => :all, "Property" => :all, "Quote" => :all, "QuoteItem" => :all, "Reminder" => :all,
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
       "SentinelSource" => :all, "SentinelWeek" => :all, "Subscription" => :all, "Task" => :all,
@@ -38,6 +38,7 @@ module Alfred
       "DailyReport" => %w[text],
       "Insurance" => %w[next_renewal_on annual_premium],
       "Letter" => %w[body_text],
+      "Loan" => %w[status days_until_due remaining_amount],
       "Subscription" => %w[next_renewal_on],
       "Warranty" => %w[status days_left]
     }.freeze
@@ -104,7 +105,14 @@ module Alfred
                     "price, duration_months = durée de la garantie, ends_on = fin de garantie (fait foi, extension comprise ; " \
                     "calculée depuis purchased_on + duration_months si tu ne la donnes pas), support_contact = SAV, notes. " \
                     "status (calculé) active/expiring (fin sous 60 jours)/expired, days_left = jours restants. La facture " \
-                    "jointe se dépose depuis la page ; son texte est dans le corpus (search_corpus). Voir la section « Garanties »."
+                    "jointe se dépose depuis la page ; son texte est dans le corpus (search_corpus). Voir la section « Garanties ».",
+      "Loan" => "Page Prêts (/loans) : un objet ou de l'argent prêté ou emprunté. direction lent (Sylvain a prêté) / " \
+                "borrowed (on lui a prêté), kind object/money, contact_id = la personne si elle est dans les contacts, " \
+                "person_name = son nom (toujours rempli, repris du contact), item = l'objet (ou le motif pour de l'argent), " \
+                "amount = somme prêtée (ou valeur de l'objet), repaid_amount = déjà remboursé, started_on = début du prêt, " \
+                "due_on = retour prévu (facultatif), returned_on = rendu ou remboursé (vide = en cours ; un prêt d'argent " \
+                "remboursé en entier se clôt seul). status (calculé) ongoing/due_soon (retour sous 7 jours)/overdue/returned, " \
+                "days_until_due, remaining_amount = reste dû. Voir la section « Prêts »."
     }.freeze
 
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
@@ -142,7 +150,7 @@ module Alfred
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all,
       "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
-      "Warranty" => :all
+      "Warranty" => :all, "Loan" => :all
     }.freeze
 
     module_function

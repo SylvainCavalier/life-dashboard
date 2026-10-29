@@ -37,6 +37,16 @@ en:
   # globalement changerait aussi les messages d'erreur de l'API pour tous les
   # autres modeles.
   activerecord:
+    # Noms des champs dans les erreurs du formulaire de la page Prets.
+    attributes:
+      loan:
+        person_name: "Personne"
+        item: "Objet"
+        amount: "Montant"
+        repaid_amount: "Montant rembourse"
+        started_on: "Date de debut"
+        due_on: "Date de retour prevue"
+        returned_on: "Date de retour"
     errors:
       models:
         user:

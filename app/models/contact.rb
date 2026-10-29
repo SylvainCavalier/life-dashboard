@@ -44,6 +44,8 @@ class Contact < ApplicationRecord
   has_one :crm_profile, dependent: :destroy
   has_many :project_contacts, dependent: :destroy
   has_many :projects, through: :project_contacts
+  # `loans` est l'ancienne colonne texte libre de la fiche : les prets suivis sont des Loan.
+  has_many :loan_records, class_name: "Loan", dependent: :nullify
 
   validates :first_name, presence: true
   validates :relationship_type, inclusion: { in: RELATIONSHIP_TYPES }

@@ -204,12 +204,21 @@
               rows="2"
               class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             ></textarea>
+            <!-- Les prets se suivent sur la page Prets ; l'ancien champ libre ne reste que s'il a du contenu -->
             <textarea
+              v-if="form.loans"
               v-model="form.loans"
-              placeholder="Prêts (objets, argent...)"
+              placeholder="Ancienne note de prêts (à reporter sur la page Prêts)"
               rows="2"
               class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             ></textarea>
+            <router-link
+              v-else
+              :to="editingId ? `/loans?contact=${editingId}` : '/loans'"
+              class="px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:text-indigo-600 hover:border-indigo-300 flex items-center"
+            >
+              🤝 Prêts (objets, argent...) : {{ editingId ? 'voir ses prêts' : 'page Prêts' }} &rarr;
+            </router-link>
             <textarea
               v-model="form.notes"
               placeholder="Notes libres"

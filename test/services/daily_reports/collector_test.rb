@@ -86,6 +86,22 @@ class DailyReports::CollectorTest < ActiveSupport::TestCase
                  warranties.first.slice("ref", "ends_in_days", "store"))
   end
 
+  test "prets dont le retour est depasse ou proche" do
+    late = Loan.create!(direction: "lent", kind: "object", person_name: "Paul", item: "Perceuse",
+                        started_on: MONDAY - 60, due_on: MONDAY - 3)
+    Loan.create!(direction: "borrowed", kind: "money", person_name: "Julie", amount: 50, started_on: MONDAY - 10, due_on: MONDAY + 5)
+    Loan.create!(direction: "lent", kind: "object", person_name: "Léa", item: "Tente", started_on: MONDAY - 10, due_on: MONDAY + 30)
+    Loan.create!(direction: "lent", kind: "object", person_name: "Marc", item: "Livre", started_on: MONDAY - 60,
+                 due_on: MONDAY - 10, returned_on: MONDAY - 1)
+
+    loans = collect["sections"]["loans"]
+
+    assert_equal %w[Paul Julie], loans.map { |l| l["person"] }
+    assert_equal({ "ref" => "Loan##{late.id}", "due_in_days" => -3, "direction" => "lent" },
+                 loans.first.slice("ref", "due_in_days", "direction"))
+    assert_equal "50,00 €", loans.last["remaining"]
+  end
+
   test "CRM : rendez-vous proches et priorites hautes sans nouvelles ; absent le week-end" do
     soon = Contact.create!(first_name: "Rdv")
     soon.create_crm_profile!(next_appointment_on: MONDAY + 3)

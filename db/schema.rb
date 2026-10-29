@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_29_155213) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_29_161052) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -687,6 +687,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_155213) do
     t.index ["document_id"], name: "index_letters_on_document_id"
   end
 
+  create_table "loans", force: :cascade do |t|
+    t.string "direction", null: false
+    t.string "kind", default: "object", null: false
+    t.bigint "contact_id"
+    t.string "person_name", null: false
+    t.string "item"
+    t.decimal "amount", precision: 10, scale: 2
+    t.decimal "repaid_amount", precision: 10, scale: 2
+    t.date "started_on", null: false
+    t.date "due_on"
+    t.date "returned_on"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_loans_on_contact_id"
+    t.index ["returned_on"], name: "index_loans_on_returned_on"
+  end
+
   create_table "mail_accounts", force: :cascade do |t|
     t.string "email", null: false
     t.string "provider", null: false
@@ -1237,6 +1255,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_155213) do
   add_foreign_key "invoices", "quotes"
   add_foreign_key "language_sessions", "languages"
   add_foreign_key "letters", "documents", on_delete: :nullify
+  add_foreign_key "loans", "contacts", on_delete: :nullify
   add_foreign_key "meetings", "documents", on_delete: :nullify
   add_foreign_key "project_contacts", "contacts"
   add_foreign_key "project_contacts", "projects"

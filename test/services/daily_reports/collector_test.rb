@@ -74,6 +74,18 @@ class DailyReports::CollectorTest < ActiveSupport::TestCase
                  insurances.first.slice("ref", "renews_in_days", "annual_premium"))
   end
 
+  test "garanties qui se terminent sous un mois" do
+    soon = Warranty.create!(name: "Lave-linge", store: "Darty", purchased_on: MONDAY - 700, ends_on: MONDAY + 12)
+    Warranty.create!(name: "Télévision", purchased_on: MONDAY - 100, ends_on: MONDAY + 45)
+    Warranty.create!(name: "Ancien grille-pain", purchased_on: MONDAY - 800, ends_on: MONDAY - 1)
+
+    warranties = collect["sections"]["warranties"]
+
+    assert_equal ["Lave-linge"], warranties.map { |w| w["name"] }
+    assert_equal({ "ref" => "Warranty##{soon.id}", "ends_in_days" => 12, "store" => "Darty" },
+                 warranties.first.slice("ref", "ends_in_days", "store"))
+  end
+
   test "CRM : rendez-vous proches et priorites hautes sans nouvelles ; absent le week-end" do
     soon = Contact.create!(first_name: "Rdv")
     soon.create_crm_profile!(next_appointment_on: MONDAY + 3)

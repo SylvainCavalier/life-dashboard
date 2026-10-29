@@ -23,7 +23,7 @@ module Alfred
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
       "SentinelSource" => :all, "SentinelWeek" => :all, "Subscription" => :all, "Task" => :all,
       "Trip" => :all, "TripItem" => :all, "TripPlan" => :all, "UsefulSite" => :all,
-      "VideoDownload" => :all, "VideoFolder" => :all, "VideoTranscript" => :all
+      "VideoDownload" => :all, "VideoFolder" => :all, "VideoTranscript" => :all, "Warranty" => :all
     }.freeze
 
     SYSTEM_FIELDS = %w[id created_at updated_at].freeze
@@ -38,7 +38,8 @@ module Alfred
       "DailyReport" => %w[text],
       "Insurance" => %w[next_renewal_on annual_premium],
       "Letter" => %w[body_text],
-      "Subscription" => %w[next_renewal_on]
+      "Subscription" => %w[next_renewal_on],
+      "Warranty" => %w[status days_left]
     }.freeze
 
     # Ce que les colonnes ne disent pas : a quelle partie de l'interface correspond
@@ -96,7 +97,14 @@ module Alfred
                   "(paragraphes séparés par une ligne vide, formules d'appel et de politesse comprises), jamais dans body " \
                   "(JSON de l'éditeur). sender / recipient : blocs d'adresse multilignes ; sender, place et signatory " \
                   "absents à la création sont repris de PersonalProfile. mention = mode d'envoi (« Lettre recommandée avec accusé de réception »...). " \
-                  "Le PDF se télécharge ou se range dans les documents depuis la page (/letters/ID)."
+                  "Le PDF se télécharge ou se range dans les documents depuis la page (/letters/ID).",
+      "Warranty" => "Page Garanties (/warranties) : la garantie d'un objet acheté. name = l'objet, brand, model_reference, " \
+                    "category electromenager/informatique/telephonie/audio_video/photo/jeux_video/mobilier/bricolage_jardin/" \
+                    "vehicule/sport/mode/autre, purchased_on = date d'achat, store = vendeur, order_number, serial_number, " \
+                    "price, duration_months = durée de la garantie, ends_on = fin de garantie (fait foi, extension comprise ; " \
+                    "calculée depuis purchased_on + duration_months si tu ne la donnes pas), support_contact = SAV, notes. " \
+                    "status (calculé) active/expiring (fin sous 60 jours)/expired, days_left = jours restants. La facture " \
+                    "jointe se dépose depuis la page ; son texte est dans le corpus (search_corpus). Voir la section « Garanties »."
     }.freeze
 
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
@@ -133,7 +141,8 @@ module Alfred
       "Project" => :all, "ProjectLink" => :all, "ProjectSkill" => :all, "Company" => :all, "CrmProfile" => :all,
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all,
-      "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all
+      "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
+      "Warranty" => :all
     }.freeze
 
     module_function

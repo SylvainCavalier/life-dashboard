@@ -40,6 +40,9 @@ module Alfred
                        path: ->(r) { "/insurances/#{r.id}" }, text: ->(r) { Alfred::Corpus.insurance_text(r) } },
       "InsuranceCoverage" => { parent: :insurance },
       "InsuredItem" => { parent: :insurance },
+      # La facture jointe est indexee comme le fichier d'un Document (OCR pour une photo).
+      "Warranty" => { title: "Garantie", label: ->(r) { [r.name, r.brand].compact_blank.join(" - ") }, date: :purchased_on,
+                      file: :receipt, path: ->(_) { "/warranties" }, text: ->(r) { Alfred::Corpus.warranty_text(r) } },
       "Company" => { title: "Entreprise", label: ->(r) { r.trade_name.presence || "Entreprise ##{r.id}" }, path: ->(r) { "/companies/#{r.id}" } },
       "Client" => { title: "Client", label: ->(r) { r.name }, path: ->(r) { "/companies/#{r.company_id}" } },
       "Invoice" => { title: "Facture", label: ->(r) { "Facture #{r.number} - #{r.client_name}" }, date: :issue_date,
@@ -113,6 +116,17 @@ module Alfred
       parts << "Biens et personnes assures :\n#{items.join("\n")}" if items.any?
       parts << "Garanties :\n#{coverages.join("\n")}" if coverages.any?
       parts.join("\n").presence
+    end
+
+    # Dates en clair : une fiche ne dit pas « expiree » (elle n'est pas reindexee quand le
+    # temps passe), Alfred compare lui-meme ends_on a la date du jour.
+    def warranty_text(warranty)
+      [
+        "Catégorie : #{Warranty::CATEGORY_LABELS[warranty.category]}",
+        warranty.purchased_on && "Achat le #{warranty.purchased_on.strftime('%d/%m/%Y')}#{" chez #{warranty.store}" if warranty.store.present?}",
+        warranty.ends_on && "Fin de garantie : #{warranty.ends_on.strftime('%d/%m/%Y')}" \
+                            "#{" (garantie de #{warranty.duration_months} mois)" if warranty.duration_months}"
+      ].compact.join("\n")
     end
 
     # Modeles qui ont leur propre fiche dans le corpus (les enfants n'en ont pas).

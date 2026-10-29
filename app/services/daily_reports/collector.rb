@@ -21,6 +21,8 @@ module DailyReports
     SUBSCRIPTION_DAYS = 30
     # Echeance principale d'une assurance : deux mois, le preavis de resiliation le plus courant.
     INSURANCE_DAYS = 60
+    # Garantie d'un objet qui se termine : le dernier mois pour faire jouer le SAV.
+    WARRANTY_DAYS = 30
     TASK_DAYS = 7
     # Entrees du journal de bord d'un projet jointes a l'instantane.
     PROJECT_JOURNAL_DAYS = 30
@@ -47,6 +49,7 @@ module DailyReports
         "birthdays" => birthdays,
         "subscriptions" => subscriptions,
         "insurances" => insurances,
+        "warranties" => warranties,
         "tasks" => tasks
       }
       unless @weekend
@@ -198,6 +201,20 @@ module DailyReports
           "annual_premium" => (insurance.annual_premium && "#{format('%.2f', insurance.annual_premium).tr('.', ',')} € / an"),
           "renews_on" => renewal.iso8601,
           "renews_in_days" => days_until(renewal)
+        }.compact
+      end
+    end
+
+    # Garanties d'objets qui se terminent sous WARRANTY_DAYS jours.
+    def warranties
+      Warranty.where(ends_on: @date..(@date + WARRANTY_DAYS)).ordered.map do |warranty|
+        {
+          "ref" => ref_for(warranty),
+          "name" => warranty.name,
+          "brand" => warranty.brand.presence,
+          "store" => warranty.store.presence,
+          "ends_on" => warranty.ends_on.iso8601,
+          "ends_in_days" => days_until(warranty.ends_on)
         }.compact
       end
     end

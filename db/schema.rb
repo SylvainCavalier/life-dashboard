@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_29_154315) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_29_155213) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1193,6 +1193,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_154315) do
     t.index ["document_id"], name: "index_video_transcripts_on_document_id"
     t.index ["user_id"], name: "index_video_transcripts_on_user_id"
     t.index ["video_download_id"], name: "index_video_transcripts_on_video_download_id"
+  end
+
+  create_table "warranties", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "brand"
+    t.string "model_reference"
+    t.string "category", default: "autre", null: false
+    t.string "serial_number"
+    t.string "store"
+    t.string "order_number"
+    t.date "purchased_on", null: false
+    t.decimal "price", precision: 10, scale: 2
+    t.integer "duration_months"
+    t.date "ends_on", null: false
+    t.string "support_contact"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ends_on"], name: "index_warranties_on_ends_on"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

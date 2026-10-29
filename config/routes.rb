@@ -133,6 +133,8 @@ Rails.application.routes.draw do
     resources :insurance_imports, only: [:create, :show, :destroy] do
       member { post :confirm }
     end
+    # Module Garanties : objets achetes, fin de garantie, facture jointe (multipart)
+    resources :warranties, only: [:index, :create, :update, :destroy]
     resources :mail_accounts, only: [:index, :create, :update, :destroy]
     # Module Projets : competences a apprendre, liens, journal et contacts imbriques ; la to-do list et les
     # documents d'un projet passent par /tasks et /documents avec ?project_id=

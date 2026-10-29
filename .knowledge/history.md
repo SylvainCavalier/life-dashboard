@@ -5,6 +5,14 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-29 — Gestionnaire de garanties
+- [feat] Nouvelle page **Garanties** (`/warranties`, tuile sur le dashboard) : objets achetés avec marque, référence, catégorie, n° de série, vendeur, n° de commande, prix, contact SAV et notes ; création, modification et suppression ; synthèse (objets sous garantie, valeur couverte, prochaine fin de garantie), filtres par statut (sous garantie, expirent bientôt, expirées) et catégorie, recherche, barre de temps écoulé
+- [feat] Fin de garantie calculée depuis la date d'achat et la durée (boutons 6 mois à 5 ans, rappel de la garantie légale), modifiable à la main pour une extension ; signalée en orange sous 60 jours
+- [feat] Facture / preuve d'achat jointe (PDF ou photo, 10 Mo), envoyée en multipart avec le formulaire, consultable et retirable
+- [db] Table `warranties` (`ends_on` indexée, obligatoire) et pièce jointe Active Storage `receipt`
+- [feat] Alfred (dashboard) : `Warranty` lisible (avec `status` et `days_left`) et modifiable sur proposition, fiche RAG et texte de la facture dans le corpus, section « Garanties » du prompt (encore sous garantie ?, préparer un recours au SAV auprès du vendeur, enregistrer un achat) ; le rapport du matin signale les garanties qui se terminent sous 30 jours
+- [chore] Skills locales d'Alfred (`query.rb`, `write.rb`, `SKILL.md`, `alfred.md`) mises à jour ; tests (modèle, API, propositions d'Alfred, rapport du matin) et documentation dans `CLAUDE.md`
+
 ### 2026-10-29 — Gestionnaire d'assurances et import IA
 - [feat] Nouvelle page **Assurances** (`/insurances`, tuile sur le dashboard) : liste des contrats filtrable par type et par recherche, avec synthèse (contrats en cours, cotisations annuelles et mensuelles, prochaine échéance en orange sous 60 jours) ; création, modification et suppression d'un contrat
 - [feat] Page d'un contrat (`/insurances/:id`) : assureur, n° de contrat, dates, échéance principale, cotisation, conditions importantes, n° sinistre, conseiller, espace client ; gestion en place des **garanties** (couverte ou exclue, plafond, franchise, conditions, suggestions selon le type de contrat), de **ce qui est assuré** (logement lié à un bien de la page Immobilier, véhicule, personne, animal, objet) et des **documents** du contrat

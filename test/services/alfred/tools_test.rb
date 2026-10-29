@@ -82,6 +82,19 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal [contact], project.contacts.to_a
   end
 
+  test "propose_write : une garantie dont la fin se deduit de la duree" do
+    _, error = run_tool("propose_write", { "operation" => "create", "model" => "Warranty", "summary" => "Garantie de l'aspirateur",
+                                           "attributes" => { "name" => "Aspirateur", "brand" => "Dyson", "category" => "electromenager",
+                                                             "store" => "Darty", "purchased_on" => "2026-10-28", "duration_months" => 24 } })
+    assert_not error
+
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+
+    assert_equal Date.new(2028, 10, 28), Warranty.find_by!(name: "Aspirateur").ends_on
+    result, = run_tool("query_records", { "model" => "Warranty" })
+    assert_equal "active", result[:records].first["status"]
+  end
+
   test "propose_write refuse un champ hors liste blanche et un modele interdit" do
     result, error = run_tool("propose_write", { "operation" => "create", "model" => "Note", "summary" => "x",
                                                 "attributes" => { "title" => "x", "created_at" => "2020-01-01" } })

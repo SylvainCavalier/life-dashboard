@@ -99,6 +99,10 @@
               <option :value="null">-- Bien non lié --</option>
               <option v-for="p in properties" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
+            <select v-if="item.kind === 'vehicule'" v-model="item.vehicle_id" class="border rounded-lg px-2 py-1 text-sm" title="Véhicule de la page Véhicules">
+              <option :value="null">-- Véhicule non lié --</option>
+              <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.name }}</option>
+            </select>
           </div>
           <p v-if="item.keep && (item.description || item.value)" class="text-xs text-gray-500 mt-1 pl-7">
             {{ item.description }}<template v-if="item.value"> · valeur {{ formatEuros(item.value) }}</template>
@@ -150,6 +154,7 @@ const coverages = ref([])
 const items = ref([])
 const documentForm = reactive({ name: '', category: 'other' })
 const properties = ref([])
+const vehicles = ref([])
 const saving = ref(false)
 const errors = ref([])
 let pollTimer = null
@@ -217,7 +222,7 @@ const confirm = async (insurance) => {
     const created = await post(`/insurance_imports/${importId.value}/confirm`, {
       insurance,
       coverages: keptCoverages.value.map(c => pick(c, ['name', 'included', 'ceiling', 'deductible', 'conditions'])),
-      items: keptItems.value.map(i => pick(i, ['name', 'kind', 'description', 'value', 'property_id'])),
+      items: keptItems.value.map(i => pick(i, ['name', 'kind', 'description', 'value', 'property_id', 'vehicle_id'])),
       document: { ...documentForm },
     })
     importId.value = null
@@ -258,6 +263,11 @@ onMounted(async () => {
     properties.value = await get('/properties') || []
   } catch {
     properties.value = []
+  }
+  try {
+    vehicles.value = await get('/vehicles') || []
+  } catch {
+    vehicles.value = []
   }
 })
 

@@ -53,7 +53,7 @@ module Api
     def confirm_params
       @confirm_params ||= params.permit(
         coverages: [:name, :included, :ceiling, :deductible, :conditions],
-        items: [:name, :kind, :description, :value, :property_id],
+        items: [:name, :kind, :description, :value, :property_id, :vehicle_id],
         document: [:name, :category]
       )
     end

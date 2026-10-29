@@ -25,6 +25,8 @@ module DailyReports
     WARRANTY_DAYS = 30
     # Pret dont le retour prevu tombe dans ce delai (ou est depasse) : a reclamer ou a rendre.
     LOAN_DAYS = Loan::DUE_SOON_DAYS
+    VEHICLE_DAYS = Vehicle::DUE_SOON_DAYS
+    VEHICLE_KM = Vehicle::DUE_SOON_KM
     TASK_DAYS = 7
     # Entrees du journal de bord d'un projet jointes a l'instantane.
     PROJECT_JOURNAL_DAYS = 30
@@ -53,6 +55,7 @@ module DailyReports
         "insurances" => insurances,
         "warranties" => warranties,
         "loans" => loans,
+        "vehicles" => vehicles,
         "tasks" => tasks
       }
       unless @weekend
@@ -234,6 +237,31 @@ module DailyReports
           "started_on" => loan.started_on.iso8601,
           "due_on" => loan.due_on.iso8601,
           "due_in_days" => days_until(loan.due_on)
+        }.compact
+      end
+    end
+
+    # Vehicules en service dont le controle technique ou la revision est depasse ou tombe
+    # sous VEHICLE_DAYS jours (ou VEHICLE_KM kilometres pour la revision).
+    def vehicles
+      Vehicle.where(status: "active").includes(:vehicle_interventions).order(:name).filter_map do |vehicle|
+        inspection = vehicle.next_inspection_on
+        inspection = nil unless inspection && days_until(inspection) <= VEHICLE_DAYS
+        service = vehicle.next_service_on
+        km_left = vehicle.service_mileage_left
+        service_due = (service && days_until(service) <= VEHICLE_DAYS) || (km_left && km_left <= VEHICLE_KM)
+        next unless inspection || service_due
+
+        {
+          "ref" => ref_for(vehicle),
+          "name" => vehicle.name,
+          "registration" => vehicle.registration_number,
+          "inspection_on" => inspection&.iso8601,
+          "inspection_in_days" => (inspection && days_until(inspection)),
+          "service_on" => (service&.iso8601 if service_due),
+          "service_in_days" => (service && days_until(service) if service_due),
+          "service_km_left" => (km_left if service_due),
+          "mileage" => vehicle.mileage
         }.compact
       end
     end

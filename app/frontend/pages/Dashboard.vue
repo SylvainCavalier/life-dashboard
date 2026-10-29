@@ -136,6 +136,7 @@ const counts = ref({
   subscriptions: 0,
   insurances: 0,
   warranties: 0,
+  vehicles: 0,
   loans: 0,
   shopping: 0,
   notes: 0,
@@ -160,6 +161,8 @@ const fetchCounts = async () => {
     { key: 'subscriptions', resource: 'subscriptions' },
     { key: 'insurances', resource: 'insurances' },
     { key: 'warranties', resource: 'warranties' },
+    // Vehicules en service : les vendus restent consultables sur la page.
+    { key: 'vehicles', resource: 'vehicles', count: (list) => list.filter(v => v.status !== 'vendu').length },
     // Prets en cours seulement : les prets rendus restent dans l'historique de la page.
     { key: 'loans', resource: 'loans', count: (list) => list.filter(l => l.status !== 'returned').length },
     // Articles restant a acheter : ceux deja dans le caddie ne comptent plus.
@@ -290,6 +293,7 @@ const modules = computed(() => [
   { name: 'Sante', icon: '🏥', subtitle: 'Infos & documents', to: '/health' },
   { name: 'Abonnements', icon: '🔄', subtitle: `${counts.value.subscriptions} abonnement${counts.value.subscriptions > 1 ? 's' : ''}`, to: '/subscriptions' },
   { name: 'Assurances', icon: '🛡️', subtitle: `${counts.value.insurances} contrat${counts.value.insurances > 1 ? 's' : ''}`, to: '/insurances' },
+  { name: 'Vehicules', icon: '🚗', subtitle: `${counts.value.vehicles} véhicule${counts.value.vehicles > 1 ? 's' : ''}`, to: '/vehicles' },
   { name: 'Garanties', icon: '🧾', subtitle: `${counts.value.warranties} garantie${counts.value.warranties > 1 ? 's' : ''}`, to: '/warranties' },
   { name: 'Courses', icon: '🛒', subtitle: shoppingSubtitle.value, to: '/shopping' },
   { name: 'Prets', icon: '🤝', subtitle: `${counts.value.loans} prêt${counts.value.loans > 1 ? 's' : ''} en cours`, to: '/loans' },

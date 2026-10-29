@@ -85,7 +85,7 @@ module InsuranceImports
 
     # Champs bruts du modele -> brouillon { insurance:, coverages:, items:, document: }
     # dont chaque valeur passe les validations des modeles.
-    def self.normalize(fields, properties: Property.all.to_a)
+    def self.normalize(fields, properties: Property.all.to_a, vehicles: Vehicle.all.to_a)
       fields = fields.to_h.stringify_keys
       str = ->(key) { fields[key].to_s.strip }
       type = str.("insurance_type").presence_in(Insurance::TYPES) || "autre"
@@ -127,7 +127,8 @@ module InsuranceImports
         kind = item["kind"].to_s.presence_in(InsuredItem::KINDS) || "autre"
         description = item["description"].to_s.strip
         { name: name, kind: kind, description: description, value: parse_amount(item["value"].to_s),
-          property_id: (guess_property(properties, "#{name} #{description}") if kind == "logement") }
+          property_id: (guess_property(properties, "#{name} #{description}") if kind == "logement"),
+          vehicle_id: (guess_vehicle(vehicles, "#{name} #{description}") if kind == "vehicule") }
       end
 
       document = {
@@ -177,6 +178,19 @@ module InsuranceImports
       return matches.first.id if matches.size == 1
 
       properties.first.id if properties.size == 1
+    end
+
+    # Vehicule de la page Vehicules dont l'immatriculation figure dans le texte (tirets et
+    # espaces ignores) ; a defaut, le seul vehicule enregistre.
+    def self.guess_vehicle(vehicles, text)
+      return nil if vehicles.empty?
+
+      plate = ->(value) { value.to_s.upcase.gsub(/[^A-Z0-9]/, "") }
+      folded = plate.(text)
+      matches = vehicles.select { |vehicle| vehicle.registration_number.present? && folded.include?(plate.(vehicle.registration_number)) }
+      return matches.first.id if matches.size == 1
+
+      vehicles.first.id if vehicles.size == 1
     end
 
     private

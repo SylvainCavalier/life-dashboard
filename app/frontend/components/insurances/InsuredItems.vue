@@ -20,7 +20,14 @@
             <option v-for="p in properties" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
         </div>
-        <div :class="form.kind === 'logement' ? 'sm:col-span-2' : ''">
+        <div v-if="form.kind === 'vehicule'">
+          <label class="block text-xs text-gray-500 mb-1">Véhicule (page Véhicules)</label>
+          <select v-model="form.vehicle_id" @change="onVehicleSelected" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+            <option :value="null">-- Aucun --</option>
+            <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.name }}</option>
+          </select>
+        </div>
+        <div :class="['logement', 'vehicule'].includes(form.kind) ? 'sm:col-span-2' : ''">
           <label class="block text-xs text-gray-500 mb-1">Nom *</label>
           <input v-model="form.name" type="text" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" :placeholder="placeholder" />
         </div>
@@ -52,6 +59,9 @@
             </p>
             <p v-if="item.property_name" class="text-xs mt-0.5">
               <router-link to="/properties" class="text-blue-600 hover:text-blue-800">Bien : {{ item.property_name }}</router-link>
+            </p>
+            <p v-if="item.vehicle_name" class="text-xs mt-0.5">
+              <router-link :to="`/vehicles/${item.vehicle_id}`" class="text-blue-600 hover:text-blue-800">Véhicule : {{ item.vehicle_name }}</router-link>
             </p>
             <p v-if="item.value" class="text-xs text-gray-500 mt-0.5">Valeur déclarée : {{ formatEuros(item.value) }}</p>
             <p v-if="item.description" class="text-xs text-gray-600 mt-1 whitespace-pre-line">{{ item.description }}</p>
@@ -85,11 +95,12 @@ const DEFAULT_KINDS = { habitation: 'logement', auto: 'vehicule', moto: 'vehicul
 
 const items = ref([...props.initial])
 const properties = ref([])
+const vehicles = ref([])
 const formOpen = ref(false)
 const editingId = ref(null)
 const saving = ref(false)
 const error = ref('')
-const blank = () => ({ kind: DEFAULT_KINDS[props.insuranceType] || 'autre', property_id: null, name: '', value: '', description: '' })
+const blank = () => ({ kind: DEFAULT_KINDS[props.insuranceType] || 'autre', property_id: null, vehicle_id: null, name: '', value: '', description: '' })
 const form = reactive(blank())
 
 const placeholder = computed(() => ({
@@ -107,6 +118,7 @@ const openForm = (item = null) => {
   Object.assign(form, blank(), item ? {
     kind: item.kind,
     property_id: item.property_id,
+    vehicle_id: item.vehicle_id,
     name: item.name,
     value: item.value || '',
     description: item.description || '',
@@ -120,10 +132,15 @@ const closeForm = () => {
   editingId.value = null
 }
 
-// Le nom du bien choisi pre-remplit le nom, s'il est vide.
+// Le nom du bien ou du vehicule choisi pre-remplit le nom, s'il est vide.
 const onPropertySelected = () => {
   const property = properties.value.find(p => p.id === form.property_id)
   if (property && !form.name) form.name = property.name
+}
+
+const onVehicleSelected = () => {
+  const vehicle = vehicles.value.find(v => v.id === form.vehicle_id)
+  if (vehicle && !form.name) form.name = [vehicle.name, vehicle.registration_number].filter(Boolean).join(' ')
 }
 
 const save = async () => {
@@ -132,6 +149,7 @@ const save = async () => {
   const attributes = {
     ...form,
     property_id: form.kind === 'logement' ? form.property_id : null,
+    vehicle_id: form.kind === 'vehicule' ? form.vehicle_id : null,
     value: form.value === '' ? null : form.value,
   }
   try {
@@ -166,6 +184,11 @@ onMounted(async () => {
     properties.value = await get('/properties') || []
   } catch {
     properties.value = []
+  }
+  try {
+    vehicles.value = await get('/vehicles') || []
+  } catch {
+    vehicles.value = []
   }
 })
 </script>

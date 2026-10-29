@@ -24,7 +24,8 @@ module Alfred
       "SentinelSource" => :all, "SentinelWeek" => :all, "ShoppingItem" => :all, "ShoppingPreset" => :all,
       "Subscription" => :all, "Task" => :all,
       "Trip" => :all, "TripItem" => :all, "TripPlan" => :all, "UsefulSite" => :all,
-      "VideoDownload" => :all, "VideoFolder" => :all, "VideoTranscript" => :all, "Warranty" => :all
+      "VideoDownload" => :all, "VideoFolder" => :all, "VideoTranscript" => :all, "Vehicle" => :all, "VehicleIntervention" => :all,
+      "Warranty" => :all
     }.freeze
 
     SYSTEM_FIELDS = %w[id created_at updated_at].freeze
@@ -41,6 +42,7 @@ module Alfred
       "Letter" => %w[body_text],
       "Loan" => %w[status days_until_due remaining_amount],
       "Subscription" => %w[next_renewal_on],
+      "Vehicle" => %w[next_inspection_on inspection_status next_service_on next_service_mileage service_status],
       "Warranty" => %w[status days_left]
     }.freeze
 
@@ -93,7 +95,8 @@ module Alfred
                              "responsabilité civile...), included faux = garantie exclue ou non souscrite, ceiling = plafond, " \
                              "deductible = franchise, conditions = conditions et exclusions propres à la garantie (texte libre).",
       "InsuredItem" => "Ce que couvre une Insurance (insurance_id) : kind logement/vehicule/personne/animal/objet/autre, " \
-                       "name, description, value, property_id = le bien de la page Immobilier quand c'est un logement.",
+                       "name, description, value, property_id = le bien de la page Immobilier quand c'est un logement, " \
+                       "vehicle_id = le véhicule de la page Véhicules quand c'est un véhicule.",
       "Letter" => "Page Courrier : lettres mises en page (brouillons), voir la section « Courriers ». Le contenu se lit et " \
                   "s'écrit dans body_text, en texte brut " \
                   "(paragraphes séparés par une ligne vide, formules d'appel et de politesse comprises), jamais dans body " \
@@ -114,6 +117,24 @@ module Alfred
                 "due_on = retour prévu (facultatif), returned_on = rendu ou remboursé (vide = en cours ; un prêt d'argent " \
                 "remboursé en entier se clôt seul). status (calculé) ongoing/due_soon (retour sous 7 jours)/overdue/returned, " \
                 "days_until_due, remaining_amount = reste dû. Voir la section « Prêts ».",
+      "Vehicle" => "Page Véhicules (/vehicles/ID) : un véhicule de Sylvain. vehicle_type voiture/moto/scooter/utilitaire/" \
+                   "camping_car/quad/velo_electrique/autre, status active/vendu/hors_service, brand, model, version, year, " \
+                   "registration_number = immatriculation, vin = numéro de série, first_registration_on = première mise en " \
+                   "circulation (date de la carte grise), fuel essence/diesel/hybride/hybride_rechargeable/electrique/gpl/e85/autre, " \
+                   "fiscal_power = chevaux fiscaux, power_hp = puissance en ch, engine_displacement = cylindrée en cm3, " \
+                   "tire_size = dimensions des pneus, oil_type = huile préconisée, mileage = dernier kilométrage relevé (mileage_on " \
+                   "= date du relevé), technical_inspection_due_on = prochain contrôle technique, service_interval_km / " \
+                   "service_interval_months = périodicité de la révision. Calculés : next_inspection_on (prochain contrôle, déduit " \
+                   "de la mise en circulation si aucun n'est consigné), next_service_on / next_service_mileage (prochaine révision " \
+                   "depuis la dernière intervention entretien), inspection_status / service_status ok/due_soon/overdue. " \
+                   "Carnet d'entretien : VehicleIntervention ; documents : Document (domaine vehicles, vehicle_id) ; contrats : " \
+                   "InsuredItem (vehicle_id) -> Insurance. Voir la section « Véhicules ».",
+      "VehicleIntervention" => "Carnet d'entretien d'un Vehicle (vehicle_id) : occurred_on, kind entretien/controle_technique/" \
+                               "reparation/pneus/carrosserie/sinistre/autre, title, mileage = kilométrage au moment de " \
+                               "l'intervention, cost, garage, description = travaux effectués, outcome (contrôle technique " \
+                               "seulement) favorable/contre_visite/critique. Enregistrer une intervention met à jour le " \
+                               "kilométrage du véhicule s'il est plus élevé, et un contrôle technique avec résultat pose le " \
+                               "prochain (technical_inspection_due_on) : ne le propose pas en plus.",
       "ShoppingItem" => "Page Courses (/shopping) : la liste de courses, unique. name = l'article, checked_at = mis dans " \
                         "le caddie (coché en magasin). Ne s'écrit pas par propose_write : ajouter, retirer ou vider la " \
                         "liste passe par propose_shopping. Voir la section « Courses ».",
@@ -157,7 +178,8 @@ module Alfred
       "CvExperience" => :all, "CvFormation" => :all, "CvInterest" => :all, "CvPitch" => :all, "CvSetting" => :all, "CvSkill" => :all,
       "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all,
       "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
-      "Warranty" => :all, "Loan" => :all, "ShoppingPreset" => :all
+      "Warranty" => :all, "Loan" => :all, "ShoppingPreset" => :all,
+      "Vehicle" => :all, "VehicleIntervention" => :all
     }.freeze
 
     module_function

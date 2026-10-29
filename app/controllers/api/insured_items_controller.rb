@@ -37,7 +37,7 @@ module Api
     end
 
     def item_params
-      params.require(:insured_item).permit(:name, :kind, :description, :value, :property_id)
+      params.require(:insured_item).permit(:name, :kind, :description, :value, :property_id, :vehicle_id)
     end
   end
 end

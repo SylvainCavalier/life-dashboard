@@ -13,6 +13,7 @@
 #  company_id    :bigint
 #  insurance_id  :bigint
 #  project_id    :bigint
+#  vehicle_id    :bigint
 #
 # Indexes
 #
@@ -21,22 +22,25 @@
 #  index_documents_on_domain_and_category  (domain,category)
 #  index_documents_on_insurance_id         (insurance_id)
 #  index_documents_on_project_id           (project_id)
+#  index_documents_on_vehicle_id           (vehicle_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (company_id => companies.id)
 #  fk_rails_...  (insurance_id => insurances.id) ON DELETE => nullify
 #  fk_rails_...  (project_id => projects.id)
+#  fk_rails_...  (vehicle_id => vehicles.id) ON DELETE => nullify
 #
 class Document < ApplicationRecord
   belongs_to :company, optional: true
   belongs_to :project, optional: true
   belongs_to :insurance, optional: true
+  belongs_to :vehicle, optional: true
   has_one_attached :file
 
   DOMAINS = %w[
     health real_estate taxes companies general
-    education invoices banking civil_status work leisure projects meetings transcriptions letters insurance
+    education invoices banking civil_status work leisure projects meetings transcriptions letters insurance vehicles
   ].freeze
 
   CATEGORIES = {
@@ -59,7 +63,9 @@ class Document < ApplicationRecord
     # Courriers ; ceux mis en page par la page Courrier (Letter) arrivent en `sent`
     "letters" => %w[sent received other],
     # Contrats de la page Assurances (insurance_id) : general_terms = conditions generales
-    "insurance" => %w[special_terms general_terms certificate schedule claim correspondence termination other]
+    "insurance" => %w[special_terms general_terms certificate schedule claim correspondence termination other],
+    # Page Vehicules (vehicle_id) : registration = carte grise, inspection = proces-verbal de controle technique
+    "vehicles" => %w[registration inspection maintenance repair purchase insurance fine manual other]
   }.freeze
 
   validates :name, presence: true

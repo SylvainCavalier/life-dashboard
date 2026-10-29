@@ -86,6 +86,23 @@ class DailyReports::CollectorTest < ActiveSupport::TestCase
                  warranties.first.slice("ref", "ends_in_days", "store"))
   end
 
+  test "vehicules dont le controle technique ou la revision approche" do
+    ct = Vehicle.create!(name: "Clio", vehicle_type: "voiture", registration_number: "AB-123-CD", technical_inspection_due_on: MONDAY + 20)
+    service = Vehicle.create!(name: "Bonneville", vehicle_type: "moto", service_interval_km: 6000, mileage: 11_500,
+                              technical_inspection_due_on: MONDAY + 400)
+    service.vehicle_interventions.create!(occurred_on: MONDAY - 90, kind: "entretien", mileage: 6000)
+    Vehicle.create!(name: "Lointaine", vehicle_type: "voiture", technical_inspection_due_on: MONDAY + 200)
+    Vehicle.create!(name: "Vendue", vehicle_type: "voiture", status: "vendu", technical_inspection_due_on: MONDAY - 5)
+
+    vehicles = collect["sections"]["vehicles"]
+
+    assert_equal %w[Bonneville Clio], vehicles.map { |v| v["name"] }
+    assert_equal({ "ref" => "Vehicle##{ct.id}", "inspection_in_days" => 20, "registration" => "AB-123-CD" },
+                 vehicles.last.slice("ref", "inspection_in_days", "registration"))
+    assert_equal 500, vehicles.first["service_km_left"]
+    assert_nil vehicles.first["inspection_on"]
+  end
+
   test "prets dont le retour est depasse ou proche" do
     late = Loan.create!(direction: "lent", kind: "object", person_name: "Paul", item: "Perceuse",
                         started_on: MONDAY - 60, due_on: MONDAY - 3)

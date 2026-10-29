@@ -135,6 +135,11 @@ Rails.application.routes.draw do
     end
     # Module Garanties : objets achetes, fin de garantie, facture jointe (multipart)
     resources :warranties, only: [:index, :create, :update, :destroy]
+    # Module Vehicules : carnet d'entretien imbrique ; les documents d'un vehicule passent par
+    # /documents avec ?vehicle_id= (domaine vehicles), ses assurances par InsuredItem#vehicle_id
+    resources :vehicles, only: [:index, :show, :create, :update, :destroy] do
+      resources :vehicle_interventions, only: [:create, :update, :destroy]
+    end
     # Module Prets : objets et argent pretes ou empruntes, lies ou non a un contact
     resources :loans, only: [:index, :create, :update, :destroy]
     # Module Courses : une liste unique, videe apres les courses, et les cartes d'articles habituels

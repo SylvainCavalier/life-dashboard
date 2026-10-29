@@ -95,6 +95,21 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal "active", result[:records].first["status"]
   end
 
+  test "propose_write : un controle technique consigne repousse l'echeance du vehicule" do
+    vehicle = Vehicle.create!(name: "Clio", vehicle_type: "voiture", mileage: 60_000)
+    _, error = run_tool("propose_write", { "operation" => "create", "model" => "VehicleIntervention", "summary" => "CT de la Clio",
+                                           "attributes" => { "vehicle_id" => vehicle.id, "occurred_on" => "2026-10-20",
+                                                             "kind" => "controle_technique", "title" => "Contrôle technique",
+                                                             "outcome" => "favorable", "mileage" => 61_500, "cost" => 79 } })
+    assert_not error
+
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+
+    result, = run_tool("query_records", { "model" => "Vehicle" })
+    assert_equal "2028-10-20", result[:records].first["next_inspection_on"].to_s
+    assert_equal 61_500, vehicle.reload.mileage
+  end
+
   test "propose_write : un pret a un contact, puis son retour" do
     contact = Contact.create!(first_name: "Paul", last_name: "Reboh")
     _, error = run_tool("propose_write", { "operation" => "create", "model" => "Loan", "summary" => "Perceuse prêtée à Paul",

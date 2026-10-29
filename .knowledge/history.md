@@ -5,6 +5,15 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-29 — Gestionnaire de véhicules
+- [feat] Nouvelle page **Véhicules** (`/vehicles`, tuile sur le dashboard) : voitures, motos, scooters, utilitaires... avec caractéristiques (marque, modèle, version, immatriculation, VIN, 1re mise en circulation, énergie, puissances, cylindrée, pneus, huile), achat, vente, kilométrage mis à jour en un clic ; liste des prochaines échéances tous véhicules confondus
+- [feat] **Carnet d'entretien** par véhicule : révisions, contrôles techniques (résultat favorable / contre-visite / critique), réparations, pneus, carrosserie, sinistres, avec date, kilométrage, coût, garage et travaux ; filtre par nature et total des frais
+- [feat] Échéances calculées : prochain contrôle technique (premier déduit de la mise en circulation, puis 2 ans voiture / 3 ans deux-roues, contre-visite à 2 mois, recalculé à chaque contrôle consigné) et prochaine révision (dernier entretien + périodicité en km ou en mois), en orange à 30 jours / 1 000 km, en rouge une fois dépassées
+- [feat] Documents du véhicule (carte grise, contrôles techniques, factures...) rangés dans la bibliothèque, nouveau domaine « Véhicules » ; contrats d'assurance liés au véhicule (choix du véhicule dans les biens assurés d'un contrat et dans l'import IA, rattachement automatique par l'immatriculation)
+- [db] Tables `vehicles` et `vehicle_interventions`, `vehicle_id` sur `documents` et `insured_items` (nullify)
+- [feat] Alfred (dashboard) : `Vehicle` et `VehicleIntervention` lisibles (échéances et statuts calculés) et modifiables sur proposition, fiche RAG avec le carnet d'entretien, section « Véhicules » du prompt, rappel rattachable à un véhicule ; le rapport du matin signale contrôles techniques et révisions dépassés ou proches
+- [chore] Skills locales d'Alfred (`query.rb`, `write.rb`, `SKILL.md`, `alfred.md`) mises à jour ; tests (modèle, API, proposition d'Alfred, rapport du matin, import d'assurance) et documentation dans `CLAUDE.md`
+
 ### 2026-10-29 — Liste de courses
 - [feat] Nouvelle page **Courses** (`/shopping`, tuile sur le dashboard avec le nombre d'articles à acheter) : une liste unique, saisie d'un article (ou de plusieurs séparés par des virgules), case à cocher en magasin (articles passés dans « Dans le caddie »), retrait d'un article, bouton « Réinitialiser » qui vide tout ; pensée pour l'iPhone
 - [feat] Cartes d'**articles habituels** (emoji + nom) : un clic ajoute l'article, la carte passe en vert s'il est déjà dans la liste ; création depuis « Gérer » ou par l'étoile d'un article de la liste

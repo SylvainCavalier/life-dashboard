@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_29_163833) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -376,11 +376,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
     t.bigint "company_id"
     t.bigint "project_id"
     t.bigint "insurance_id"
+    t.bigint "vehicle_id"
     t.index ["company_id"], name: "index_documents_on_company_id"
     t.index ["domain", "category"], name: "index_documents_on_domain_and_category"
     t.index ["domain"], name: "index_documents_on_domain"
     t.index ["insurance_id"], name: "index_documents_on_insurance_id"
     t.index ["project_id"], name: "index_documents_on_project_id"
+    t.index ["vehicle_id"], name: "index_documents_on_vehicle_id"
   end
 
   create_table "embedding_caches", force: :cascade do |t|
@@ -592,8 +594,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
     t.decimal "value", precision: 12, scale: 2
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "vehicle_id"
     t.index ["insurance_id"], name: "index_insured_items_on_insurance_id"
     t.index ["property_id"], name: "index_insured_items_on_property_id"
+    t.index ["vehicle_id"], name: "index_insured_items_on_vehicle_id"
   end
 
   create_table "invoice_items", force: :cascade do |t|
@@ -1161,6 +1165,55 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
     t.index ["role"], name: "index_users_on_role"
   end
 
+  create_table "vehicle_interventions", force: :cascade do |t|
+    t.bigint "vehicle_id", null: false
+    t.date "occurred_on", null: false
+    t.string "kind", default: "entretien", null: false
+    t.string "title", null: false
+    t.integer "mileage"
+    t.decimal "cost", precision: 10, scale: 2
+    t.string "garage"
+    t.string "outcome"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["vehicle_id", "occurred_on"], name: "index_vehicle_interventions_on_vehicle_id_and_occurred_on"
+    t.index ["vehicle_id"], name: "index_vehicle_interventions_on_vehicle_id"
+  end
+
+  create_table "vehicles", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "vehicle_type", default: "voiture", null: false
+    t.string "status", default: "active", null: false
+    t.string "brand"
+    t.string "model"
+    t.string "version"
+    t.integer "year"
+    t.string "registration_number"
+    t.string "vin"
+    t.date "first_registration_on"
+    t.string "fuel"
+    t.integer "fiscal_power"
+    t.integer "power_hp"
+    t.integer "engine_displacement"
+    t.string "color"
+    t.string "tire_size"
+    t.string "oil_type"
+    t.date "purchased_on"
+    t.decimal "purchase_price", precision: 10, scale: 2
+    t.integer "purchase_mileage"
+    t.integer "mileage"
+    t.date "mileage_on"
+    t.date "technical_inspection_due_on"
+    t.integer "service_interval_km"
+    t.integer "service_interval_months"
+    t.date "sold_on"
+    t.decimal "sale_price", precision: 10, scale: 2
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "video_downloads", force: :cascade do |t|
     t.bigint "video_folder_id"
     t.string "url", null: false
@@ -1260,11 +1313,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
   add_foreign_key "documents", "companies"
   add_foreign_key "documents", "insurances", on_delete: :nullify
   add_foreign_key "documents", "projects"
+  add_foreign_key "documents", "vehicles", on_delete: :nullify
   add_foreign_key "events", "deadlines", on_delete: :nullify
   add_foreign_key "file_transfers", "users"
   add_foreign_key "insurance_coverages", "insurances"
   add_foreign_key "insured_items", "insurances"
   add_foreign_key "insured_items", "properties", on_delete: :nullify
+  add_foreign_key "insured_items", "vehicles", on_delete: :nullify
   add_foreign_key "invoice_items", "invoices"
   add_foreign_key "invoices", "clients"
   add_foreign_key "invoices", "companies"
@@ -1286,6 +1341,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_162154) do
   add_foreign_key "tasks", "projects"
   add_foreign_key "trip_items", "trips"
   add_foreign_key "trip_plans", "trips"
+  add_foreign_key "vehicle_interventions", "vehicles"
   add_foreign_key "video_downloads", "users"
   add_foreign_key "video_downloads", "video_folders"
   add_foreign_key "video_folders", "users"

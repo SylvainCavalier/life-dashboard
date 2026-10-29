@@ -45,6 +45,11 @@ module Alfred
                       file: :receipt, path: ->(_) { "/warranties" }, text: ->(r) { Alfred::Corpus.warranty_text(r) } },
       "Loan" => { title: "Pret", label: ->(r) { "#{r.label} - #{r.person_name}" }, date: :started_on,
                   path: ->(_) { "/loans" }, text: ->(r) { Alfred::Corpus.loan_text(r) } },
+      # Carnet d'entretien rendu en francais dans la fiche : c'est elle que retrouve « quand ai-je
+      # change les pneus de la moto ? ».
+      "Vehicle" => { title: "Vehicule", label: ->(r) { [r.name, r.registration_number].compact_blank.join(" - ") },
+                     path: ->(r) { "/vehicles/#{r.id}" }, text: ->(r) { Alfred::Corpus.vehicle_text(r) } },
+      "VehicleIntervention" => { parent: :vehicle },
       "Company" => { title: "Entreprise", label: ->(r) { r.trade_name.presence || "Entreprise ##{r.id}" }, path: ->(r) { "/companies/#{r.id}" } },
       "Client" => { title: "Client", label: ->(r) { r.name }, path: ->(r) { "/companies/#{r.company_id}" } },
       "Invoice" => { title: "Facture", label: ->(r) { "Facture #{r.number} - #{r.client_name}" }, date: :issue_date,
@@ -63,8 +68,8 @@ module Alfred
       "ProjectSkill" => { parent: :project },
       "ProjectLink" => { parent: :project },
       "Document" => { title: "Document", label: ->(r) { r.name }, date: :document_date, file: :file,
-                      path: ->(r) { r.insurance_id ? "/insurances/#{r.insurance_id}" : "/documents" },
-                      text: ->(r) { "Contrat d'assurance : #{r.insurance.name}" if r.insurance } },
+                      path: ->(r) { Alfred::Corpus.document_path(r) },
+                      text: ->(r) { Alfred::Corpus.document_text(r) } },
       "PersonalProfile" => { title: "Profil personnel", label: ->(_) { "Profil personnel (etat civil, coordonnees, famille)" }, path: ->(_) { "/profile" } },
       "HealthProfile" => { title: "Profil sante", label: ->(_) { "Profil sante" }, path: ->(_) { "/health" } },
       "CvExperience" => { title: "Experience (CV)", label: ->(r) { [r.title, r.company].compact_blank.join(" - ") }, path: ->(_) { "/cv" }, except: %w[position] },
@@ -104,6 +109,7 @@ module Alfred
     def insurance_text(insurance)
       items = insurance.insured_items.map do |item|
         details = [item.kind, item.property && "bien immobilier : #{item.property.name}",
+                   item.vehicle && "vehicule : #{item.vehicle.name}",
                    item.value && "valeur #{item.value.to_s('F')} EUR", item.description].compact_blank
         "- #{item.name}#{" (#{details.join(' ; ')})" if details.any?}"
       end
@@ -118,6 +124,40 @@ module Alfred
       parts << "Biens et personnes assures :\n#{items.join("\n")}" if items.any?
       parts << "Garanties :\n#{coverages.join("\n")}" if coverages.any?
       parts.join("\n").presence
+    end
+
+    # Documents rattaches a un contrat ou a un vehicule : leur page et leur rattachement.
+    def document_path(document)
+      if document.insurance_id then "/insurances/#{document.insurance_id}"
+      elsif document.vehicle_id then "/vehicles/#{document.vehicle_id}"
+      else "/documents"
+      end
+    end
+
+    def document_text(document)
+      [document.insurance && "Contrat d'assurance : #{document.insurance.name}",
+       document.vehicle && "Vehicule : #{document.vehicle.name}"].compact.join("\n").presence
+    end
+
+    # Type, contrats qui le couvrent et carnet d'entretien d'un vehicule. Comme pour les
+    # garanties, pas d'etat date-dependant (« controle en retard ») : la fiche n'est pas
+    # reindexee quand le temps passe, Alfred compare lui-meme les dates.
+    def vehicle_text(vehicle)
+      parts = ["Type : #{Vehicle::TYPE_LABELS[vehicle.vehicle_type]}"]
+      insurances = vehicle.insurances.map { |i| "- #{[i.name, i.insurer].compact_blank.join(' - ')} (#{i.status})" }
+      parts << "Assure par :\n#{insurances.join("\n")}" if insurances.any?
+      lines = vehicle.vehicle_interventions.map do |intervention|
+        details = [intervention.mileage && "#{intervention.mileage} km",
+                   intervention.cost && "#{intervention.cost.to_s('F')} EUR",
+                   intervention.garage.presence,
+                   intervention.outcome && "resultat : #{VehicleIntervention::OUTCOME_LABELS[intervention.outcome]}"].compact
+        line = "- #{intervention.occurred_on.strftime('%d/%m/%Y')} · #{VehicleIntervention::KIND_LABELS[intervention.kind]} : #{intervention.title}"
+        line += " (#{details.join(' ; ')})" if details.any?
+        line += " : #{intervention.description.squish}" if intervention.description.present?
+        line
+      end
+      parts << "Carnet d'entretien :\n#{lines.join("\n")}" if lines.any?
+      parts.join("\n")
     end
 
     # Dates en clair : une fiche ne dit pas « expiree » (elle n'est pas reindexee quand le

@@ -50,6 +50,14 @@ class InsuranceImports::ExtractorTest < ActiveSupport::TestCase
     assert_equal({ name: "Conditions particulières 2024", category: "special_terms" }, draft[:document])
   end
 
+  test "un vehicule assure se rattache par son immatriculation" do
+    clio = Vehicle.create!(name: "Clio", vehicle_type: "voiture", registration_number: "AB-123-CD")
+    Vehicle.create!(name: "Bonneville", vehicle_type: "moto", registration_number: "GH-456-IJ")
+    fields = FIELDS.merge("items" => [{ "name" => "Renault Clio", "kind" => "vehicule", "description" => "Immatriculée AB 123 CD", "value" => "" }])
+
+    assert_equal clio.id, InsuranceImports::Extractor.normalize(fields)[:items].first[:vehicle_id]
+  end
+
   test "valeurs hors liste ramenees a une valeur sure" do
     draft = InsuranceImports::Extractor.normalize({ "insurance_type" => "spatiale", "insurer" => "AXA",
                                                     "premium_frequency" => "weekly", "document_category" => "x" })

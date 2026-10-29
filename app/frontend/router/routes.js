@@ -77,6 +77,16 @@ export default [
     component: () => import('../pages/modules/InsuranceShowPage.vue'),
   },
   {
+    path: '/vehicles',
+    name: 'Vehicles',
+    component: () => import('../pages/modules/VehiclesPage.vue'),
+  },
+  {
+    path: '/vehicles/:id',
+    name: 'VehicleShow',
+    component: () => import('../pages/modules/VehicleShowPage.vue'),
+  },
+  {
     path: '/warranties',
     name: 'Warranties',
     component: () => import('../pages/modules/WarrantiesPage.vue'),

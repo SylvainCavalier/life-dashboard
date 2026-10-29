@@ -58,7 +58,7 @@ module Api
     private
 
     def set_insurance
-      @insurance = Insurance.includes(:documents, insured_items: :property).find(params[:id])
+      @insurance = Insurance.includes(:documents, insured_items: [:property, :vehicle]).find(params[:id])
     end
 
     def insurance_params

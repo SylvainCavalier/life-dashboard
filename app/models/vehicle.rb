@@ -34,6 +34,7 @@
 #  created_at                  :datetime         not null
 #  updated_at                  :datetime         not null
 #
+
 # Vehicule de Sylvain (page Vehicules) : caracteristiques, carnet d'entretien
 # (VehicleIntervention : entretiens, controles techniques, reparations...), documents
 # (Document, domaine `vehicles` : carte grise, factures, proces-verbaux) et assurances

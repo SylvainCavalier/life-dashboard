@@ -31,6 +31,7 @@
 #
 #  fk_rails_...  (document_id => documents.id) ON DELETE => nullify
 #
+
 # Rapport de reunion : un enregistrement audio (presentiel ou visio) devient une
 # transcription par intervenant (Voxtral), une synthese (Claude) et un PDF range
 # dans les documents (domaine "meetings"). L'audio n'est garde que le temps de la

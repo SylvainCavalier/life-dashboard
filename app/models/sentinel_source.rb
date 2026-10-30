@@ -23,6 +23,7 @@
 #
 #  index_sentinel_sources_on_domain_and_slug  (domain,slug) UNIQUE
 #
+
 # Source surveillée par Sentinelle, rattachée à un seul domaine de veille.
 # Une source se collecte par n'importe quelle combinaison de trois canaux :
 # un adaptateur dédié (API officielle ou scraper), un flux RSS/Atom, et la

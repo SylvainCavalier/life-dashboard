@@ -13,6 +13,7 @@
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
 #
+
 # Etat de la synchronisation Google Calendar, sur une seule ligne. Comme pour le
 # Downloader et la Sentinelle, la table fait foi : l'interface la sonde tant
 # qu'une synchronisation est en cours.

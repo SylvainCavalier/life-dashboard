@@ -177,6 +177,9 @@ npm install          # Node packages
 rails db:create db:migrate
 bundle exec annotaterb models  # Update model annotations after migrations
 ```
+Le bloc d'annotation (`# == Schema Information`) doit etre separe du commentaire de classe par une **ligne vide** :
+colle a l'annotation, ce commentaire est pris pour une partie du bloc et efface a chaque passage d'annotaterb.
+`test/models/schema_annotations_test.rb` le verifie.
 
 ### Stockage OVH (Object Storage S3)
 ```bash

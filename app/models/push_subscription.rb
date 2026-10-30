@@ -17,6 +17,7 @@
 #
 #  index_push_subscriptions_on_endpoint  (endpoint) UNIQUE
 #
+
 # Abonnement Web Push d'un appareil (voir PushNotifications). Cree quand Sylvain
 # active les notifications depuis la page Rappels ; supprime automatiquement
 # quand le service push le declare expire (application retiree de l'ecran

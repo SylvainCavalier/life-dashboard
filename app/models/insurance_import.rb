@@ -11,6 +11,7 @@
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
 #
+
 # Creation d'une assurance a partir de son contrat (PDF ou photo). Le fichier arrive en
 # direct upload, InsuranceImportJob en extrait le texte (pdf-reader, OCR Mistral pour un
 # scan) puis Mistral le range dans `draft`. Rien n'est cree tant que Sylvain n'a pas

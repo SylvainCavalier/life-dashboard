@@ -20,6 +20,7 @@
 #  fk_rails_...  (contact_id => contacts.id)
 #  fk_rails_...  (project_id => projects.id)
 #
+
 # Contact important pour un projet (role : « conseiller du pole de competitivite »...).
 # Le suivi (priorite, dernier contact, prochain rendez-vous) reste sur le CrmProfile du
 # contact, unique et partage avec la page CRM : la page du projet n'en est qu'un filtre.

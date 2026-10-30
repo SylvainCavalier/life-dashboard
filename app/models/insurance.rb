@@ -27,6 +27,7 @@
 #
 #  index_insurances_on_insurance_type  (insurance_type)
 #
+
 # Contrat d'assurance (page Assurances). Ses garanties (InsuranceCoverage) disent
 # contre quoi il couvre et a quelles conditions, ses biens assures (InsuredItem) ce
 # qu'il couvre, et ses documents (Document, domaine `insurance`) portent le texte

@@ -1,3 +1,17 @@
+# == Schema Information
+#
+# Table name: shopping_items
+#
+#  id         :bigint           not null, primary key
+#  checked_at :datetime
+#  name       :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+# Indexes
+#
+#  index_shopping_items_on_lower_name  (lower((name)::text)) UNIQUE
+#
 require "test_helper"
 
 class ShoppingItemTest < ActiveSupport::TestCase

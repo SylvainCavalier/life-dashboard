@@ -24,6 +24,7 @@
 #  index_reminders_on_remind_at     (remind_at)
 #  index_reminders_on_remindable    (remindable_type,remindable_id)
 #
+
 # Rappel date : a l'heure dite, une notification push part vers chaque appareil
 # abonne (voir PushNotifications), puis est relancee tant que Sylvain ne l'a pas
 # vue, et un mail prend le relais en dernier recours (ReminderDispatchJob).

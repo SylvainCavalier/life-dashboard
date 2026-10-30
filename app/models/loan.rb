@@ -26,6 +26,7 @@
 #
 #  fk_rails_...  (contact_id => contacts.id) ON DELETE => nullify
 #
+
 # Pret d'un objet ou d'argent (page Prets), dans un sens ou dans l'autre :
 # `lent` = Sylvain a prete, `borrowed` = on lui a prete. La personne est un contact
 # du dashboard ou un simple nom ; `person_name` est toujours rempli (repris du contact),

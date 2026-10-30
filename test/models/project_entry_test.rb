@@ -1,3 +1,28 @@
+# == Schema Information
+#
+# Table name: project_entries
+#
+#  id          :bigint           not null, primary key
+#  body        :text
+#  kind        :string           default("travail"), not null
+#  occurred_on :date             not null
+#  title       :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  contact_id  :bigint
+#  project_id  :bigint           not null
+#
+# Indexes
+#
+#  index_project_entries_on_contact_id                  (contact_id)
+#  index_project_entries_on_project_id                  (project_id)
+#  index_project_entries_on_project_id_and_occurred_on  (project_id,occurred_on)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (contact_id => contacts.id) ON DELETE => nullify
+#  fk_rails_...  (project_id => projects.id)
+#
 require "test_helper"
 
 class ProjectEntryTest < ActiveSupport::TestCase

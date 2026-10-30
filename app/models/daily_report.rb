@@ -24,6 +24,7 @@
 #
 #  index_daily_reports_on_report_date  (report_date) UNIQUE
 #
+
 # Rapport du matin d'Alfred : chaque jour a 9 h (cron DailyReportJob), Alfred passe
 # en revue mails, agenda, echeances, CRM, anniversaires, projets, taches, abonnements
 # et rappels, puis redige un rapport (Claude, sortie structuree) et previent Sylvain

@@ -24,6 +24,7 @@
 #
 #  index_sentinel_weeks_on_domain_and_monday  (domain,monday) UNIQUE
 #
+
 # Une semaine va TOUJOURS du lundi au dimanche inclus, à la collecte comme à la
 # lecture (veille-juridique collectait du lundi au vendredi mais lisait
 # jusqu'au dimanche).

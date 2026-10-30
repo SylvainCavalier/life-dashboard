@@ -23,6 +23,7 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
+
 # Onglet Comparateur de la page Outils : deux PDF arrivent en direct upload,
 # DocumentComparisonJob en extrait le texte (pdf-reader, OCR Mistral pour un scan) puis
 # Mistral redige la comparaison dans `result`. Les fichiers sont purges des que le job

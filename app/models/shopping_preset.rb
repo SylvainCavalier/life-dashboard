@@ -12,6 +12,7 @@
 #
 #  index_shopping_presets_on_lower_name  (lower((name)::text)) UNIQUE
 #
+
 # Article habituel de la page Courses : une carte qui ajoute l'article a la liste
 # en un clic, pour ne pas l'oublier. `icon` = emoji facultatif affiche sur la carte.
 class ShoppingPreset < ApplicationRecord

@@ -42,6 +42,7 @@
 #  fk_rails_...  (user_id => users.id)
 #  fk_rails_...  (video_folder_id => video_folders.id)
 #
+
 # La table fait foi pour l'etat du job : VideoDownloadJob met a jour `status`
 # directement, l'interface sonde /api/video_downloads sans regarder GoodJob.
 class VideoDownload < ApplicationRecord

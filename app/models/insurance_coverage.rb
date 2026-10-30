@@ -21,6 +21,7 @@
 #
 #  fk_rails_...  (insurance_id => insurances.id)
 #
+
 # Garantie d'un contrat d'assurance : degats des eaux, vol, bris de glace...
 # `included` faux = garantie expressement exclue ou non souscrite (utile pour repondre
 # « suis-je couvert contre... »). Plafond et franchise en texte libre : « 3 000 € »,

@@ -1,3 +1,41 @@
+# == Schema Information
+#
+# Table name: video_transcripts
+#
+#  id                :bigint           not null, primary key
+#  duration_seconds  :integer
+#  error             :text
+#  finished_at       :datetime
+#  language          :string           default("auto"), not null
+#  requested_at      :datetime
+#  source_citation   :text
+#  speaker_names     :jsonb            not null
+#  status            :string           default("pending"), not null
+#  step              :string
+#  summary           :jsonb            not null
+#  summary_model     :string
+#  title             :string           not null
+#  transcribed_at    :datetime
+#  transcript        :jsonb            not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  document_id       :bigint
+#  user_id           :bigint           not null
+#  video_download_id :bigint
+#
+# Indexes
+#
+#  index_video_transcripts_on_created_at         (created_at)
+#  index_video_transcripts_on_document_id        (document_id)
+#  index_video_transcripts_on_user_id            (user_id)
+#  index_video_transcripts_on_video_download_id  (video_download_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (document_id => documents.id) ON DELETE => nullify
+#  fk_rails_...  (user_id => users.id)
+#  fk_rails_...  (video_download_id => video_downloads.id) ON DELETE => nullify
+#
 FactoryBot.define do
   factory :video_transcript do
     user { User.owner || association(:user) }

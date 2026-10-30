@@ -12,6 +12,7 @@
 #
 #  index_shopping_items_on_lower_name  (lower((name)::text)) UNIQUE
 #
+
 # Un article de la liste de courses (page Courses). Il n'y a qu'une liste : elle se
 # vide d'un coup apres les courses (`clear!`), rien n'est archive. `checked_at` =
 # article mis dans le caddie, coche en magasin. Un meme article (casse ignoree) n'est

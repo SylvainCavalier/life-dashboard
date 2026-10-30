@@ -36,6 +36,7 @@
 #
 #  fk_rails_...  (sentinel_source_id => sentinel_sources.id)
 #
+
 # Document collecté par Sentinelle (décision, texte officiel, article...) avec
 # son tri déterministe (`relevant`) et son résumé IA. Un document hors champ
 # est conservé, sans son texte, pour que le tri reste auditable.

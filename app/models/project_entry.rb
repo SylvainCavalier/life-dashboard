@@ -23,6 +23,7 @@
 #  fk_rails_...  (contact_id => contacts.id) ON DELETE => nullify
 #  fk_rails_...  (project_id => projects.id)
 #
+
 # Journal de bord d'un projet : ce qui a ete fait, decide ou appris, et quand.
 # C'est la chronologie qui dit si un projet avance (rapport du matin, Alfred), la
 # to-do list ne disant que ce qui reste a faire. Contact facultatif : la personne

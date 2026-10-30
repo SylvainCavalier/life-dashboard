@@ -23,6 +23,7 @@
 #
 #  index_warranties_on_ends_on  (ends_on)
 #
+
 # Garantie d'un objet achete (page Garanties). `ends_on` fait foi : c'est la date de
 # fin de garantie, extension comprise. Avec `duration_months`, elle se calcule toute
 # seule depuis la date d'achat, sauf si elle est saisie a la main (extension, garantie

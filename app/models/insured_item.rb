@@ -25,6 +25,7 @@
 #  fk_rails_...  (property_id => properties.id) ON DELETE => nullify
 #  fk_rails_...  (vehicle_id => vehicles.id) ON DELETE => nullify
 #
+
 # Ce que couvre un contrat : un logement (lie si possible a un bien de la page
 # Immobilier), un vehicule (lie a la page Vehicules), une personne, un animal, un objet de valeur.
 class InsuredItem < ApplicationRecord

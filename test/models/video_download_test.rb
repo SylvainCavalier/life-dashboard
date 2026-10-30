@@ -27,16 +27,19 @@
 #  view_count      :bigint
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
+#  user_id         :bigint           not null
 #  video_folder_id :bigint
 #
 # Indexes
 #
 #  index_video_downloads_on_created_at       (created_at)
 #  index_video_downloads_on_status           (status)
+#  index_video_downloads_on_user_id          (user_id)
 #  index_video_downloads_on_video_folder_id  (video_folder_id)
 #
 # Foreign Keys
 #
+#  fk_rails_...  (user_id => users.id)
 #  fk_rails_...  (video_folder_id => video_folders.id)
 #
 require "test_helper"

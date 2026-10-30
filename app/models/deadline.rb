@@ -18,6 +18,7 @@
 #
 #  index_deadlines_on_due_on  (due_on)
 #
+
 # Echeance notable (credit, charges trimestrielles, URSSAF, impot, taxe fonciere...)
 # affichee sous l'agenda. Chaque occurrence est posee dans l'agenda comme un
 # evenement journee entiere (`Event#deadline_id`, type « echeance »), donc part

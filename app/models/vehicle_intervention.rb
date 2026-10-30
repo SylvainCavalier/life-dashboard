@@ -24,6 +24,7 @@
 #
 #  fk_rails_...  (vehicle_id => vehicles.id)
 #
+
 # Ligne du carnet d'entretien d'un vehicule : revision, controle technique, reparation,
 # pneus, carrosserie, sinistre... Enregistrer une intervention met la fiche du vehicule a
 # jour : kilometrage s'il est plus eleve que le dernier releve, et pour un controle

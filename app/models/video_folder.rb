@@ -17,6 +17,7 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
+
 # Dossier de classement des telechargements du module Downloader stockes sur
 # le cloud OVH. Supprimer un dossier ne supprime pas ses fichiers : ils
 # redeviennent simplement "non classes".

@@ -7,7 +7,7 @@
         <span class="text-3xl">🧰</span>
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Outils</h1>
-          <p class="text-sm text-gray-400">Petits utilitaires, tout se passe dans le navigateur (sauf la transcription de vidéos)</p>
+          <p class="text-sm text-gray-400">Petits utilitaires, tout se passe dans le navigateur (sauf la transcription de vidéos et le comparateur)</p>
         </div>
       </div>
 
@@ -46,6 +46,7 @@ const TABS = [
   { key: 'pdf', label: 'PDF', icon: '📄', component: defineAsyncComponent(() => import('../../components/tools/PdfTool.vue')) },
   { key: 'images', label: 'Images', icon: '🖼️', component: defineAsyncComponent(() => import('../../components/tools/ImageTool.vue')) },
   { key: 'videos', label: 'Vidéos', icon: '🎬', component: defineAsyncComponent(() => import('../../components/tools/VideoTool.vue')) },
+  { key: 'comparateur', label: 'Comparateur', icon: '⚖️', component: defineAsyncComponent(() => import('../../components/tools/ComparatorTool.vue')) },
 ]
 
 const current = computed(() => TABS.find(t => t.key === props.tab) || TABS[0])

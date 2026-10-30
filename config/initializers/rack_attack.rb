@@ -87,6 +87,11 @@ class Rack::Attack
     req.ip if req.post? && req.path.match?(%r{^/api/video_transcripts(/\d+/regenerate)?$})
   end
 
+  # Comparateur de documents : OCR eventuel et un appel Mistral sur deux longs textes.
+  Rack::Attack.throttle('document comparisons', limit: 10, period: 10.minutes) do |req|
+    req.ip if req.post? && req.path == '/api/document_comparisons'
+  end
+
   # Coffre-fort : une session compromise ne doit pas pouvoir aspirer les entrees
   # une par une via /api/password_entries/:id/reveal.
   Rack::Attack.throttle('vault reveal', limit: 20, period: 5.minutes) do |req|

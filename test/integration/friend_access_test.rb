@@ -7,7 +7,7 @@ class FriendAccessTest < ActionDispatch::IntegrationTest
   include VideoDownloadStorageHelper
 
   FRIEND_CONTROLLERS = %w[
-    api/video_downloads api/video_folders api/file_transfers api/video_transcripts
+    api/video_downloads api/video_folders api/file_transfers api/video_transcripts api/document_comparisons
   ].freeze
 
   setup do

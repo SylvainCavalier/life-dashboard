@@ -41,6 +41,7 @@ class User < ApplicationRecord
   has_many :video_downloads, dependent: :destroy
   has_many :video_transcripts, dependent: :destroy
   has_many :file_transfers, dependent: :destroy
+  has_many :document_comparisons, dependent: :destroy
 
   validates :role, inclusion: { in: ROLES }
 

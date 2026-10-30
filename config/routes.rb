@@ -100,6 +100,8 @@ Rails.application.routes.draw do
       end
     end
     # Outil Videos (page Outils) : video (direct upload ou Downloader) -> transcription, resume, PDF
+    # Outils, onglet Comparateur : deux PDF compares par Mistral en tache de fond
+    resources :document_comparisons, only: [:index, :show, :create, :destroy]
     resources :video_transcripts, only: [:index, :show, :create, :update, :destroy] do
       collection do
         get :availability

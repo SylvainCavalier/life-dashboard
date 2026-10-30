@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_29_163833) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_30_092456) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -363,6 +363,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_163833) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["due_on"], name: "index_deadlines_on_due_on"
+  end
+
+  create_table "document_comparisons", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "name_a"
+    t.string "name_b"
+    t.text "focus"
+    t.jsonb "result"
+    t.jsonb "extractors"
+    t.text "error"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_document_comparisons_on_user_id"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -1310,6 +1325,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_29_163833) do
   add_foreign_key "clients", "companies"
   add_foreign_key "crm_profiles", "contacts"
   add_foreign_key "cv_settings", "cv_pitches", column: "active_pitch_id", on_delete: :nullify
+  add_foreign_key "document_comparisons", "users"
   add_foreign_key "documents", "companies"
   add_foreign_key "documents", "insurances", on_delete: :nullify
   add_foreign_key "documents", "projects"

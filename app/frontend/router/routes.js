@@ -147,6 +147,16 @@ export default [
     component: () => import('../pages/modules/LettersPage.vue'),
   },
   {
+    path: '/scripts',
+    name: 'Scripts',
+    component: () => import('../pages/modules/ScriptsPage.vue'),
+  },
+  {
+    path: '/scripts/:id',
+    name: 'ScriptShow',
+    component: () => import('../pages/modules/ScriptShowPage.vue'),
+  },
+  {
     path: '/transfer',
     name: 'Transfer',
     component: () => import('../pages/modules/TransferPage.vue'),

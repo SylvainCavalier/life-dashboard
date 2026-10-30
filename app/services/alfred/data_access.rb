@@ -20,6 +20,7 @@ module Alfred
       "MailAccount" => { exclude: %w[password imap_server imap_port smtp_server smtp_port] },
       "Loan" => :all, "Note" => :all, "PersonalProfile" => :all, "Project" => :all, "ProjectContact" => :all, "ProjectEntry" => :all,
       "ProjectLink" => :all, "ProjectSkill" => :all, "Property" => :all, "Quote" => :all, "QuoteItem" => :all, "Reminder" => :all,
+      "Script" => :all, "ScriptFolder" => :all,
       "SentinelDocument" => { exclude: %w[raw_content raw_metadata] },
       "SentinelSource" => :all, "SentinelWeek" => :all, "ShoppingItem" => :all, "ShoppingPreset" => :all,
       "Subscription" => :all, "Task" => :all,
@@ -41,6 +42,7 @@ module Alfred
       "Insurance" => %w[next_renewal_on annual_premium],
       "Letter" => %w[body_text],
       "Loan" => %w[status days_until_due remaining_amount],
+      "Script" => %w[word_count estimated_duration],
       "Subscription" => %w[next_renewal_on],
       "Vehicle" => %w[next_inspection_on inspection_status next_service_on next_service_mileage service_status],
       "Warranty" => %w[status days_left]
@@ -139,7 +141,16 @@ module Alfred
                         "le caddie (coché en magasin). Ne s'écrit pas par propose_write : ajouter, retirer ou vider la " \
                         "liste passe par propose_shopping. Voir la section « Courses ».",
       "ShoppingPreset" => "Page Courses (/shopping) : carte d'un article habituel (name, icon = emoji facultatif), qui " \
-                          "l'ajoute à la liste en un clic. Ce n'est pas la liste elle-même (ShoppingItem)."
+                          "l'ajoute à la liste en un clic. Ce n'est pas la liste elle-même (ShoppingItem).",
+      "Script" => "Page Scripts (/scripts/ID) : script d'une vidéo YouTube, d'un short, d'un thread ou d'un post de Sylvain. " \
+                  "script_folder_id = sa chaîne ou son compte (ScriptFolder, nul = non classé), title, kind video/short/thread/" \
+                  "post/other, status idea/draft/review (à relire)/ready/published/abandoned, body = le texte complet, en texte " \
+                  "brut (dans un thread, une ligne --- sépare deux messages), notes = sources, références, idées, planned_on = " \
+                  "publication prévue, published_on + published_url = publication faite. word_count et estimated_duration " \
+                  "(secondes, à 150 mots par minute) sont calculés. Voir la section « Scripts ».",
+      "ScriptFolder" => "Page Scripts : dossier d'une chaîne YouTube ou d'un compte de réseau social de Sylvain. name, " \
+                        "platform youtube/x/instagram/tiktok/linkedin/facebook/bluesky/threads/podcast/other, handle = " \
+                        "identifiant (@...), url, description = ligne éditoriale (public, ton, formats, thèmes)."
     }.freeze
 
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
@@ -179,7 +190,8 @@ module Alfred
       "Invoice" => :all, "InvoiceItem" => :all, "Quote" => :all, "QuoteItem" => :all,
       "Insurance" => :all, "InsuranceCoverage" => :all, "InsuredItem" => :all,
       "Warranty" => :all, "Loan" => :all, "ShoppingPreset" => :all,
-      "Vehicle" => :all, "VehicleIntervention" => :all
+      "Vehicle" => :all, "VehicleIntervention" => :all,
+      "Script" => :all, "ScriptFolder" => :all
     }.freeze
 
     module_function

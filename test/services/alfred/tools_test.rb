@@ -95,6 +95,21 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_equal "active", result[:records].first["status"]
   end
 
+  test "propose_write : un script range dans sa chaine, relu par query_records" do
+    folder = ScriptFolder.create!(name: "Debunker des Étoiles", platform: "youtube")
+    _, error = run_tool("propose_write", { "operation" => "create", "model" => "Script", "summary" => "Idée de vidéo",
+                                           "attributes" => { "title" => "Les chemtrails", "script_folder_id" => folder.id,
+                                                             "kind" => "video", "status" => "draft", "body" => "Bonjour à tous." } })
+    assert_not error
+    Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+
+    result, = run_tool("query_records", { "model" => "Script" })
+    record = result[:records].first
+    assert_equal folder.id, record["script_folder_id"]
+    assert_equal "Bonjour à tous.", record["body"]
+    assert_equal 3, record["word_count"]
+  end
+
   test "propose_write : un controle technique consigne repousse l'echeance du vehicule" do
     vehicle = Vehicle.create!(name: "Clio", vehicle_type: "voiture", mileage: 60_000)
     _, error = run_tool("propose_write", { "operation" => "create", "model" => "VehicleIntervention", "summary" => "CT de la Clio",

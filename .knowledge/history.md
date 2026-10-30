@@ -5,6 +5,13 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-10-30 — Scripts de vidéos et de threads
+- [feat] Nouvelle page **Scripts** (`/scripts`, tuile sur le dashboard avec les scripts en cours) : dossiers par chaîne YouTube ou compte de réseau social (plateforme, identifiant, lien, ligne éditoriale), scripts non classés, filtres par statut (idée, brouillon, à relire, prêt, publié, abandonné) et par format (vidéo, short, thread, post), recherche
+- [feat] Éditeur de script (`/scripts/:id`) : enregistrement automatique, compteurs de mots et de caractères, durée lue estimée (150 mots/min), threads découpés par `---` avec aperçu et compteur de 280 caractères par message, notes et sources, publication prévue / faite avec lien, dictée vocale
+- [db] Tables `script_folders` et `scripts` (dossier en `nullify`)
+- [feat] Alfred (dashboard) : `Script` et `ScriptFolder` lisibles et modifiables sur proposition, fiche RAG avec le texte intégral, section « Scripts » du prompt (relecture, réécriture, idées de vidéos), rappel rattachable à un script
+- [chore] Skills locales d'Alfred (`query.rb`, `write.rb`, `SKILL.md`, `alfred.md`) mises à jour ; tests (modèle, API, proposition d'Alfred) et documentation dans `CLAUDE.md`
+
 ### 2026-10-29 — Gestionnaire de véhicules
 - [feat] Nouvelle page **Véhicules** (`/vehicles`, tuile sur le dashboard) : voitures, motos, scooters, utilitaires... avec caractéristiques (marque, modèle, version, immatriculation, VIN, 1re mise en circulation, énergie, puissances, cylindrée, pneus, huile), achat, vente, kilométrage mis à jour en un clic ; liste des prochaines échéances tous véhicules confondus
 - [feat] **Carnet d'entretien** par véhicule : révisions, contrôles techniques (résultat favorable / contre-visite / critique), réparations, pneus, carrosserie, sinistres, avec date, kilométrage, coût, garage et travaux ; filtre par nature et total des frais

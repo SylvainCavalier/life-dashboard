@@ -148,6 +148,7 @@ const counts = ref({
   video_downloads: 0,
   meetings: 0,
   letters: 0,
+  scripts: 0,
 })
 
 const fetchCounts = async () => {
@@ -168,6 +169,8 @@ const fetchCounts = async () => {
     // Articles restant a acheter : ceux deja dans le caddie ne comptent plus.
     { key: 'shopping', resource: 'shopping_items', count: (list) => list.filter(i => !i.checked).length },
     { key: 'notes', resource: 'notes' },
+    // Scripts en cours : ni publies ni abandonnes.
+    { key: 'scripts', resource: 'scripts', count: (list) => list.filter(s => !['published', 'abandoned'].includes(s.status)).length },
     { key: 'useful_sites', resource: 'useful_sites' },
     { key: 'projects', resource: 'projects' },
     { key: 'events', resource: 'events' },
@@ -305,6 +308,7 @@ const modules = computed(() => [
   { name: 'Mon profil', icon: '👤', subtitle: 'Donnees personnelles', to: '/profile' },
   { name: 'CV', icon: '📄', subtitle: 'Experiences, formations, competences', to: '/cv' },
   { name: 'Documents', icon: '📁', subtitle: `${counts.value.documents} document${counts.value.documents > 1 ? 's' : ''}`, to: '/documents' },
+  { name: 'Scripts', icon: '✍️', subtitle: `${counts.value.scripts} script${counts.value.scripts > 1 ? 's' : ''} en cours`, to: '/scripts' },
   { name: 'Courrier', icon: '✉️', subtitle: `${counts.value.letters} brouillon${counts.value.letters > 1 ? 's' : ''}`, to: '/letters' },
   { name: 'Transfert', icon: '📤', subtitle: `${counts.value.file_transfers} fichier${counts.value.file_transfers > 1 ? 's' : ''} partage${counts.value.file_transfers > 1 ? 's' : ''}`, to: '/transfer' },
   { name: 'Voyages', icon: '✈️', subtitle: `${counts.value.trips} voyage${counts.value.trips > 1 ? 's' : ''}`, to: '/trips' },

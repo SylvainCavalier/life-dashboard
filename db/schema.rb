@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_30_092456) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -995,6 +995,35 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_092456) do
     t.index ["remindable_type", "remindable_id"], name: "index_reminders_on_remindable"
   end
 
+  create_table "script_folders", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "platform", default: "youtube", null: false
+    t.string "handle"
+    t.string "url"
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_script_folders_on_lower_name", unique: true
+  end
+
+  create_table "scripts", force: :cascade do |t|
+    t.bigint "script_folder_id"
+    t.string "title", null: false
+    t.string "kind", default: "video", null: false
+    t.string "status", default: "idea", null: false
+    t.text "body", default: "", null: false
+    t.text "notes"
+    t.date "planned_on"
+    t.date "published_on"
+    t.string "published_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["script_folder_id"], name: "index_scripts_on_script_folder_id"
+    t.index ["status"], name: "index_scripts_on_status"
+    t.index ["updated_at"], name: "index_scripts_on_updated_at"
+  end
+
   create_table "sentinel_documents", force: :cascade do |t|
     t.bigint "sentinel_source_id", null: false
     t.string "domain", null: false
@@ -1353,6 +1382,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_092456) do
   add_foreign_key "quote_items", "quotes"
   add_foreign_key "quotes", "clients"
   add_foreign_key "quotes", "companies"
+  add_foreign_key "scripts", "script_folders", on_delete: :nullify
   add_foreign_key "sentinel_documents", "sentinel_sources"
   add_foreign_key "tasks", "projects"
   add_foreign_key "trip_items", "trips"

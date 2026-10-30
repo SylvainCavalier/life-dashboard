@@ -82,6 +82,10 @@ module Alfred
       "TripItem" => { parent: :trip },
       "Letter" => { title: "Courrier", label: ->(r) { r.label }, date: :letter_date, path: ->(r) { "/letters/#{r.id}" },
                     except: %w[body document_id include_signature], text: ->(r) { "Contenu :\n#{r.body_text}" if r.body_text.present? } },
+      # Texte integral du script dans la fiche (decoupe en passages par le Chunker).
+      "Script" => { title: "Script", label: ->(r) { r.title }, date: :published_on, path: ->(r) { "/scripts/#{r.id}" },
+                    except: %w[body script_folder_id], text: ->(r) { Alfred::Corpus.script_text(r) } },
+      "ScriptFolder" => { title: "Chaine / compte (scripts)", label: ->(r) { r.name }, path: ->(r) { "/scripts?folder=#{r.id}" } },
       "UsefulSite" => { title: "Site utile", label: ->(r) { r.name }, path: ->(_) { "/useful-sites" } },
       "VideoDownload" => { title: "Video telechargee", label: ->(r) { r.title.presence || r.url }, date: :published_at, path: ->(_) { "/downloader" },
                            only_if: ->(r) { r.status == "completed" && r.user_id == User.owner&.id },
@@ -95,6 +99,15 @@ module Alfred
     IGNORED_COLUMNS = %w[id created_at updated_at].freeze
 
     module_function
+
+    def script_text(script)
+      [
+        "Format : #{Script::KIND_LABELS[script.kind]} ; statut : #{Script::STATUS_LABELS[script.status]}",
+        script.script_folder && "Chaine / compte : #{script.script_folder.name} " \
+                                "(#{ScriptFolder::PLATFORM_LABELS[script.script_folder.platform]})",
+        script.body.present? && "Texte :\n#{script.body}"
+      ].compact_blank.join("\n")
+    end
 
     # Contacts lies a un projet, par leur nom (ProjectContact n'a que des identifiants).
     def project_contacts_text(project)

@@ -135,6 +135,9 @@ Rails.application.routes.draw do
     resources :insurance_imports, only: [:create, :show, :destroy] do
       member { post :confirm }
     end
+    # Module Scripts : scripts de videos, threads et posts, ranges par chaine ou compte
+    resources :script_folders, only: [:index, :create, :update, :destroy]
+    resources :scripts, only: [:index, :show, :create, :update, :destroy]
     # Module Garanties : objets achetes, fin de garantie, facture jointe (multipart)
     resources :warranties, only: [:index, :create, :update, :destroy]
     # Module Vehicules : carnet d'entretien imbrique ; les documents d'un vehicule passent par

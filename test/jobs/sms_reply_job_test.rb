@@ -92,6 +92,19 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     assert_includes client.requests.first[:system_].map { |b| b[:text] }.join("\n"), "Ton correspondant : Camille."
   end
 
+  test "l'agent voit le texto envoye auquel on lui repond, meme en tete de fil" do
+    other = SmsCorrespondent.create!(name: "Paul", phone: "+33612345679")
+    other.messages.create!(direction: "outbound", status: "sent", body: "Monsieur Sylvain arrivera plus tard.")
+    inbound = other.messages.create!(direction: "inbound", status: "received", body: "Ok")
+    client = FakeClient.new(text_response("Bien."))
+    perform(client, inbound)
+
+    first, last = client.requests.first[:messages].first(2)
+    assert_equal :user, first[:role]
+    assert_includes first[:content], "Monsieur Sylvain arrivera plus tard."
+    assert_equal({ role: :user, content: "Ok" }, last)
+  end
+
   test "execute un outil puis repond" do
     tool_use = FakeClient::Block.new(type: :tool_use, name: "get_availability", id: "t1",
                                      input: { "from_date" => Date.current.iso8601, "to_date" => Date.current.iso8601 })

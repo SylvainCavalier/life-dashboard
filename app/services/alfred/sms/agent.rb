@@ -62,10 +62,13 @@ module Alfred
       def history
         past = @correspondent.messages.where(created_at: HISTORY_WINDOW.ago..).where("id <= ?", @inbound.id)
                              .where.not(status: "failed").order(id: :desc).limit(HISTORY_MESSAGES).to_a.reverse
-        # L'API exige que le premier message soit celui de l'utilisateur.
-        past.drop_while { |m| !m.inbound? }.map do |m|
-          { role: m.inbound? ? :user : :assistant, content: m.body }
-        end
+        # L'API exige que le premier message soit celui de l'utilisateur. Un fil peut pourtant
+        # commencer par un texto envoye de la part de Sylvain : sans lui, « Ok » ne veut rien dire.
+        sent_first, rest = past.partition.with_index { |m, i| !m.inbound? && past.first(i).none?(&:inbound?) }
+        turns = rest.map { |m| { role: m.inbound? ? :user : :assistant, content: m.body } }
+        return turns if sent_first.empty?
+
+        [{ role: :user, content: "[Note du système, pas de ton correspondant] Tu lui as d'abord envoyé ce(s) texto(s) :\n#{sent_first.map(&:body).join("\n")}" }] + turns
       end
     end
   end

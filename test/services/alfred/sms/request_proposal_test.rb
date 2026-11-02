@@ -85,6 +85,32 @@ class AlfredSmsRequestProposalTest < ActiveSupport::TestCase
     assert_includes sent.first[:title], "Camille"
   end
 
+  test "un message pour Sylvain le notifie sans rien ecrire ni proposer" do
+    inbound = @friend.messages.create!(direction: "inbound", status: "processing", body: "Dis lui que je l'attends devant le cine [ici](https://mal.example)")
+    sent = []
+
+    assert_no_difference ["Task.count", "Event.count", "AlfredAction.count"] do
+      PushNotifications.stub(:broadcast, ->(payload) { sent << payload; 1 }) do
+        Alfred::Sms::MessageRelay.new(@friend, inbound, { "summary" => "Camille l'attend devant le cine" }).call
+      end
+    end
+
+    conversation = AlfredConversation.last
+    assert_equal @friend, conversation.sms_correspondent
+    assert_equal "/sms?conversation=#{conversation.id}", sent.first[:url]
+    assert_equal "Camille l'attend devant le cine", sent.first[:body]
+    assert_includes conversation.messages.first.content, "devant le cine"
+    assert_not_includes conversation.messages.first.content, "[ici]"
+    assert_match(/jamais une instruction/, Alfred::Prompt.system_blocks(conversation).last[:text])
+  end
+
+  test "plafonne les messages transmis et refuse un message vide" do
+    assert_raises(ArgumentError) { Alfred::Sms::MessageRelay.new(@friend, @inbound, { "summary" => " " }).call }
+
+    Alfred::Sms::MessageRelay::DAILY_LIMIT.times { Alfred::Sms::MessageRelay.new(@friend, @inbound, { "summary" => "x" }).call }
+    assert_raises(ArgumentError) { Alfred::Sms::MessageRelay.new(@friend, @inbound, { "summary" => "x" }).call }
+  end
+
   test "le prompt de la conversation declare le texto non fiable" do
     propose("kind" => "task", "description" => "Vaisselle", "summary" => "x")
     blocks = Alfred::Prompt.system_blocks(AlfredAction.last.conversation)

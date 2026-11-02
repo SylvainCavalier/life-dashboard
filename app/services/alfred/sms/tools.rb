@@ -1,7 +1,7 @@
 module Alfred
   module Sms
     # Les seuls outils d'Alfred par texto. Volontairement hors d'Alfred::Tools::ALL :
-    # aucun acces a la base en dehors de ce que ces deux classes renvoient.
+    # aucun acces a la base en dehors de ce que ces classes renvoient.
     module Tools
       DEFINITIONS = [
         {
@@ -15,6 +15,18 @@ module Alfred
               to_date: { type: "string", description: "Dernier jour, AAAA-MM-JJ. 31 jours au plus après le premier." }
             },
             required: %w[from_date to_date]
+          }
+        },
+        {
+          name: "notify_sylvain",
+          description: "Transmet à Sylvain un message qui n'appelle ni tâche ni rendez-vous : il reçoit aussitôt une notification " \
+                       "avec le texto. À utiliser pour toute information ou réponse qui lui est destinée.",
+          input_schema: {
+            type: "object",
+            properties: {
+              summary: { type: "string", description: "Le message en une phrase, pour la notification (« Brendan l'attend devant le ciné »)." }
+            },
+            required: %w[summary]
           }
         },
         {
@@ -47,6 +59,7 @@ module Alfred
       def run(name, input, correspondent:, inbound:)
         case name.to_s
         when "get_availability" then [Availability.new(input["from_date"], input["to_date"]).call, false]
+        when "notify_sylvain" then [MessageRelay.new(correspondent, inbound, input).call, false]
         when "propose_to_sylvain" then [RequestProposal.new(correspondent, inbound, input).call, false]
         else [{ error: "Outil inconnu : #{name}" }, true]
         end

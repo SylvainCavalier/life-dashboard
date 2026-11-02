@@ -80,11 +80,7 @@ module Alfred
       def create_conversation(model, attributes)
         label = attributes["description"] || attributes["title"]
         AlfredConversation.transaction do
-          conversation = AlfredConversation.create!(
-            sms_correspondent: @correspondent, title: "Texto de #{@correspondent.name} : #{label}".truncate(60),
-            last_message_at: Time.current
-          )
-          message = conversation.messages.create!(role: "assistant", status: "done", content: introduction)
+          conversation, message = open_conversation(label)
           conversation.actions.create!(
             message: message, operation: "create", target_model: model,
             summary: clean(@input["summary"]).truncate(250).presence || label.truncate(250),
@@ -92,6 +88,14 @@ module Alfred
           )
           conversation
         end
+      end
+
+      def open_conversation(label)
+        conversation = AlfredConversation.create!(
+          sms_correspondent: @correspondent, title: "Texto de #{@correspondent.name} : #{label}".truncate(60),
+          last_message_at: Time.current
+        )
+        [conversation, conversation.messages.create!(role: "assistant", status: "done", content: introduction)]
       end
 
       def introduction

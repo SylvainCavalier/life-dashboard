@@ -54,7 +54,7 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     assert_equal "SM1", outbound.twilio_sid
   end
 
-  test "l'agent n'a que ses deux outils et les seuls faits autorises" do
+  test "l'agent n'a que ses trois outils et les seuls faits autorises" do
     PersonalProfile.create!(first_name: "S", last_name: "Nom-Administratif", email: "s@example.com", birth_date: Date.new(1985, 3, 14),
                             passport_number: "PASS123", iban: "FR7600000")
     AlfredMemory.create!(content: "Souvenir prive", category: "other")
@@ -62,7 +62,7 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     perform(client)
 
     request = client.requests.first
-    assert_equal %w[get_availability propose_to_sylvain], request[:tools].map { |t| t[:name] }
+    assert_equal %w[get_availability notify_sylvain propose_to_sylvain], request[:tools].map { |t| t[:name] }
     system = request[:system_].map { |b| b[:text] }.join("\n")
     assert_includes system, "s@example.com"
     assert_includes system, "14/03"
@@ -82,7 +82,7 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     assert_includes system, "sans jamais dire comment cette personne est classée"
     assert_includes system, "le plus affectueux"
     assert_no_match(/Note privee|Gout prive|Adresse privee/, system)
-    assert_equal %w[get_availability propose_to_sylvain], client.requests.first[:tools].map { |t| t[:name] }
+    assert_equal %w[get_availability notify_sylvain propose_to_sylvain], client.requests.first[:tools].map { |t| t[:name] }
   end
 
   test "sans fiche, seul le nom est donne" do

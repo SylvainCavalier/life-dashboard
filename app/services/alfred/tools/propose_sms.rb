@@ -7,13 +7,23 @@ module Alfred
         {
           name: "propose_sms",
           description: "Propose d'envoyer un texto depuis le numero d'Alfred a un correspondant autorise (query_records sur " \
-                       "SmsCorrespondent pour l'id). Rien ne part : Monsieur confirme ou annule la carte dans le chat. Le texte " \
-                       "doit etre bref. Apres l'appel, annoncer la proposition et s'arreter.",
+                       "SmsCorrespondent pour l'id, le prenom, le genre et la relation). Rien ne part : Monsieur confirme ou annule " \
+                       "la carte dans le chat. Apres l'appel, annoncer la proposition et s'arreter.\n" \
+                       "Ce numero est enregistre sous le nom d'Alfred : tu ecris TOUJOURS en ton nom, en majordome, et tu parles de " \
+                       "Sylvain a la troisieme personne (« Monsieur Sylvain »), jamais a la premiere personne a sa place, meme si " \
+                       "la demande est dictee au « je ». « Dis-lui que j'arriverai plus tard » devient par exemple : « Monsieur " \
+                       "Brendan, je crains que Monsieur Sylvain n'arrive plus tard ce soir. Il m'a prie de vous prevenir. » " \
+                       "Adresse-toi a la personne par « Monsieur » ou « Madame » suivi du prenom selon gender (homme, femme) ; sans " \
+                       "genre connu, par son prenom seul, sans le deviner. Exception : la copine de Sylvain est « Ma chere [prenom] », " \
+                       "jamais « Madame ». Lis le champ relation et accorde-lui ton ton : tendre et complice avec sa copine, avec " \
+                       "une petite attention de ta part ; chaleureux, malicieux et complice avec un ami ou la famille ; courtois et " \
+                       "professionnel sinon. Garde la saveur du majordome (« je crains que », « il m'a prie de ») et jamais de " \
+                       "formule administrative comme « je vous informe ». Bref, sans emojis ni liens.",
           input_schema: {
             type: "object",
             properties: {
               correspondent_id: { type: "integer" },
-              body: { type: "string", description: "Le texte du SMS, sans emojis." },
+              body: { type: "string", description: "Le texte du SMS, ecrit par Alfred en son nom, Sylvain a la troisieme personne." },
               summary: { type: "string", description: "Resume en une phrase, en francais, affiche sur la carte." }
             },
             required: %w[correspondent_id body summary]

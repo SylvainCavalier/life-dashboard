@@ -95,6 +95,27 @@ class SmsTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "propose_sms impose d'ecrire en tant qu'Alfred et donne de quoi s'adresser a la personne" do
+    description = Alfred::Tools::ProposeSms.definition[:description]
+    assert_includes description, "en ton nom"
+    assert_includes description, "troisieme personne"
+
+    contact = Contact.create!(first_name: "Brendan", last_name: "Durand", gender: "homme", relationship_type: "ami")
+    linked = SmsCorrespondent.create!(name: "Brendan D.", phone: "+33612345670", contact: contact)
+    assert_equal ["Brendan", "homme", "un(e) ami(e) de Sylvain"], [linked.first_name, linked.gender, linked.relation]
+
+    conversation = AlfredConversation.create!
+    message = conversation.messages.create!(role: "assistant", status: "processing", content: "")
+    context = Alfred::Tools::Context.new(conversation: conversation, message: message, seen: Set.new)
+    result, error = Alfred::Tools.run("query_records", { "model" => "SmsCorrespondent" }, context)
+    assert_not error
+    assert_equal "homme", result[:records].first["gender"]
+
+    unlinked = SmsCorrespondent.new(name: "Sam Martin", phone: "+33612345671")
+    assert_equal "Sam", unlinked.first_name
+    assert_nil unlinked.gender
+  end
+
   test "propose_sms ne part qu'a la confirmation, et seulement a un correspondant autorise" do
     ENV["TWILIO_ACCOUNT_SID"] = "AC"
     ENV["TWILIO_AUTH_TOKEN"] = "t"

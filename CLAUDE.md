@@ -698,7 +698,8 @@ qui regle son ton selon la section `sms` du prompt (copine, proches, professionn
 personne), ouvre une `AlfredConversation` (`sms_correspondent_id`) avec la citation du texto et une `AlfredAction` ordinaire, puis notifie
 (`/sms?conversation=ID` ouvre le widget sur la carte). Seul `ActionExecutor` ecrit. `Prompt.sms_request_block` rejoue la citation dans le prompt
 de cette conversation en la declarant non fiable ; les signes de Markdown en sont retires (liens). Dans l'autre sens, l'Alfred du chat dispose
-de `propose_sms` (operation `send_sms`, `Alfred::SmsActions`, correspondants autorises seulement, confirme carte par carte).
+de `propose_sms` (operation `send_sms`, `Alfred::SmsActions`, correspondants autorises seulement, confirme carte par carte). Le numero etant enregistre
+sous le nom d'Alfred, il ecrit en son nom et parle de Sylvain a la troisieme personne ; la regle est dans la description de l'outil, hors des sections modifiables.
 Le corps et l'expediteur sont filtres des logs (`filter_parameter_logging`). Pas dans le corpus RAG. Tests : `twilio_webhook_test.rb`,
 `sms_test.rb`, `sms_reply_job_test.rb`, `test/services/alfred/sms/`.
 

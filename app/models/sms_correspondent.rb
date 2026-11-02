@@ -68,6 +68,15 @@ class SmsCorrespondent < ApplicationRecord
     RELATIONS[contact&.relationship_type]
   end
 
+  # Pour s'adresser a la personne : repris de sa fiche, sans rien deviner du genre.
+  def first_name
+    contact&.first_name.presence || name.split.first
+  end
+
+  def gender
+    contact&.gender
+  end
+
   # Consigne le texto puis l'envoie. L'echec est note sur le message et releve.
   def send_text!(body)
     message = messages.create!(direction: "outbound", status: "sending", body: body.to_s.strip.truncate(SmsMessage::MAX_LENGTH))

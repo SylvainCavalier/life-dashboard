@@ -43,6 +43,7 @@ module Alfred
       "Letter" => %w[body_text],
       "Loan" => %w[status days_until_due remaining_amount],
       "Script" => %w[word_count estimated_duration],
+      "SmsCorrespondent" => %w[first_name gender relation],
       "Subscription" => %w[next_renewal_on],
       "Vehicle" => %w[next_inspection_on inspection_status next_service_on next_service_mileage service_status],
       "Warranty" => %w[status days_left]

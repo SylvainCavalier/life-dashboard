@@ -133,6 +133,9 @@ class SmsTest < ActionDispatch::IntegrationTest
     assert_equal "executed", AlfredAction.last.status
     assert_equal "Bonjour", @sent.last[:body]
 
+    Alfred::Tools.run("propose_sms", { "correspondent_id" => friend.id, "body" => "\"A tout a l'heure.\"", "summary" => "x" }, context)
+    assert_equal "A tout a l'heure.", AlfredAction.last.new_attributes["texte"]
+
     result, error = Alfred::Tools.run("propose_sms", { "correspondent_id" => 0, "body" => "x", "summary" => "x" }, context)
     assert error
     assert result[:error]

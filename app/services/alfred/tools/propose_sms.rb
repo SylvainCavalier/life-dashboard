@@ -39,7 +39,8 @@ module Alfred
         correspondent = SmsCorrespondent.find(input["correspondent_id"])
         raise ArgumentError, "#{correspondent.name} est desactive(e) dans la page Textos" unless correspondent.enabled?
 
-        body = input["body"].to_s.strip
+        # Le modele laisse parfois un guillemet autour du texte : il partirait tel quel.
+        body = input["body"].to_s.gsub(/\A[\s"«»]+|[\s"«»]+\z/, "")
         raise ArgumentError, "Texto vide" if body.empty?
         raise ArgumentError, "Texto trop long (#{SmsMessage::MAX_LENGTH} caracteres au plus)" if body.length > SmsMessage::MAX_LENGTH
 

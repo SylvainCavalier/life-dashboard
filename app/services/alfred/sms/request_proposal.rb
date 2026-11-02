@@ -22,6 +22,7 @@ module Alfred
         model, attributes = @input["kind"] == "event" ? ["Event", event_attributes] : ["Task", task_attributes]
         record = model.constantize.new(attributes)
         raise ArgumentError, record.errors.full_messages.to_sentence unless record.valid?
+        return { status: "deja transmis a Sylvain", note: "Cette demande attend deja sa decision : rien de plus a faire." } if already_pending?(model, attributes)
 
         conversation = create_conversation(model, attributes)
         notified = notify(conversation)
@@ -35,6 +36,19 @@ module Alfred
         AlfredAction.joins(:conversation)
                     .where(alfred_conversations: { sms_correspondent_id: @correspondent.id }, created_at: Time.current.all_day)
                     .count >= DAILY_LIMIT
+      end
+
+      # Le modele peut reproposer ce qu'il a deja transmis, meme en voyant sa reponse : on ne
+      # s'y fie pas. Comparaison en Ruby, le payload etant chiffre ; il y a peu de cartes en attente.
+      def already_pending?(model, attributes)
+        pending = AlfredAction.joins(:conversation)
+                              .where(alfred_conversations: { sms_correspondent_id: @correspondent.id })
+                              .where(status: "proposed", target_model: model)
+        pending.any? { |action| same_request?(action.new_attributes, attributes) }
+      end
+
+      def same_request?(first, second)
+        %w[description title start_time].all? { |key| first[key].to_s.casecmp?(second[key].to_s) }
       end
 
       def task_attributes

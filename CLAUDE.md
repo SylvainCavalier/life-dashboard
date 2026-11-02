@@ -686,16 +686,17 @@ bin/rails sms:send ID=3 BODY="..."           # envoie un texto a un correspondan
 Variables : `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` ; procedure dans `DEPLOY.md`. `TwilioSms` parle a l'API par
 Net::HTTP (pas de gem). Circuit : `POST /webhooks/twilio/sms` verifie la signature, ignore un numero hors liste blanche (ni reponse ni appel
 au modele), consigne le texto (`SmsMessage`, chiffre, unique par `twilio_sid` car Twilio rejoue) et enfile `SmsReplyJob`, qui attend 4 s et
-laisse le dernier texto d'une rafale repondre pour tous (`merged`). Plafond `SMS_DAILY_LIMIT` (30) par correspondant et par jour.
+laisse le dernier texto d'une rafale repondre pour tous (`merged`). Une seule reponse a la fois par personne (`SmsCorrespondent#claim_reply`, colonne
+`replying_since`, abandonnee apres 5 min) : le texto suivant repasse 3 s plus tard et voit la reponse au precedent (`Agent#in_conversation_order`), les autres personnes ne s'attendent pas. Plafond `SMS_DAILY_LIMIT` (30) par correspondant et par jour.
 **Modele de menace : le texto vient d'un tiers et un numero d'expediteur peut etre usurpe.** `Alfred::Sms::Agent` est donc une boucle a part,
 hors d'`Alfred::Tools` : ni corpus, ni `query_records`, ni memoires, ni Gmail. Sa limite est ce qu'il peut atteindre, pas son prompt (section
 `sms`, modifiable, `chat: false`). Il voit `AlfredSetting#effective_sms_facts` (texte de la page, par defaut email et anniversaire sans
 l'annee ; pas le nom de famille du profil, administratif) et trois outils : `notify_sylvain` (`Sms::MessageRelay`, message sans tache ni rendez-vous : notification et conversation citant le texto, ou Sylvain peut faire repondre, sans carte ; 15 par jour et par personne), `get_availability` (`Sms::Availability`, creneaux seuls, jamais le
 titre, le lieu ou la description, `echeance` ignorees, 31 jours et 6 mois d'avance au plus) et `propose_to_sylvain` (`Sms::RequestProposal`).
 Un numero se lie a une fiche `Contact` (`contact_id`, page Textos) : Alfred n'en recoit que le prenom et la nature de la relation (`SmsCorrespondent::RELATIONS`),
-qui regle son ton selon la section `sms` du prompt (copine, proches, professionnels) sans changer ses droits ; jamais notes, gouts ou adresse. Le numero de Sylvain (`owner`) n'a **aucun droit de plus**. Ne pas ajouter d'outil a cet agent sans refaire ce raisonnement.
+(et le genre, pour « Monsieur » ou « Madame ») qui regle son ton selon la section `sms` du prompt (copine, proches, professionnels) sans changer ses droits ; jamais notes, gouts ou adresse. Le numero de Sylvain (`owner`) n'a **aucun droit de plus**. Ne pas ajouter d'outil a cet agent sans refaire ce raisonnement.
 `RequestProposal` construit les attributs champ par champ (ni modele, ni projet, ni priorite au choix du texto ; 5 demandes par jour et par
-personne), ouvre une `AlfredConversation` (`sms_correspondent_id`) avec la citation du texto et une `AlfredAction` ordinaire, puis notifie
+personne ; une demande identique encore en attente est ignoree, le modele reproposant parfois ce qu'il a deja transmis), ouvre une `AlfredConversation` (`sms_correspondent_id`) avec la citation du texto et une `AlfredAction` ordinaire, puis notifie
 (`/sms?conversation=ID` ouvre le widget sur la carte). Seul `ActionExecutor` ecrit. `Prompt.sms_request_block` rejoue la citation dans le prompt
 de cette conversation en la declarant non fiable ; les signes de Markdown en sont retires (liens). Dans l'autre sens, l'Alfred du chat dispose
 de `propose_sms` (operation `send_sms`, `Alfred::SmsActions`, correspondants autorises seulement, confirme carte par carte). Le numero etant enregistre

@@ -2,6 +2,8 @@ require "test_helper"
 require "minitest/mock"
 
 class SmsReplyJobTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   # Client Claude factice : rejoue une liste de reponses et garde les requetes.
   class FakeClient
     Block = Struct.new(:type, :text, :name, :input, :id, keyword_init: true)
@@ -79,6 +81,7 @@ class SmsReplyJobTest < ActiveSupport::TestCase
 
     system = client.requests.first[:system_].map { |b| b[:text] }.join("\n")
     assert_includes system, "(prénom : Camille), la copine de Sylvain"
+    assert_includes system, "Tu vouvoies TOUT le monde"
     assert_includes system, "sans jamais dire comment cette personne est classée"
     assert_includes system, "le plus affectueux"
     assert_no_match(/Note privee|Gout prive|Adresse privee/, system)
@@ -152,6 +155,72 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     perform(client, second)
     assert_equal 1, @sent.size
     assert_equal ["Quel est son mail ?", "Et son anniversaire ?"], client.requests.first[:messages].first(2).map { |m| m[:content] }
+  end
+
+  test "pendant une reponse, le texto suivant attend sans appeler le modele" do
+    @friend.claim_reply
+    client = FakeClient.new(text_response("Trop tot."))
+
+    assert_enqueued_with(job: SmsReplyJob, args: [@inbound.id]) { perform(client) }
+    assert_equal "received", @inbound.reload.status
+    assert_empty client.requests
+    assert_empty @sent
+
+    @friend.release_reply
+    client = FakeClient.new(text_response("A vous."))
+    perform(client)
+    assert_equal "answered", @inbound.reload.status
+    assert_nil @friend.reload.replying_since
+  end
+
+  test "le second texto voit la reponse au premier, et l'historique finit par lui" do
+    second = @friend.messages.create!(direction: "inbound", status: "received", body: "Et son anniversaire ?")
+    @inbound.update!(status: "answered")
+    @friend.messages.create!(direction: "outbound", status: "sent", body: "Son mail est a@b.fr.")
+    client = FakeClient.new(text_response("Le 14 mars."))
+
+    perform(client, second)
+
+    roles = client.requests.first[:messages].map { |m| [m[:role], m[:content]] }
+    assert_equal [[:user, "Quel est son mail ?"], [:assistant, "Son mail est a@b.fr."], [:user, "Et son anniversaire ?"]], roles
+  end
+
+  test "un texto arrive pendant une reponse se joint au suivant, apres cette reponse" do
+    @inbound.update!(status: "answered")
+    merged = @friend.messages.create!(direction: "inbound", status: "merged", body: "Au fait")
+    last = @friend.messages.create!(direction: "inbound", status: "received", body: "Et son anniversaire ?")
+    @friend.messages.create!(direction: "outbound", status: "sent", body: "Son mail est a@b.fr.")
+    client = FakeClient.new(text_response("Bien."))
+
+    perform(client, last)
+
+    assert_equal ["Quel est son mail ?", "Son mail est a@b.fr.", merged.body, last.body], client.requests.first[:messages].map { |m| m[:content] }
+  end
+
+  test "une prise abandonnee par un process mort n'empeche pas de repondre" do
+    @friend.update_columns(replying_since: (SmsCorrespondent::REPLY_LEASE + 1.minute).ago)
+    perform(FakeClient.new(text_response("Me voici.")))
+
+    assert_equal "answered", @inbound.reload.status
+  end
+
+  test "la prise est rendue meme si la reponse echoue" do
+    failing = Object.new
+    def failing.messages = self
+    def failing.create(**) = raise("panne")
+    perform(failing)
+
+    assert_nil @friend.reload.replying_since
+  end
+
+  test "deux personnes ne s'attendent pas" do
+    other = SmsCorrespondent.create!(name: "Paul", phone: "+33612345679")
+    other_inbound = other.messages.create!(direction: "inbound", status: "received", body: "Bonjour")
+    @friend.claim_reply
+
+    perform(FakeClient.new(text_response("Bonjour Paul.")), other_inbound)
+
+    assert_equal "answered", other_inbound.reload.status
   end
 
   test "au-dela du plafond du jour, un seul avertissement et plus de modele" do

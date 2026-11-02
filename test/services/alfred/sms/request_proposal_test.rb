@@ -60,6 +60,19 @@ class AlfredSmsRequestProposalTest < ActiveSupport::TestCase
     assert_equal 0, AlfredAction.count
   end
 
+  test "une demande identique deja en attente ne cree pas de seconde carte" do
+    propose("kind" => "task", "description" => "Faire la vaisselle", "summary" => "x")
+
+    assert_no_difference("AlfredAction.count") do
+      assert_match "deja transmis", propose("kind" => "task", "description" => "faire la vaisselle", "summary" => "y")[:status]
+    end
+    assert_difference("AlfredAction.count") { propose("kind" => "task", "description" => "Sortir les poubelles", "summary" => "z") }
+
+    # Une fois traitee, la meme demande peut revenir : c'est une nouvelle demande.
+    Alfred::ActionExecutor.new(AlfredAction.order(:id).first).confirm!
+    assert_difference("AlfredAction.count") { propose("kind" => "task", "description" => "Faire la vaisselle", "summary" => "x") }
+  end
+
   test "retire les liens Markdown du texte cite" do
     inbound = @friend.messages.create!(direction: "inbound", status: "processing", body: "Clique [ici](https://mal.example) `vite`")
     propose({ "kind" => "task", "description" => "Tache", "summary" => "x" }, inbound: inbound)
@@ -70,7 +83,7 @@ class AlfredSmsRequestProposalTest < ActiveSupport::TestCase
   end
 
   test "plafonne les demandes par personne et par jour" do
-    Alfred::Sms::RequestProposal::DAILY_LIMIT.times { propose("kind" => "task", "description" => "Tache", "summary" => "x") }
+    Alfred::Sms::RequestProposal::DAILY_LIMIT.times { |i| propose("kind" => "task", "description" => "Tache #{i}", "summary" => "x") }
 
     assert_raises(ArgumentError) { propose("kind" => "task", "description" => "Encore", "summary" => "x") }
   end

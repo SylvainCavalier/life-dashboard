@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_02_174625) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_02_190734) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1118,6 +1118,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_02_174625) do
     t.boolean "enabled", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "replying_since"
     t.index ["contact_id"], name: "index_sms_correspondents_on_contact_id"
     t.index ["phone"], name: "index_sms_correspondents_on_phone", unique: true
   end

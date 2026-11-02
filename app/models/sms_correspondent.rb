@@ -6,14 +6,15 @@
 #
 # Table name: sms_correspondents
 #
-#  id         :bigint           not null, primary key
-#  enabled    :boolean          default(TRUE), not null
-#  name       :string           not null
-#  owner      :boolean          default(FALSE), not null
-#  phone      :string           not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  contact_id :bigint
+#  id             :bigint           not null, primary key
+#  enabled        :boolean          default(TRUE), not null
+#  name           :string           not null
+#  owner          :boolean          default(FALSE), not null
+#  phone          :string           not null
+#  replying_since :datetime
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  contact_id     :bigint
 #
 # Indexes
 #
@@ -26,6 +27,7 @@
 #
 class SmsCorrespondent < ApplicationRecord
   PHONE_FORMAT = /\A\+[1-9]\d{7,14}\z/
+  REPLY_LEASE = 5.minutes
   # Ce qu'Alfred sait de la personne, tire de sa fiche : la nature de la relation et rien
   # d'autre. Notes, gouts et prets restent hors de portee (le numero peut etre usurpe).
   RELATIONS = {
@@ -75,6 +77,18 @@ class SmsCorrespondent < ApplicationRecord
 
   def gender
     contact&.gender
+  end
+
+  # Une seule reponse a la fois par personne : le texto suivant doit voir la reponse au
+  # precedent, sinon Alfred y repond une seconde fois. Prise conditionnelle (meme patron que
+  # CalendarSync#claim!) ; une prise trop ancienne est celle d'un process mort en route.
+  def claim_reply
+    self.class.where(id: id).where("replying_since IS NULL OR replying_since < ?", REPLY_LEASE.ago)
+        .update_all(replying_since: Time.current) == 1
+  end
+
+  def release_reply
+    self.class.where(id: id).update_all(replying_since: nil)
   end
 
   # Consigne le texto puis l'envoie. L'echec est note sur le message et releve.

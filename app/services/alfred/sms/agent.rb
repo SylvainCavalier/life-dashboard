@@ -59,9 +59,20 @@ module Alfred
         end
       end
 
+      # Un texto arrive pendant une reponse a un id plus petit que cette reponse. Les textos
+      # encore sans reponse passent donc en dernier, sinon l'historique finirait par Alfred
+      # (l'API le refuse) et il croirait n'avoir pas repondu au precedent.
+      def in_conversation_order(messages)
+        answered_up_to = messages.select { |m| m.inbound? && %w[answered limited].include?(m.status) }.map(&:id).max.to_i
+        waiting, settled = messages.partition { |m| m.inbound? && m.id > answered_up_to }
+        settled + waiting
+      end
+
       def history
-        past = @correspondent.messages.where(created_at: HISTORY_WINDOW.ago..).where("id <= ?", @inbound.id)
-                             .where.not(status: "failed").order(id: :desc).limit(HISTORY_MESSAGES).to_a.reverse
+        past = in_conversation_order(
+          @correspondent.messages.where(created_at: HISTORY_WINDOW.ago..).where.not(status: "failed")
+                        .order(id: :desc).limit(HISTORY_MESSAGES).to_a.reverse
+        )
         # L'API exige que le premier message soit celui de l'utilisateur. Un fil peut pourtant
         # commencer par un texto envoye de la part de Sylvain : sans lui, « Ok » ne veut rien dire.
         sent_first, rest = past.partition.with_index { |m, i| !m.inbound? && past.first(i).none?(&:inbound?) }

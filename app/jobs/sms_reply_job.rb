@@ -5,6 +5,8 @@ class SmsReplyJob < ApplicationJob
 
   # Laisse arriver la suite d'un message envoye en plusieurs textos.
   COALESCE_DELAY = 4.seconds
+  # Alfred repond encore au texto precedent de cette personne : on repasse dans un instant.
+  BUSY_RETRY_DELAY = 3.seconds
   # Plafond par correspondant et par jour : chaque reponse paie Claude et Twilio.
   DAILY_LIMIT = ENV.fetch("SMS_DAILY_LIMIT", "30").to_i
 
@@ -15,16 +17,33 @@ class SmsReplyJob < ApplicationJob
 
   def perform(message_id)
     message = SmsMessage.find(message_id)
-    return unless SmsMessage.where(id: message.id, status: "received").update_all(status: "processing") == 1
+    return unless message.status == "received"
 
     correspondent = message.correspondent
-    return message.update!(status: "merged") if correspondent.messages.inbound.where("id > ?", message.id).exists?
+    # Un texto plus recent repondra pour celui-ci, meme si une reponse est en cours.
+    return mark_merged(message) if correspondent.messages.inbound.where("id > ?", message.id).exists?
+    return self.class.set(wait: BUSY_RETRY_DELAY).perform_later(message.id) unless correspondent.claim_reply
+
+    begin
+      next_step(message, correspondent)
+    ensure
+      correspondent.release_reply
+    end
+  end
+
+  private
+
+  def mark_merged(message)
+    SmsMessage.where(id: message.id, status: "received").update_all(status: "merged")
+  end
+
+  def next_step(message, correspondent)
+    return unless SmsMessage.where(id: message.id, status: "received").update_all(status: "processing") == 1
+
     return apply_limit(message, correspondent) if over_limit?(correspondent)
 
     answer(message, correspondent)
   end
-
-  private
 
   def over_limit?(correspondent)
     today_count(correspondent) > DAILY_LIMIT

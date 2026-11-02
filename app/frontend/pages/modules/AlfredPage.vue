@@ -232,7 +232,7 @@
                     <span class="text-[11px] px-2 py-0.5 rounded-full" :class="tool.kind === 'proposal' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-600'">
                       {{ tool.kind === 'proposal' ? 'proposition' : 'lecture' }}
                     </span>
-                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ tool.integration === 'gmail' ? 'Gmail' : 'dashboard' }}</span>
+                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ { gmail: 'Gmail', sms: 'Textos' }[tool.integration] || 'dashboard' }}</span>
                   </div>
                   <p class="text-xs text-gray-500 mt-1 leading-relaxed">{{ tool.description }}</p>
                 </div>

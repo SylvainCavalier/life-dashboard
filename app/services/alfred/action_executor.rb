@@ -22,7 +22,7 @@ module Alfred
       end
       @action
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Stale, DataAccess::Denied,
-           Gmail::Client::Error => e
+           Gmail::Client::Error, TwilioSms::Error => e
       @action.update!(status: "failed", error: e.message.truncate(500), resolved_at: Time.current)
       note("Echec de l'action proposee (#{@action.operation} #{@action.target_model}) : #{e.message.truncate(300)}")
       @action
@@ -45,6 +45,7 @@ module Alfred
       return [MailActions.execute!(@action), nil] if @action.mail?
       return MemoryActions.execute!(@action) if @action.memory?
       return [ShoppingActions.execute!(@action), nil] if @action.shopping?
+      return [SmsActions.execute!(@action), nil] if @action.sms?
 
       record = write!
       ["Ecriture confirmee par Sylvain et executee : #{@action.operation} #{@action.target_model} ##{record.id} (#{@action.summary}).",

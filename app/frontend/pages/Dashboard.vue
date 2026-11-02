@@ -302,6 +302,7 @@ const modules = computed(() => [
   { name: 'Prets', icon: '🤝', subtitle: `${counts.value.loans} prêt${counts.value.loans > 1 ? 's' : ''} en cours`, to: '/loans' },
   { name: 'Reunions', icon: '🎙️', subtitle: `${counts.value.meetings} compte${counts.value.meetings > 1 ? 's' : ''} rendu${counts.value.meetings > 1 ? 's' : ''}`, to: '/meetings' },
   { name: 'Rappels', icon: '⏰', subtitle: remindersSubtitle.value, to: '/reminders' },
+  { name: 'Textos', icon: '💬', subtitle: 'Alfred par SMS', to: '/sms' },
   { name: 'Notes', icon: '📝', subtitle: `${counts.value.notes} note${counts.value.notes > 1 ? 's' : ''}`, to: '/notes' },
   { name: 'Sites utiles', icon: '🔗', subtitle: `${counts.value.useful_sites} site${counts.value.useful_sites > 1 ? 's' : ''}`, to: '/useful-sites' },
   { name: 'Mes projets', icon: '🚀', subtitle: `${counts.value.projects} projet${counts.value.projects > 1 ? 's' : ''}`, to: '/projects' },

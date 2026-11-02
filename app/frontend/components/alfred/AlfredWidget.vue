@@ -302,7 +302,7 @@ const resolve = async (action, decision) => {
 }
 
 // Les mails restent a confirmer un par un : un envoi ne se rattrape pas.
-const MAIL_OPERATIONS = ['send_email', 'draft_email', 'triage_email']
+const MAIL_OPERATIONS = ['send_email', 'draft_email', 'triage_email', 'send_sms']
 const bulkActions = (message) =>
   message.actions.filter((action) => action.status === 'proposed' && !MAIL_OPERATIONS.includes(action.operation))
 
@@ -346,9 +346,10 @@ const operationLabel = (action) => ({
   shopping_add: 'Ajout',
   shopping_remove: 'Retrait',
   shopping_clear: 'Remise a zero',
+  send_sms: 'Envoi d\'un texto',
 }[action.operation] || action.operation)
 
-const TARGET_LABELS = { AlfredMemory: 'Memoire d\'Alfred', ShoppingItem: 'Liste de courses' }
+const TARGET_LABELS = { AlfredMemory: 'Memoire d\'Alfred', ShoppingItem: 'Liste de courses', Sms: 'Textos', Task: 'To-do list', Event: 'Agenda' }
 const targetLabel = (action) => TARGET_LABELS[action.target_model] || action.target_model
 
 const actionBorder = (action) => ({

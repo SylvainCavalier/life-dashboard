@@ -112,6 +112,11 @@ export default [
     component: () => import('../pages/modules/RemindersPage.vue'),
   },
   {
+    path: '/sms',
+    name: 'Sms',
+    component: () => import('../pages/modules/SmsPage.vue'),
+  },
+  {
     path: '/notes',
     name: 'Notes',
     component: () => import('../pages/modules/NotesPage.vue'),

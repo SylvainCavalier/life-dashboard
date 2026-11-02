@@ -33,6 +33,7 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       /api/script_folders
       /api/shopping_items
       /api/shopping_presets
+      /api/sms
       /api/projects
       /api/tasks
       /api/reminders

@@ -175,6 +175,18 @@ rattrape les rappels echus.
 | `REMINDER_EMAIL_TO` | Optionnel. Destinataire du mail de secours des rappels (defaut `GMAIL_USER`) |
 | `GOOD_JOB_EXECUTION_MODE` | Optionnel. `async` par defaut (jobs dans le process web) ; `external` si un dyno worker est ajoute |
 
+### Alfred par SMS (Twilio)
+
+```bash
+heroku config:set TWILIO_ACCOUNT_SID=AC... TWILIO_AUTH_TOKEN=... TWILIO_PHONE_NUMBER=+33... --app life-dashboard-prive
+```
+
+Dans la console Twilio (Phone Numbers > Manage > Active numbers > le numero > Messaging) : « A message comes in » =
+Webhook, `https://<APP_HOST>/webhooks/twilio/sms`, HTTP POST. L'URL doit etre exactement celle-ci : la signature porte
+dessus, et `config.hosts` refuse l'hote `*.herokuapp.com`. Derriere un proxy qui change l'URL, la fixer avec
+`TWILIO_WEBHOOK_URL`. Puis autoriser les numeros depuis la page Textos (`/sms`) ; `bin/rails sms:check` fait le point.
+Facultatif : `ALFRED_SMS_MODEL`, `ALFRED_SMS_EFFORT` (`low`), `SMS_DAILY_LIMIT` (`30` par correspondant).
+
 ## 4. Domaine et dyno
 
 ```bash

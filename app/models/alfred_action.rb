@@ -40,7 +40,9 @@ class AlfredAction < ApplicationRecord
   MAIL_OPERATIONS = %w[send_email draft_email triage_email].freeze
   MEMORY_OPERATIONS = %w[remember revise_memory forget].freeze
   SHOPPING_OPERATIONS = %w[shopping_add shopping_remove shopping_clear].freeze
-  OPERATIONS = (WRITE_OPERATIONS + MAIL_OPERATIONS + MEMORY_OPERATIONS + SHOPPING_OPERATIONS).freeze
+  # send_sms : texto a un correspondant autorise (Alfred::SmsActions), target_model "Sms".
+  SMS_OPERATIONS = %w[send_sms].freeze
+  OPERATIONS = (WRITE_OPERATIONS + MAIL_OPERATIONS + MEMORY_OPERATIONS + SHOPPING_OPERATIONS + SMS_OPERATIONS).freeze
   STATUSES = %w[proposed executed cancelled failed].freeze
 
   belongs_to :conversation, class_name: "AlfredConversation", foreign_key: :alfred_conversation_id,
@@ -66,4 +68,5 @@ class AlfredAction < ApplicationRecord
   def mail? = MAIL_OPERATIONS.include?(operation)
   def memory? = MEMORY_OPERATIONS.include?(operation)
   def shopping? = SHOPPING_OPERATIONS.include?(operation)
+  def sms? = SMS_OPERATIONS.include?(operation)
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_02_174625) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -87,8 +87,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "daily_report_id"
+    t.bigint "sms_correspondent_id"
     t.index ["daily_report_id"], name: "index_alfred_conversations_on_daily_report_id"
     t.index ["last_message_at"], name: "index_alfred_conversations_on_last_message_at"
+    t.index ["sms_correspondent_id"], name: "index_alfred_conversations_on_sms_correspondent_id"
   end
 
   create_table "alfred_index_entries", force: :cascade do |t|
@@ -141,6 +143,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
     t.datetime "updated_at", null: false
     t.jsonb "prompt_overrides", default: {}, null: false
     t.jsonb "suggestions", default: [], null: false
+    t.text "sms_public_facts"
   end
 
   create_table "budget_entries", force: :cascade do |t|
@@ -1107,6 +1110,32 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
     t.index "lower((name)::text)", name: "index_shopping_presets_on_lower_name", unique: true
   end
 
+  create_table "sms_correspondents", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "phone", null: false
+    t.bigint "contact_id"
+    t.boolean "owner", default: false, null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_sms_correspondents_on_contact_id"
+    t.index ["phone"], name: "index_sms_correspondents_on_phone", unique: true
+  end
+
+  create_table "sms_messages", force: :cascade do |t|
+    t.bigint "sms_correspondent_id", null: false
+    t.string "direction", null: false
+    t.text "body", null: false
+    t.string "status", null: false
+    t.string "twilio_sid"
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sms_correspondent_id", "created_at"], name: "index_sms_messages_on_sms_correspondent_id_and_created_at"
+    t.index ["sms_correspondent_id"], name: "index_sms_messages_on_sms_correspondent_id"
+    t.index ["twilio_sid"], name: "index_sms_messages_on_twilio_sid", unique: true
+  end
+
   create_table "subscriptions", force: :cascade do |t|
     t.string "name", null: false
     t.decimal "cost", precision: 8, scale: 2, null: false
@@ -1350,6 +1379,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
   add_foreign_key "alfred_actions", "alfred_conversations"
   add_foreign_key "alfred_actions", "alfred_messages"
   add_foreign_key "alfred_conversations", "daily_reports", on_delete: :nullify
+  add_foreign_key "alfred_conversations", "sms_correspondents", on_delete: :nullify
   add_foreign_key "alfred_messages", "alfred_conversations"
   add_foreign_key "clients", "companies"
   add_foreign_key "crm_profiles", "contacts"
@@ -1384,6 +1414,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_30_094125) do
   add_foreign_key "quotes", "companies"
   add_foreign_key "scripts", "script_folders", on_delete: :nullify
   add_foreign_key "sentinel_documents", "sentinel_sources"
+  add_foreign_key "sms_correspondents", "contacts", on_delete: :nullify
+  add_foreign_key "sms_messages", "sms_correspondents", on_delete: :cascade
   add_foreign_key "tasks", "projects"
   add_foreign_key "trip_items", "trips"
   add_foreign_key "trip_plans", "trips"

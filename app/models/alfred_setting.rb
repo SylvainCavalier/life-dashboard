@@ -10,6 +10,7 @@
 #  id                  :bigint           not null, primary key
 #  custom_instructions :text
 #  prompt_overrides    :jsonb            not null
+#  sms_public_facts    :text
 #  suggestions         :jsonb            not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
@@ -48,6 +49,28 @@ class AlfredSetting < ApplicationRecord
   # Phrases affichees par le widget : celles de Sylvain, sinon celles du code.
   def effective_suggestions
     suggestions.presence || DEFAULT_SUGGESTIONS
+  end
+
+  # Faits donnes par texto, faute de texte choisi par Sylvain : l'anniversaire sans
+  # l'annee (date de naissance complete = donnee d'identite), et l'email du profil.
+  def self.default_sms_facts
+    profile = PersonalProfile.first
+    return "" unless profile
+
+    lines = []
+    lines << "Adresse mail : #{profile.email}" if profile.email.present?
+    lines << "Anniversaire : #{profile.birth_date.strftime('%d/%m')} (jour/mois, sans l'année)" if profile.birth_date
+    lines.join("\n")
+  end
+
+  def effective_sms_facts
+    sms_public_facts.presence || self.class.default_sms_facts
+  end
+
+  # Un texte identique aux valeurs par defaut n'est pas stocke, pour suivre le profil.
+  def replace_sms_facts!(text)
+    cleaned = text.to_s.strip
+    update!(sms_public_facts: cleaned == self.class.default_sms_facts ? nil : cleaned.presence)
   end
 
   # Nettoie la liste (espaces, lignes vides, doublons). Une liste identique aux

@@ -52,6 +52,11 @@ class Rack::Attack
     req.ip unless req.path.start_with?('/assets')
   end
 
+  # Webhook Twilio : public, signature verifiee ensuite ; plafond large pour les rafales legitimes.
+  Rack::Attack.throttle('twilio webhook', limit: 60, period: 60.seconds) do |req|
+    req.ip if req.post? && req.path == '/webhooks/twilio/sms'
+  end
+
   # Alfred : chaque message declenche des appels payants (Claude, embeddings).
   Rack::Attack.throttle('alfred messages', limit: 20, period: 60.seconds) do |req|
     req.ip if req.post? && req.path.match?(%r{^/api/alfred_conversations/\d+/message$})

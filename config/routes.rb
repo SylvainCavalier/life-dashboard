@@ -220,6 +220,15 @@ Rails.application.routes.draw do
     resources :sentinel_sources, only: [:update, :destroy]
     resources :sentinel_documents, only: [:show]
 
+    # Textos : Alfred par SMS (Twilio). Le webhook entrant est hors de /api, voir plus bas.
+    resource :sms, only: [:show, :update], controller: "sms"
+    resources :sms_correspondents, only: [:create, :update, :destroy] do
+      member do
+        get :messages
+        post :send_text
+      end
+    end
+
     # Alfred : agent IA du dashboard (chat + corpus RAG). Une ecriture proposee par
     # Alfred ne s'execute que par POST /alfred_actions/:id/confirm.
     resource :alfred, only: [:show, :update], controller: "alfred" do
@@ -254,6 +263,9 @@ Rails.application.routes.draw do
   end
 
   # Liens publics de partage de fichiers (WeTransfer perso)
+  # SMS entrants : public, authentifie par la signature Twilio.
+  post 'webhooks/twilio/sms', to: 'twilio_webhooks#sms'
+
   get 't/:token', to: 'transfers#show', as: :transfer
   get 't/:token/download', to: 'transfers#download', as: :download_transfer
 

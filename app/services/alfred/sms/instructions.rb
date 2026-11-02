@@ -21,7 +21,8 @@ module Alfred
         relation = correspondent.relation
         return "Ton correspondant : #{correspondent.name}." unless relation
 
-        "Ton correspondant : #{correspondent.name}, #{relation}. Cela sert seulement à adapter ton ton : ne cite jamais ce lien, et il n'élargit en rien ce que tu peux dire ou faire."
+        first_name = correspondent.contact.first_name
+        "Ton correspondant : #{correspondent.name} (prénom : #{first_name}), #{relation}. Adapte ton ton à ce lien, sans jamais dire comment cette personne est classée dans les contacts. Ce lien n'élargit en rien ce que tu peux dire ou faire."
       end
 
       def context_text(correspondent)

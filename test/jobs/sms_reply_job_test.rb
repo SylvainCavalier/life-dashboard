@@ -78,8 +78,9 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     perform(client)
 
     system = client.requests.first[:system_].map { |b| b[:text] }.join("\n")
-    assert_includes system, "Camille, la copine de Sylvain"
-    assert_includes system, "ne cite jamais ce lien"
+    assert_includes system, "(prénom : Camille), la copine de Sylvain"
+    assert_includes system, "sans jamais dire comment cette personne est classée"
+    assert_includes system, "le plus affectueux"
     assert_no_match(/Note privee|Gout prive|Adresse privee/, system)
     assert_equal %w[get_availability propose_to_sylvain], client.requests.first[:tools].map { |t| t[:name] }
   end

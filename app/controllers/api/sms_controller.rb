@@ -21,8 +21,17 @@ module Api
         configured: TwilioSms.configured?, number: TwilioSms.number,
         facts: setting.effective_sms_facts, facts_default: AlfredSetting.default_sms_facts,
         correspondents: SmsCorrespondent.ordered.map { |correspondent| correspondent_json(correspondent) },
+        contacts: contact_options,
         pending: pending_requests
       }
+    end
+
+    # Tous les contacts, numero renseigne ou non : tries par nom, comme la page Contacts.
+    def contact_options
+      Contact.ordered.pluck(:id, :last_name, :first_name, :phone, :relationship_type).map do |id, last_name, first_name, phone, relationship|
+        { id: id, label: [last_name, first_name].compact_blank.join(" "), name: [first_name, last_name].compact_blank.join(" "),
+          phone: phone, relationship: relationship }
+      end
     end
 
     def correspondent_json(correspondent)

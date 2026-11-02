@@ -29,6 +29,28 @@ class SmsTest < ActionDispatch::IntegrationTest
     assert_equal ["Camille"], response.parsed_body["correspondents"].map { |c| c["name"] }
   end
 
+  test "tous les contacts sont proposes, meme sans numero, et un numero se lie a une fiche" do
+    sign_in_owner
+    contact = Contact.create!(first_name: "Camille", last_name: "Durand", relationship_type: "copine")
+
+    get "/api/sms", headers: JSON_HEADERS
+    option = response.parsed_body["contacts"].find { |c| c["id"] == contact.id }
+    assert_equal "Durand Camille", option["label"]
+    assert_equal "Camille Durand", option["name"]
+    assert_nil option["phone"]
+
+    friend = SmsCorrespondent.create!(name: "Camille", phone: "+33612345678")
+    patch "/api/sms_correspondents/#{friend.id}", params: { sms_correspondent: { contact_id: contact.id } }.to_json, headers: JSON_HEADERS
+    assert_response :success
+    assert_equal "la copine de Sylvain", friend.reload.relation
+
+    patch "/api/sms_correspondents/#{friend.id}", params: { sms_correspondent: { contact_id: 0 } }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_content
+
+    patch "/api/sms_correspondents/#{friend.id}", params: { sms_correspondent: { contact_id: nil } }.to_json, headers: JSON_HEADERS
+    assert_nil friend.reload.contact_id
+  end
+
   test "envoi manuel, consigne dans le fil" do
     sign_in_owner
     friend = SmsCorrespondent.create!(name: "Camille", phone: "+33612345678")

@@ -692,7 +692,8 @@ hors d'`Alfred::Tools` : ni corpus, ni `query_records`, ni memoires, ni Gmail. S
 `sms`, modifiable, `chat: false`). Il voit `AlfredSetting#effective_sms_facts` (texte de la page, par defaut email et anniversaire sans
 l'annee ; pas le nom de famille du profil, administratif) et deux outils : `get_availability` (`Sms::Availability`, creneaux seuls, jamais le
 titre, le lieu ou la description, `echeance` ignorees, 31 jours et 6 mois d'avance au plus) et `propose_to_sylvain` (`Sms::RequestProposal`).
-Le numero de Sylvain (`owner`) n'a **aucun droit de plus**. Ne pas ajouter d'outil a cet agent sans refaire ce raisonnement.
+Un numero se lie a une fiche `Contact` (`contact_id`, page Textos) : Alfred n'en recoit que la nature de la relation (`SmsCorrespondent::RELATIONS`,
+pour le ton, sans le citer), jamais notes, gouts ou adresse. Le numero de Sylvain (`owner`) n'a **aucun droit de plus**. Ne pas ajouter d'outil a cet agent sans refaire ce raisonnement.
 `RequestProposal` construit les attributs champ par champ (ni modele, ni projet, ni priorite au choix du texto ; 5 demandes par jour et par
 personne), ouvre une `AlfredConversation` (`sms_correspondent_id`) avec la citation du texto et une `AlfredAction` ordinaire, puis notifie
 (`/sms?conversation=ID` ouvre le widget sur la carte). Seul `ActionExecutor` ecrit. `Prompt.sms_request_block` rejoue la citation dans le prompt

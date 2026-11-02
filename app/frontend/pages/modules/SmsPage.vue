@@ -39,7 +39,11 @@
                 </p>
                 <p class="text-xs text-gray-500">{{ person.phone }}<span v-if="person.last_message_at"> · dernier texto {{ formatDate(person.last_message_at) }}</span></p>
               </button>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <select :value="person.contact_id ?? ''" class="max-w-[12rem] rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-700" aria-label="Fiche contact liée" @change="linkContact(person, $event.target.value)">
+                  <option value="">Sans fiche contact</option>
+                  <option v-for="contact in overview.contacts" :key="contact.id" :value="contact.id">{{ contact.label }} ({{ contact.relationship }})</option>
+                </select>
                 <button type="button" class="text-xs px-2 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" @click="toggleEnabled(person)">{{ person.enabled ? 'Désactiver' : 'Activer' }}</button>
                 <button type="button" class="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50" @click="removeCorrespondent(person)">Retirer</button>
               </div>
@@ -64,10 +68,12 @@
         </ul>
 
         <form class="grid gap-2 sm:grid-cols-[1fr_1fr_auto]" @submit.prevent="addCorrespondent">
-          <input v-model="form.name" type="text" required placeholder="Nom" list="sms-contacts" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" @change="fillFromContact" />
-          <datalist id="sms-contacts">
-            <option v-for="contact in contacts" :key="contact.id" :value="contact.label" />
-          </datalist>
+          <select v-model="form.contact_id" class="sm:col-span-3 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700" aria-label="Fiche contact" @change="fillFromContact">
+            <option :value="null">Choisir une fiche contact (facultatif)</option>
+            <option v-for="contact in overview?.contacts || []" :key="contact.id" :value="contact.id">{{ contact.label }} ({{ contact.relationship }}){{ contact.phone ? '' : ' - sans numéro' }}</option>
+          </select>
+          <p class="sm:col-span-3 text-xs text-gray-500">Liée à une fiche, la personne est reconnue par Alfred (ami, copine, famille...) pour adapter son ton. Il n'apprend rien d'autre de la fiche et n'obtient aucun droit de plus.</p>
+          <input v-model="form.name" type="text" required placeholder="Nom" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
           <input v-model="form.phone" type="tel" required placeholder="06 12 34 56 78" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
           <button type="submit" class="text-sm px-3 py-1.5 rounded-lg bg-black text-white hover:bg-gray-800">Autoriser</button>
           <label class="sm:col-span-3 flex items-center gap-2 text-xs text-gray-600">
@@ -101,7 +107,6 @@ const route = useRoute()
 const { openInPanel } = useAlfred()
 
 const overview = ref(null)
-const contacts = ref([])
 const error = ref(null)
 const facts = ref('')
 const factsSaved = ref(false)
@@ -128,19 +133,21 @@ const load = () => attempt(async () => {
   facts.value = overview.value.facts
 })
 
-const loadContacts = () => attempt(async () => {
-  const all = (await apiClient.get('/contacts')).data
-  contacts.value = all.filter((c) => c.phone).map((c) => ({
-    id: c.id, phone: c.phone, label: [c.first_name, c.last_name].filter(Boolean).join(' '),
-  }))
-})
-
+// Sans numero sur la fiche, le champ reste a remplir a la main.
 const fillFromContact = () => {
-  const contact = contacts.value.find((c) => c.label === form.value.name)
+  const contact = overview.value.contacts.find((c) => c.id === form.value.contact_id)
   if (!contact) return
-  form.value.phone = contact.phone
-  form.value.contact_id = contact.id
+  form.value.name = contact.name
+  form.value.phone = contact.phone || ''
 }
+
+const linkContact = (person, value) => attempt(async () => {
+  try {
+    await apiClient.patch(`/sms_correspondents/${person.id}`, { sms_correspondent: { contact_id: value || null } })
+  } finally {
+    await load()
+  }
+})
 
 const addCorrespondent = () => attempt(async () => {
   await apiClient.post('/sms_correspondents', { sms_correspondent: form.value })
@@ -197,7 +204,6 @@ const onActionResolved = () => load()
 
 onMounted(() => {
   load()
-  loadContacts()
   openRequested()
   window.addEventListener('alfred:action-resolved', onActionResolved)
 })

@@ -70,6 +70,27 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     assert_no_match(/Nom-Administratif|PASS123|FR7600000|Souvenir prive/, system)
   end
 
+  test "une fiche liee donne la relation, et rien d'autre de la fiche" do
+    contact = Contact.create!(first_name: "Camille", last_name: "Durand", relationship_type: "copine",
+                              notes: "Note privee", likes: "Gout prive", address: "Adresse privee")
+    @friend.update!(contact: contact)
+    client = FakeClient.new(text_response("Bien."))
+    perform(client)
+
+    system = client.requests.first[:system_].map { |b| b[:text] }.join("\n")
+    assert_includes system, "Camille, la copine de Sylvain"
+    assert_includes system, "ne cite jamais ce lien"
+    assert_no_match(/Note privee|Gout prive|Adresse privee/, system)
+    assert_equal %w[get_availability propose_to_sylvain], client.requests.first[:tools].map { |t| t[:name] }
+  end
+
+  test "sans fiche, seul le nom est donne" do
+    client = FakeClient.new(text_response("Bien."))
+    perform(client)
+
+    assert_includes client.requests.first[:system_].map { |b| b[:text] }.join("\n"), "Ton correspondant : Camille."
+  end
+
   test "execute un outil puis repond" do
     tool_use = FakeClient::Block.new(type: :tool_use, name: "get_availability", id: "t1",
                                      input: { "from_date" => Date.current.iso8601, "to_date" => Date.current.iso8601 })

@@ -26,6 +26,15 @@
 #
 class SmsCorrespondent < ApplicationRecord
   PHONE_FORMAT = /\A\+[1-9]\d{7,14}\z/
+  # Ce qu'Alfred sait de la personne, tire de sa fiche : la nature de la relation et rien
+  # d'autre. Notes, gouts et prets restent hors de portee (le numero peut etre usurpe).
+  RELATIONS = {
+    "ami" => "un(e) ami(e) de Sylvain", "copine" => "la copine de Sylvain", "ex" => "un(e) ex de Sylvain",
+    "famille" => "un membre de la famille de Sylvain", "collegue" => "un(e) collègue de Sylvain",
+    "connaissance" => "une connaissance de Sylvain", "client" => "un(e) client(e) de Sylvain",
+    "prospect" => "un(e) client(e) potentiel(le) de Sylvain", "partenaire" => "un(e) partenaire professionnel(le) de Sylvain",
+    "prestataire" => "un(e) prestataire de Sylvain", "eleve" => "un(e) élève de Sylvain", "medias" => "un contact de Sylvain dans les médias"
+  }.freeze
 
   belongs_to :contact, optional: true
   has_many :messages, class_name: "SmsMessage", dependent: :destroy, inverse_of: :correspondent
@@ -35,6 +44,7 @@ class SmsCorrespondent < ApplicationRecord
   normalizes :phone, with: ->(value) { SmsCorrespondent.normalize_phone(value) }
 
   validates :name, presence: true
+  validates :contact, presence: true, if: :contact_id
   validates :phone, presence: true, uniqueness: true,
                     format: { with: PHONE_FORMAT, message: "doit etre un numero valide (06 12 34 56 78 ou +33612345678)" }
 
@@ -52,6 +62,10 @@ class SmsCorrespondent < ApplicationRecord
 
   def self.for_phone(value)
     find_by(phone: normalize_phone(value))
+  end
+
+  def relation
+    RELATIONS[contact&.relationship_type]
   end
 
   # Consigne le texto puis l'envoie. L'echec est note sur le message et releve.

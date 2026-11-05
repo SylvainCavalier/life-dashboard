@@ -26,7 +26,17 @@
 
       <section class="bg-white rounded-xl shadow-sm p-4 sm:p-5 mb-6">
         <h2 class="font-semibold text-gray-900 mb-1">Numéros autorisés</h2>
-        <p class="text-xs text-gray-500 mb-3">Un texto venu d'un autre numéro est ignoré, sans réponse ni coût.</p>
+        <p v-if="!overview?.whitelist_open_until" class="text-xs text-gray-500 mb-3">Un texto venu d'un autre numéro est ignoré, sans réponse ni coût.</p>
+
+        <div v-if="overview?.whitelist_open_until" class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3">
+          <p class="text-sm font-semibold text-red-800">Liste blanche désactivée jusqu'au {{ formatDate(overview.whitelist_open_until) }}</p>
+          <p class="mt-1 text-xs text-red-800">Tout numéro peut écrire à Alfred, qui lui répond. Elle se réactivera toute seule à cette date.</p>
+          <button type="button" class="mt-2 text-sm px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800" @click="setWhitelistOpen(false)">Réactiver maintenant</button>
+        </div>
+        <div v-else-if="overview" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3">
+          <p class="text-xs text-amber-900"><strong>Dangereux :</strong> pendant 24 h, n'importe quel numéro pourra écrire à Alfred. Il lui répondra, lui donnera ce qu'il peut dire de vous et vos disponibilités, et chaque texto sera facturé.</p>
+          <button type="button" class="mt-2 text-sm px-3 py-1.5 rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50" @click="setWhitelistOpen(true)">Désactiver la liste blanche</button>
+        </div>
 
         <ul class="divide-y divide-gray-100 mb-4">
           <li v-for="person in overview?.correspondents || []" :key="person.id" class="py-2">
@@ -35,6 +45,7 @@
                 <p class="text-sm font-medium text-gray-900">
                   {{ person.name }}
                   <span v-if="person.owner" class="ml-1 text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">moi</span>
+                  <span v-if="person.temporary" class="ml-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800">temporaire</span>
                   <span v-if="!person.enabled" class="ml-1 text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">désactivé</span>
                 </p>
                 <p class="text-xs text-gray-500">{{ person.phone }}<span v-if="person.last_message_at"> · dernier texto {{ formatDate(person.last_message_at) }}</span></p>
@@ -44,6 +55,7 @@
                   <option value="">Sans fiche contact</option>
                   <option v-for="contact in overview.contacts" :key="contact.id" :value="contact.id">{{ contact.label }} ({{ contact.relationship }})</option>
                 </select>
+                <button v-if="person.temporary" type="button" class="text-xs px-2 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" @click="keepCorrespondent(person)">Garder</button>
                 <button type="button" class="text-xs px-2 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" @click="toggleEnabled(person)">{{ person.enabled ? 'Désactiver' : 'Activer' }}</button>
                 <button type="button" class="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50" @click="removeCorrespondent(person)">Retirer</button>
               </div>
@@ -158,6 +170,17 @@ const addCorrespondent = () => attempt(async () => {
 const toggleEnabled = (person) => attempt(async () => {
   await apiClient.patch(`/sms_correspondents/${person.id}`, { sms_correspondent: { enabled: !person.enabled } })
   await load()
+})
+
+// Un numero temporaire n'est plus accepte une fois la liste blanche reactivee, sauf s'il est garde.
+const keepCorrespondent = (person) => attempt(async () => {
+  await apiClient.patch(`/sms_correspondents/${person.id}`, { sms_correspondent: { temporary: false } })
+  await load()
+})
+
+const setWhitelistOpen = (open) => attempt(async () => {
+  if (open && !window.confirm('Désactiver la liste blanche pendant 24 h ? N\'importe quel numéro pourra écrire à Alfred et obtenir une réponse.')) return
+  overview.value = (await apiClient.patch('/sms', { whitelist_open: open })).data
 })
 
 const removeCorrespondent = (person) => attempt(async () => {

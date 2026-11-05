@@ -10,8 +10,8 @@ class TwilioWebhooksController < ApplicationController
 
   # POST /webhooks/twilio/sms
   def sms
-    correspondent = SmsCorrespondent.for_phone(params[:From])
-    if correspondent&.enabled?
+    correspondent = SmsCorrespondent.accepting(params[:From])
+    if correspondent
       store_and_enqueue(correspondent)
     else
       Rails.logger.info "[TwilioWebhooks] texto ignore, numero non autorise (se terminant par #{params[:From].to_s.last(2)})"
@@ -30,6 +30,14 @@ class TwilioWebhooksController < ApplicationController
     head :forbidden unless valid
   end
 
+  # Liste blanche ouverte : Sylvain voit chaque texto d'un inconnu, sans dependre du modele.
+  def notify_unknown(correspondent, message)
+    PushNotifications.broadcast(
+      title: "Texto d'un numero inconnu", body: "#{correspondent.phone} : #{message.body}".truncate(160),
+      url: "/sms", tag: "sms-unknown-#{message.id}", renotify: true
+    )
+  end
+
   # Twilio rejoue un webhook en cas de delai : le sid garantit un seul traitement.
   def store_and_enqueue(correspondent)
     message = correspondent.messages.create!(
@@ -37,6 +45,7 @@ class TwilioWebhooksController < ApplicationController
       body: params[:Body].to_s.strip.truncate(SmsMessage::MAX_INBOUND_LENGTH).presence || "(texto sans texte)"
     )
     SmsReplyJob.set(wait: SmsReplyJob::COALESCE_DELAY).perform_later(message.id)
+    notify_unknown(correspondent, message) if correspondent.temporary?
   rescue ActiveRecord::RecordNotUnique
     Rails.logger.info "[TwilioWebhooks] webhook rejoue, deja traite : #{params[:MessageSid]}"
   end

@@ -88,6 +88,15 @@ class SmsReplyJobTest < ActiveSupport::TestCase
     assert_equal %w[get_availability notify_sylvain propose_to_sylvain], client.requests.first[:tools].map { |t| t[:name] }
   end
 
+  test "un numero temporaire est presente comme inconnu, avec les memes outils" do
+    @friend.update!(temporary: true)
+    client = FakeClient.new(text_response("Bien."))
+    perform(client)
+
+    assert_includes client.requests.first[:system_].map { |b| b[:text] }.join("\n"), "numéro inconnu de Sylvain"
+    assert_equal %w[get_availability notify_sylvain propose_to_sylvain], client.requests.first[:tools].map { |t| t[:name] }
+  end
+
   test "sans fiche, seul le nom est donne" do
     client = FakeClient.new(text_response("Bien."))
     perform(client)

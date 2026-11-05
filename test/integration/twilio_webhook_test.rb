@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class TwilioWebhookTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
@@ -65,6 +66,79 @@ class TwilioWebhookTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_not_includes response.body, "Message"
+  end
+
+  test "liste blanche ouverte : un inconnu est admis, repond et notifie, comme temporaire" do
+    AlfredSetting.instance.open_sms_whitelist!
+    pushes = []
+
+    PushNotifications.stub(:broadcast, ->(payload) { pushes << payload; 1 }) do
+      assert_enqueued_with(job: SmsReplyJob) { deliver(sms(from: "+33699999945", body: "Bonjour, ici Karim")) }
+    end
+
+    assert_response :success
+    person = SmsCorrespondent.for_phone("+33699999945")
+    assert person.temporary?
+    assert_equal "Inconnu 9945", person.name
+    assert_equal "Bonjour, ici Karim", person.messages.last.body
+    assert_includes pushes.first[:body], "Bonjour, ici Karim"
+  end
+
+  test "au bout de 24 h la liste se referme seule, y compris pour les numeros admis" do
+    AlfredSetting.instance.open_sms_whitelist!
+    deliver(sms(from: "+33699999945", sid: "SM1"))
+    @friend_count = SmsMessage.count
+
+    travel(AlfredSetting::SMS_OPENING_DURATION + 1.minute) do
+      assert_no_difference("SmsMessage.count") do
+        deliver(sms(from: "+33699999945", sid: "SM2"))
+        deliver(sms(from: "+33688888888", sid: "SM3"))
+      end
+      assert_response :success
+      assert_nil SmsCorrespondent.for_phone("+33688888888")
+
+      deliver(sms(sid: "SM4"))
+      assert_equal "SM4", @friend.messages.last.twilio_sid
+    end
+  end
+
+  test "la reactivation manuelle ferme aussi la porte aux numeros admis" do
+    AlfredSetting.instance.open_sms_whitelist!
+    deliver(sms(from: "+33699999945", sid: "SM1"))
+    AlfredSetting.instance.close_sms_whitelist!
+
+    assert_no_difference("SmsMessage.count") { deliver(sms(from: "+33699999945", sid: "SM2")) }
+  end
+
+  test "un numero garde reste accepte apres la fermeture" do
+    AlfredSetting.instance.open_sms_whitelist!
+    deliver(sms(from: "+33699999945", sid: "SM1"))
+    SmsCorrespondent.for_phone("+33699999945").update!(temporary: false)
+    AlfredSetting.instance.close_sms_whitelist!
+
+    assert_difference("SmsMessage.count") { deliver(sms(from: "+33699999945", sid: "SM2")) }
+  end
+
+  test "liste blanche ouverte : un numero desactive et un expediteur sans numero restent ignores" do
+    AlfredSetting.instance.open_sms_whitelist!
+    @friend.update!(enabled: false)
+
+    assert_no_difference(["SmsMessage.count", "SmsCorrespondent.count"]) do
+      deliver(sms(sid: "SM1"))
+      assert_response :success
+      deliver(sms(from: "MABANQUE", sid: "SM2"))
+      assert_response :success
+    end
+  end
+
+  test "le nombre d'inconnus admis par ouverture est plafonne" do
+    AlfredSetting.instance.open_sms_whitelist!
+    SmsCorrespondent::MAX_TEMPORARY_PER_OPENING.times do |i|
+      SmsCorrespondent.create!(name: "Inconnu #{i}", phone: format("+336000000%02d", i), temporary: true)
+    end
+
+    assert_no_difference("SmsCorrespondent.count") { deliver(sms(from: "+33699999945")) }
+    assert_response :success
   end
 
   test "un correspondant desactive est ignore" do

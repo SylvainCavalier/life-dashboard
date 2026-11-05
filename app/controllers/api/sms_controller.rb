@@ -9,16 +9,25 @@ module Api
 
     # PATCH /api/sms
     def update
-      AlfredSetting.instance.replace_sms_facts!(params[:facts])
+      setting = AlfredSetting.instance
+      setting.replace_sms_facts!(params[:facts]) if params.key?(:facts)
+      change_whitelist(setting) if params.key?(:whitelist_open)
       render json: overview
     end
 
     private
 
+    def change_whitelist(setting)
+      open = ActiveModel::Type::Boolean.new.cast(params[:whitelist_open])
+      open ? setting.open_sms_whitelist! : setting.close_sms_whitelist!
+      Rails.logger.warn "[Sms] liste blanche #{open ? "ouverte jusqu'au #{setting.sms_open_until}" : 'refermee'} par l'utilisateur ##{current_user.id}"
+    end
+
     def overview
       setting = AlfredSetting.instance
       {
         configured: TwilioSms.configured?, number: TwilioSms.number,
+        whitelist_open_until: setting.sms_whitelist_open? ? setting.sms_open_until : nil,
         facts: setting.effective_sms_facts, facts_default: AlfredSetting.default_sms_facts,
         correspondents: SmsCorrespondent.ordered.map { |correspondent| correspondent_json(correspondent) },
         contacts: contact_options,
@@ -36,7 +45,7 @@ module Api
 
     def correspondent_json(correspondent)
       last = correspondent.messages.order(:id).last
-      correspondent.slice(:id, :name, :phone, :owner, :enabled, :contact_id).merge(last_message_at: last&.created_at)
+      correspondent.slice(:id, :name, :phone, :owner, :enabled, :temporary, :contact_id).merge(last_message_at: last&.created_at)
     end
 
     def pending_requests

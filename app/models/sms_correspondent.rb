@@ -12,6 +12,7 @@
 #  owner          :boolean          default(FALSE), not null
 #  phone          :string           not null
 #  replying_since :datetime
+#  temporary      :boolean          default(FALSE), not null
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
 #  contact_id     :bigint
@@ -28,6 +29,9 @@
 class SmsCorrespondent < ApplicationRecord
   PHONE_FORMAT = /\A\+[1-9]\d{7,14}\z/
   REPLY_LEASE = 5.minutes
+  # Numeros inconnus admis au plus pendant une ouverture de la liste blanche (chaque texto
+  # paie Claude et Twilio).
+  MAX_TEMPORARY_PER_OPENING = 20
   # Ce qu'Alfred sait de la personne, tire de sa fiche : la nature de la relation et rien
   # d'autre. Notes, gouts et prets restent hors de portee (le numero peut etre usurpe).
   RELATIONS = {
@@ -89,6 +93,31 @@ class SmsCorrespondent < ApplicationRecord
 
   def release_reply
     self.class.where(id: id).update_all(replying_since: nil)
+  end
+
+  # Le correspondant d'un texto entrant, ou nil s'il faut l'ignorer. Un numero desactive a la
+  # main le reste, meme liste blanche ouverte.
+  def self.accepting(phone)
+    existing = for_phone(phone)
+    return existing&.accepts_texts? ? existing : nil if existing
+
+    admit_unknown(phone) if AlfredSetting.instance.sms_whitelist_open?
+  end
+
+  # Nil pour un expediteur sans numero valide (nom alphanumerique d'un service, par exemple).
+  def self.admit_unknown(phone)
+    opened_at = AlfredSetting.instance.sms_open_until - AlfredSetting::SMS_OPENING_DURATION
+    return if where(temporary: true, created_at: opened_at..).count >= MAX_TEMPORARY_PER_OPENING
+
+    record = create(name: "Inconnu #{normalize_phone(phone).last(4)}", phone: phone, temporary: true)
+    record if record.persisted?
+  rescue ActiveRecord::RecordNotUnique
+    for_phone(phone)
+  end
+
+  # Un numero temporaire n'est accepte que le temps de l'ouverture, qui l'a fait entrer.
+  def accepts_texts?
+    enabled? && (!temporary? || AlfredSetting.instance.sms_whitelist_open?)
   end
 
   # Consigne le texto puis l'envoie. L'echec est note sur le message et releve.

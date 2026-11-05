@@ -688,6 +688,9 @@ Net::HTTP (pas de gem). Circuit : `POST /webhooks/twilio/sms` verifie la signatu
 au modele), consigne le texto (`SmsMessage`, chiffre, unique par `twilio_sid` car Twilio rejoue) et enfile `SmsReplyJob`, qui attend 4 s et
 laisse le dernier texto d'une rafale repondre pour tous (`merged`). Une seule reponse a la fois par personne (`SmsCorrespondent#claim_reply`, colonne
 `replying_since`, abandonnee apres 5 min) : le texto suivant repasse 3 s plus tard et voit la reponse au precedent (`Agent#in_conversation_order`), les autres personnes ne s'attendent pas. Plafond `SMS_DAILY_LIMIT` (30) par correspondant et par jour.
+**Desactivation temporaire de la liste blanche** (bouton de la page, `PATCH /api/sms` `whitelist_open`) : `AlfredSetting#sms_open_until`, 24 h. C'est une date
+de fin verifiee a chaque texto, donc sans cron. Un inconnu entre comme `SmsCorrespondent` `temporary` (20 au plus par ouverture, notification a chaque texto), accepte seulement tant que
+l'ouverture dure (`accepts_texts?`), sauf si Sylvain le garde depuis la page ; un numero desactive reste ignore.
 **Modele de menace : le texto vient d'un tiers et un numero d'expediteur peut etre usurpe.** `Alfred::Sms::Agent` est donc une boucle a part,
 hors d'`Alfred::Tools` : ni corpus, ni `query_records`, ni memoires, ni Gmail. Sa limite est ce qu'il peut atteindre, pas son prompt (section
 `sms`, modifiable, `chat: false`). Il voit `AlfredSetting#effective_sms_facts` (texte de la page, par defaut email et anniversaire sans

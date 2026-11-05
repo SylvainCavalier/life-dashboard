@@ -10,6 +10,7 @@
 #  id                  :bigint           not null, primary key
 #  custom_instructions :text
 #  prompt_overrides    :jsonb            not null
+#  sms_open_until      :datetime
 #  sms_public_facts    :text
 #  suggestions         :jsonb            not null
 #  created_at          :datetime         not null
@@ -49,6 +50,22 @@ class AlfredSetting < ApplicationRecord
   # Phrases affichees par le widget : celles de Sylvain, sinon celles du code.
   def effective_suggestions
     suggestions.presence || DEFAULT_SUGGESTIONS
+  end
+
+  # Liste blanche des textos ouverte : une date de fin et non un interrupteur, pour que la
+  # fermeture ne depende d'aucune tache planifiee ni de la memoire de quelqu'un.
+  SMS_OPENING_DURATION = 24.hours
+
+  def sms_whitelist_open?
+    sms_open_until.present? && sms_open_until.future?
+  end
+
+  def open_sms_whitelist!
+    update!(sms_open_until: SMS_OPENING_DURATION.from_now)
+  end
+
+  def close_sms_whitelist!
+    update!(sms_open_until: nil)
   end
 
   # Faits donnes par texto, faute de texte choisi par Sylvain : l'anniversaire sans

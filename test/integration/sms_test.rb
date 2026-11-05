@@ -51,6 +51,26 @@ class SmsTest < ActionDispatch::IntegrationTest
     assert_nil friend.reload.contact_id
   end
 
+  test "desactiver la liste blanche dure 24 h, sans toucher aux faits, et se reactive a la main" do
+    sign_in_owner
+    AlfredSetting.instance.update!(sms_public_facts: "Il aime le the.")
+
+    patch "/api/sms", params: { whitelist_open: true }.to_json, headers: JSON_HEADERS
+    assert_response :success
+    assert_in_delta 24.hours.from_now, Time.zone.parse(response.parsed_body["whitelist_open_until"]), 5
+    assert_equal "Il aime le the.", response.parsed_body["facts"]
+
+    travel(24.hours + 1.minute) do
+      get "/api/sms", headers: JSON_HEADERS
+      assert_nil response.parsed_body["whitelist_open_until"]
+    end
+
+    patch "/api/sms", params: { whitelist_open: true }.to_json, headers: JSON_HEADERS
+    patch "/api/sms", params: { whitelist_open: false }.to_json, headers: JSON_HEADERS
+    assert_nil response.parsed_body["whitelist_open_until"]
+    assert_not AlfredSetting.instance.sms_whitelist_open?
+  end
+
   test "envoi manuel, consigne dans le fil" do
     sign_in_owner
     friend = SmsCorrespondent.create!(name: "Camille", phone: "+33612345678")
@@ -93,6 +113,10 @@ class SmsTest < ActionDispatch::IntegrationTest
     sign_in friend_user
     get "/api/sms", headers: JSON_HEADERS
     assert_response :forbidden
+
+    patch "/api/sms", params: { whitelist_open: true }.to_json, headers: JSON_HEADERS
+    assert_response :forbidden
+    assert_not AlfredSetting.instance.sms_whitelist_open?
   end
 
   test "propose_sms impose d'ecrire en tant qu'Alfred et donne de quoi s'adresser a la personne" do

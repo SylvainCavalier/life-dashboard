@@ -48,7 +48,7 @@ module Api
     end
 
     def correspondent_params
-      params.require(:sms_correspondent).permit(:name, :phone, :contact_id, :owner, :enabled)
+      params.require(:sms_correspondent).permit(:name, :phone, :contact_id, :owner, :enabled, :temporary)
     end
 
     def messages_json

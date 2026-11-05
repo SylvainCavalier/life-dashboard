@@ -18,6 +18,10 @@ module Alfred
 
       # Hors de la section modifiable : la regle suit la relation, meme si la consigne est reecrite.
       def correspondent_text(correspondent)
+        if correspondent.temporary?
+          return "Ton correspondant : un numéro inconnu de Sylvain, admis temporairement. Reste poli et réservé, et demande-lui qui il est s'il ne s'est pas présenté. Sylvain est déjà prévenu de chacun de ses textos : n'appelle pas notify_sylvain pour les lui transmettre."
+        end
+
         relation = correspondent.relation
         return "Ton correspondant : #{correspondent.name}." unless relation
 

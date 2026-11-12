@@ -27,6 +27,11 @@
                 <a v-if="project.github_url" :href="project.github_url" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-800 underline">GitHub</a>
                 <a v-if="project.site_url" :href="project.site_url" target="_blank" rel="noopener" class="text-blue-500 hover:text-blue-700 underline">Lien principal</a>
               </div>
+              <p v-if="project.slug && hasCode" class="text-xs text-gray-400 mt-2">
+                Dans le CLAUDE.md du dépôt :
+                <code class="bg-gray-100 text-gray-700 rounded px-1.5 py-0.5">{{ claudeMarker }}</code>
+                <button @click="copyMarker" class="text-blue-500 hover:text-blue-700 ml-1">{{ markerCopied ? 'Copié' : 'Copier' }}</button>
+              </p>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
               <button @click="editing = true" class="text-xs text-blue-500 hover:text-blue-700">Modifier</button>
@@ -351,6 +356,21 @@ const daysSinceLastEntry = computed(() => {
   start.setHours(0, 0, 0, 0)
   return Math.round((start - new Date(year, month - 1, day)) / 86400000)
 })
+
+// Ligne a poser dans le CLAUDE.md du depot : /historyupdate envoie alors chaque
+// session de code au journal de ce projet (~/.claude/scripts/project-journal).
+const hasCode = computed(() => ['developpement', 'jeu_video'].includes(project.value?.category) || !!project.value?.github_url)
+const claudeMarker = computed(() => `Projet du life-dashboard : \`${project.value?.slug}\``)
+const markerCopied = ref(false)
+const copyMarker = async () => {
+  try {
+    await navigator.clipboard.writeText(claudeMarker.value)
+    markerCopied.value = true
+    setTimeout(() => { markerCopied.value = false }, 2000)
+  } catch {
+    markerCopied.value = false
+  }
+}
 
 const lastEntryText = computed(() => {
   const days = daysSinceLastEntry.value

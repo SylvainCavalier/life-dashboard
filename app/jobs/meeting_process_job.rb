@@ -23,6 +23,7 @@ class MeetingProcessJob < ApplicationJob
     transcribe(meeting) if meeting.has_audio?
     summarize(meeting) if meeting.summary.blank? && meeting.transcript.present?
     render(meeting)
+    journal(meeting)
 
     meeting.update!(status: "done", step: nil, error: nil, finished_at: Time.current)
   rescue ActiveRecord::RecordNotFound
@@ -81,8 +82,19 @@ class MeetingProcessJob < ApplicationJob
   def summarize(meeting)
     meeting.advance!("summarize")
     result = Meetings::Summarizer.new(meeting).call
-    meeting.update!(summary: result[:content], summary_model: result[:model],
-                    speaker_names: result[:speaker_names].merge(meeting.speaker_names.compact_blank))
+    attributes = { summary: result[:content], summary_model: result[:model],
+                   speaker_names: result[:speaker_names].merge(meeting.speaker_names.compact_blank) }
+    # Projet devine : jamais a la place d'un projet choisi, ni apres une premiere
+    # consignation (Sylvain a pu retirer le projet expres).
+    attributes[:project_id] = result[:project_id] if result[:project_id] && meeting.project_id.nil? && meeting.journaled_at.nil?
+    meeting.update!(attributes)
+  end
+
+  # Le journal du projet n'est qu'un a-cote : son echec ne fait pas echouer la reunion.
+  def journal(meeting)
+    Projects::Journal.record_meeting(meeting)
+  rescue StandardError => e
+    Rails.logger.error "[MeetingProcessJob] journal de la reunion ##{meeting.id} : #{e.class}: #{e.message}"
   end
 
   def render(meeting)

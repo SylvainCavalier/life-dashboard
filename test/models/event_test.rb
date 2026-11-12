@@ -9,6 +9,7 @@
 #  end_time          :datetime
 #  event_type        :string           default("autre"), not null
 #  google_updated_at :datetime
+#  journaled_at      :datetime
 #  location          :string
 #  notified_at       :datetime
 #  reminder_minutes  :integer          default(60)
@@ -18,17 +19,20 @@
 #  updated_at        :datetime         not null
 #  deadline_id       :bigint
 #  google_event_id   :string
+#  project_id        :bigint
 #
 # Indexes
 #
 #  index_events_on_deadline_id      (deadline_id)
 #  index_events_on_event_type       (event_type)
 #  index_events_on_google_event_id  (google_event_id) UNIQUE
+#  index_events_on_project_id       (project_id)
 #  index_events_on_start_time       (start_time)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (deadline_id => deadlines.id) ON DELETE => nullify
+#  fk_rails_...  (project_id => projects.id) ON DELETE => nullify
 #
 require "test_helper"
 require "minitest/mock"

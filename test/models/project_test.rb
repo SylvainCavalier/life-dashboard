@@ -11,6 +11,7 @@
 #  priority    :integer          default(0)
 #  progress    :integer          default(0)
 #  site_url    :string
+#  slug        :string
 #  status      :string           default("en_cours")
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
@@ -18,6 +19,7 @@
 # Indexes
 #
 #  index_projects_on_category  (category)
+#  index_projects_on_slug      (slug) UNIQUE
 #
 require "test_helper"
 

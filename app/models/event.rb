@@ -9,6 +9,7 @@
 #  end_time          :datetime
 #  event_type        :string           default("autre"), not null
 #  google_updated_at :datetime
+#  journaled_at      :datetime
 #  location          :string
 #  notified_at       :datetime
 #  reminder_minutes  :integer          default(60)
@@ -18,17 +19,20 @@
 #  updated_at        :datetime         not null
 #  deadline_id       :bigint
 #  google_event_id   :string
+#  project_id        :bigint
 #
 # Indexes
 #
 #  index_events_on_deadline_id      (deadline_id)
 #  index_events_on_event_type       (event_type)
 #  index_events_on_google_event_id  (google_event_id) UNIQUE
+#  index_events_on_project_id       (project_id)
 #  index_events_on_start_time       (start_time)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (deadline_id => deadlines.id) ON DELETE => nullify
+#  fk_rails_...  (project_id => projects.id) ON DELETE => nullify
 #
 class Event < ApplicationRecord
   EVENT_TYPES = %w[rdv visio lecon reunion echeance autre].freeze
@@ -68,6 +72,14 @@ class Event < ApplicationRecord
   # Occurrence d'une echeance notable (voir Deadline), nul pour un evenement ordinaire.
   belongs_to :deadline, optional: true
 
+  # Projet concerne : le rendez-vous passe est consigne a son journal de bord
+  # (Projects::Journal, ProjectJournalJob), une seule fois (`journaled_at`). Devine a la
+  # creation (nom du projet ou d'un de ses contacts dans le titre ou la description,
+  # Projects::Matcher), y compris pour un evenement venu de Google ; modifiable ensuite.
+  belongs_to :project, optional: true
+
+  before_validation :guess_project, on: :create
+
   before_save :rearm_notification, if: -> { persisted? && NOTIFICATION_RESET_COLUMNS.any? { |c| will_save_change_to_attribute?(c) } }
 
   after_commit :enqueue_google_push, on: [:create, :update]
@@ -94,6 +106,16 @@ class Event < ApplicationRecord
       .where("reminder_minutes > 0")
       .where("start_time > ?", now)
       .where("start_time - make_interval(mins => reminder_minutes) <= ?", now)
+  }
+
+  # Rendez-vous rattaches a un projet, termines (fin, sinon 1 h apres le debut ; une
+  # journee entiere le lendemain a minuit) et pas encore consignes au journal.
+  scope :journal_due, lambda { |now = Time.current, since: nil|
+    since ||= now - 14.days
+    where.not(project_id: nil).where(journaled_at: nil).where.not(event_type: "echeance")
+      .where(start_time: since..now)
+      .where("CASE WHEN all_day THEN start_time + interval '1 day' " \
+             "ELSE COALESCE(end_time, start_time + interval '1 hour') END <= ?", now)
   }
 
   def self.without_google_push
@@ -133,6 +155,12 @@ class Event < ApplicationRecord
 
   def rearm_notification
     self.notified_at = nil
+  end
+
+  def guess_project
+    return if project_id.present? || deadline_id.present? || event_type == "echeance"
+
+    self.project = Projects::Matcher.new([title, description].compact.join("\n")).project
   end
 
   def google_push_wanted?

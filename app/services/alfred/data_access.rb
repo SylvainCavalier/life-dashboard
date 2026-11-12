@@ -76,7 +76,9 @@ module Alfred
       "ProjectEntry" => "Page du projet, « Journal de bord » : ce que Sylvain a fait, décidé ou appris pour un projet, et " \
                         "quand (occurred_on). kind travail/rendez_vous/echange/decision/jalon/idee/autre, title court, body = " \
                         "le récit détaillé, contact_id facultatif = la personne rencontrée ou contactée. C'est le journal qui " \
-                        "dit si un projet avance : voir la section « Projets ».",
+                        "dit si un projet avance : voir la section « Projets ». source = manual (saisie) ou entrée " \
+                        "automatique : agenda (rendez-vous passé), meeting (réunion enregistrée), code (session de " \
+                        "code envoyée depuis Claude Code).",
       "ProjectContact" => "Page du projet, « Contacts du projet » (mini-CRM) : lie un Contact à un Project (role = son rôle " \
                           "pour le projet). Le suivi (priorité, dernier contact, prochain rendez-vous, notes) reste sur le " \
                           "CrmProfile du contact, partagé avec la page CRM. Un contact ne se lie qu'une fois par projet.",
@@ -161,7 +163,7 @@ module Alfred
     # TripPlan, VideoDownload, VideoTranscript, SentinelWeek, SentinelDocument (voir CLAUDE.md).
     # ShoppingItem passe par son propre outil (propose_shopping), qui sait aussi vider la liste.
     WRITABLE = {
-      "Event" => { create: %w[title description event_type start_time end_time location color all_day reminder_minutes] },
+      "Event" => { create: %w[title description event_type start_time end_time location color all_day reminder_minutes project_id] },
       "Note" => { create: %w[title content note_date important] },
       "Deadline" => { create: %w[title category due_on recurrence ends_on amount notes] },
       "Task" => { create: %w[description priority deadline completed project_id] },

@@ -49,7 +49,7 @@ module Api
     def project_params
       params.require(:project).permit(
         :name, :description, :category, :status, :priority, :progress,
-        :github_url, :site_url, :notes
+        :github_url, :site_url, :notes, :slug
       )
     end
   end

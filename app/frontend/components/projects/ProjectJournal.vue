@@ -8,6 +8,7 @@
     </div>
     <p class="text-xs text-gray-400 mb-4">
       Ce qui a été fait, décidé ou appris, et quand. Alfred peut le tenir pour vous : racontez-lui votre journée.
+      Les rendez-vous passés rattachés au projet, les réunions enregistrées et les sessions de code (/historyupdate) s'y ajoutent seuls.
     </p>
 
     <form v-if="showForm" @submit.prevent="save" class="bg-gray-50 rounded-lg p-4 mb-5 space-y-3">
@@ -64,6 +65,7 @@
                   <time class="text-gray-500 font-medium">{{ formatDay(entry.occurred_on) }}</time>
                   <span :class="entryKindBadge(entry.kind)" class="px-2 py-0.5 rounded-full font-medium">{{ entryKindLabel(entry.kind) }}</span>
                   <span v-if="entry.contact_name" class="text-gray-500">avec {{ entry.contact_name }}</span>
+                  <span v-if="entry.source_label" class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500" :title="sourceTitle(entry.source)">auto · {{ entry.source_label }}</span>
                 </div>
                 <p class="text-sm font-medium text-gray-900 mt-1">{{ entry.title }}</p>
                 <p v-if="entry.body" class="text-sm text-gray-600 mt-1 whitespace-pre-line break-words">{{ entry.body }}</p>
@@ -135,6 +137,13 @@ const groups = computed(() => {
     return { key, label, entries: list }
   })
 })
+
+const SOURCE_TITLES = {
+  agenda: "Consigné automatiquement : rendez-vous de l'agenda rattaché au projet",
+  meeting: 'Consigné automatiquement : compte rendu de réunion',
+  code: 'Consigné automatiquement : session de code envoyée par /historyupdate',
+}
+const sourceTitle = (source) => SOURCE_TITLES[source] || ''
 
 const formatDay = (date) => {
   const [year, month, day] = date.split('-').map(Number)

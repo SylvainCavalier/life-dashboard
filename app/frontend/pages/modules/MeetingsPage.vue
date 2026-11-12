@@ -41,6 +41,11 @@
             </select>
           </div>
           <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Projet</label>
+            <ProjectSelect v-model="form.project_id" placeholder="— Aucun (l'IA le devine si la réunion porte sur un projet) —" />
+            <p class="text-xs text-gray-400 mt-1">Le compte rendu sera consigné au journal de bord du projet.</p>
+          </div>
+          <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">Participants</label>
             <input v-model="form.participants" type="text" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Sylvain, Marie Dupont, Me Martin (separes par des virgules)" />
             <p class="text-xs text-gray-400 mt-1">Aide l'IA a mettre un nom sur chaque voix et a orthographier les noms propres.</p>
@@ -119,6 +124,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '../../plugins/axios'
 import { useDirectUpload } from '../../composables/useDirectUpload'
+import ProjectSelect from '../../components/projects/ProjectSelect.vue'
 import { formatDateTime, formatDuration, statusClass, statusLabel } from '../../utils/meetingFormat'
 
 const POLL_INTERVAL = 3000
@@ -142,7 +148,7 @@ const nowLocal = () => {
   return d.toISOString().slice(0, 16)
 }
 
-const defaultForm = () => ({ title: '', held_at: nowLocal(), kind: 'in_person', participants: '', context: '' })
+const defaultForm = () => ({ title: '', held_at: nowLocal(), kind: 'in_person', participants: '', context: '', project_id: null })
 const form = ref(defaultForm())
 
 const fetchMeetings = async () => {

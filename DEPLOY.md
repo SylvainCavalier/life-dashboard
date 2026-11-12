@@ -167,6 +167,7 @@ rattrape les rappels echus.
 | `RAILS_MASTER_KEY` | Dechiffre `credentials.yml.enc` (secret_key_base **et** cles Active Record Encryption) |
 | `APP_HOST` | Domaine autorise. **Tant qu'il n'est pas pose, l'app repond aussi sur `*.herokuapp.com`** (voir §6) |
 | `CALENDAR_FEED_TOKEN` | Secret du flux ICS `/api/calendar.ics?token=...` |
+| `PROJECT_JOURNAL_TOKEN` | Jeton de `POST /api/project_journal` (sessions de code envoyees par `/historyupdate`) ; meme valeur que l'entree `life-dashboard-journal-token` du trousseau du Mac |
 | `GOOGLE_CALENDAR_ID` | Agenda Google synchronise (adresse Gmail pour l'agenda principal) |
 | `GOOGLE_CALENDAR_CREDENTIALS` | Contenu JSON de la cle du compte de service (alias accepte : `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`) |
 | `GMAIL_USER` | Boite Gmail que gere Alfred (delegation au niveau du domaine, voir ci-dessous) |

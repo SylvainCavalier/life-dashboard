@@ -6,6 +6,8 @@
 #  body        :text
 #  kind        :string           default("travail"), not null
 #  occurred_on :date             not null
+#  source      :string           default("manual"), not null
+#  source_ref  :string
 #  title       :string           not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
@@ -17,6 +19,7 @@
 #  index_project_entries_on_contact_id                  (contact_id)
 #  index_project_entries_on_project_id                  (project_id)
 #  index_project_entries_on_project_id_and_occurred_on  (project_id,occurred_on)
+#  index_project_entries_on_project_id_and_source_ref   (project_id,source_ref) UNIQUE WHERE (source_ref IS NOT NULL)
 #
 # Foreign Keys
 #
@@ -41,12 +44,29 @@ class ProjectEntry < ApplicationRecord
     "autre" => "Autre"
   }.freeze
 
+  # Origine de l'entree. manual : saisie sur la page ou par Alfred ; les autres sont
+  # ecrites par Projects::Journal (rendez-vous passe, reunion traitee, session de code
+  # envoyee par /historyupdate). `source_ref` designe ce qui l'a produite, unique par projet.
+  SOURCES = %w[manual agenda meeting code].freeze
+
+  SOURCE_LABELS = {
+    "manual" => nil,
+    "agenda" => "Agenda",
+    "meeting" => "Réunion",
+    "code" => "Code"
+  }.freeze
+
   belongs_to :project
   belongs_to :contact, optional: true
 
   validates :title, presence: true, length: { maximum: 200 }
+  validates :body, length: { maximum: 20_000 }
   validates :occurred_on, presence: true
   validates :kind, inclusion: { in: KINDS }
+  validates :source, inclusion: { in: SOURCES }
+  validates :source_ref, uniqueness: { scope: :project_id }, allow_nil: true
+
+  scope :automatic, -> { where.not(source: "manual") }
 
   attribute :occurred_on, :date, default: -> { Date.current }
 
@@ -57,6 +77,7 @@ class ProjectEntry < ApplicationRecord
   def api_attributes
     attributes.symbolize_keys.merge(
       kind_label: kind_label,
+      source_label: SOURCE_LABELS[source],
       contact_name: contact && [contact.first_name, contact.last_name].compact_blank.join(" ")
     )
   end

@@ -62,6 +62,11 @@ class Rack::Attack
     req.ip if req.post? && req.path.match?(%r{^/api/alfred_conversations/\d+/message$})
   end
 
+  # Journal des sessions de code (jeton, sans session) : borne aussi les essais de jeton.
+  Rack::Attack.throttle('project journal', limit: 20, period: 60.seconds) do |req|
+    req.ip if req.path == '/api/project_journal'
+  end
+
   # Dictee vocale : chaque requete est une transcription payante (Voxtral).
   Rack::Attack.throttle('transcriptions', limit: 20, period: 60.seconds) do |req|
     req.ip if req.post? && req.path == '/api/transcriptions'

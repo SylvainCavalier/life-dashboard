@@ -19,13 +19,14 @@ class MeetingProcessJobTest < ActiveJob::TestCase
   end
 
   class FakeSummarizer
-    def initialize(names = {})
+    def initialize(names = {}, project_id: nil)
       @names = names
+      @project_id = project_id
     end
 
     def call
       { content: { "overview" => "Synthese de test.", "key_points" => [], "decisions" => [], "action_items" => [], "open_questions" => [] },
-        model: "claude-test", speaker_names: @names }
+        model: "claude-test", speaker_names: @names, project_id: @project_id }
     end
   end
 
@@ -42,7 +43,7 @@ class MeetingProcessJobTest < ActiveJob::TestCase
     meeting = create(:meeting, :with_audio, speaker_names: { "speaker_1" => "Sylvain" })
     meeting.update!(status: "pending", requested_at: Time.current)
 
-    run_job(meeting, summarizer: FakeSummarizer.new("speaker_1" => "Jean", "speaker_2" => "Marie"))
+    run_job(meeting, summarizer: FakeSummarizer.new({ "speaker_1" => "Jean", "speaker_2" => "Marie" }))
 
     assert meeting.done?, meeting.error
     assert_not meeting.audio.attached?
@@ -57,6 +58,26 @@ class MeetingProcessJobTest < ActiveJob::TestCase
     assert_equal "in_person", document.category
     assert_equal "Synthese de test.", document.notes
     assert_equal "application/pdf", document.file.content_type
+  end
+
+  test "le projet devine recoit le compte rendu dans son journal, un projet choisi n'est pas remplace" do
+    prudo = create(:project, name: "Prudo")
+    other = create(:project, name: "Glucksbot")
+    meeting = create(:meeting, :with_audio)
+    meeting.update!(status: "pending", requested_at: Time.current)
+
+    run_job(meeting, summarizer: FakeSummarizer.new(project_id: prudo.id))
+
+    assert_equal prudo, meeting.project
+    entry = prudo.project_entries.sole
+    assert_equal "meeting", entry.source
+    assert_match "Synthese de test.", entry.body
+
+    chosen = create(:meeting, :with_audio, project: other)
+    chosen.update!(status: "pending", requested_at: Time.current)
+    run_job(chosen, summarizer: FakeSummarizer.new(project_id: prudo.id))
+    assert_equal other, chosen.project
+    assert_equal 1, other.project_entries.count
   end
 
   test "une regeneration remplace le PDF du meme document sans retranscrire" do

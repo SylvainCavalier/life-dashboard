@@ -22,6 +22,7 @@ class Meetings::SummarizerTest < ActiveSupport::TestCase
   end
 
   SUMMARY = {
+    "project_id" => nil,
     "overview" => "Point sur le bail.", "key_points" => [], "decisions" => [],
     "action_items" => [], "open_questions" => [],
     "speakers" => [{ "speaker" => "speaker_2", "name" => "Marie" }, { "speaker" => "speaker_9", "name" => "Fantome" },
@@ -39,6 +40,19 @@ class Meetings::SummarizerTest < ActiveSupport::TestCase
     assert_equal :json_schema, client.params.dig(:output_config, :format_, :type)
     assert_match "[speaker_2] J'envoie", client.params[:messages].first[:content]
     assert_match "mardi 2026-09-22 à 10:00", client.params[:messages].first[:content]
+  end
+
+  test "devine le projet parmi les projets actifs, jamais hors de la liste" do
+    prudo = create(:project, name: "Prudo", description: "SaaS prud'homal")
+    client = FakeClient.new(SUMMARY.merge("project_id" => prudo.id))
+    result = Meetings::Summarizer.new(build(:meeting, :transcribed), client: client).call
+
+    assert_equal prudo.id, result[:project_id]
+    assert_not result[:content].key?("project_id")
+    assert_match "- #{prudo.id} : Prudo — SaaS prud'homal", client.params[:messages].first[:content]
+
+    client = FakeClient.new(SUMMARY.merge("project_id" => prudo.id + 1000))
+    assert_nil Meetings::Summarizer.new(build(:meeting, :transcribed), client: client).call[:project_id]
   end
 
   test "une synthese tronquee est une erreur" do

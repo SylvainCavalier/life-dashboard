@@ -8,6 +8,7 @@
 #  error            :text
 #  finished_at      :datetime
 #  held_at          :datetime         not null
+#  journaled_at     :datetime
 #  kind             :string           default("in_person"), not null
 #  participants     :text
 #  requested_at     :datetime
@@ -21,15 +22,18 @@
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
 #  document_id      :bigint
+#  project_id       :bigint
 #
 # Indexes
 #
 #  index_meetings_on_document_id  (document_id)
 #  index_meetings_on_held_at      (held_at)
+#  index_meetings_on_project_id   (project_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (document_id => documents.id) ON DELETE => nullify
+#  fk_rails_...  (project_id => projects.id) ON DELETE => nullify
 #
 
 # Rapport de reunion : un enregistrement audio (presentiel ou visio) devient une
@@ -55,6 +59,10 @@ class Meeting < ApplicationRecord
   STUCK_AFTER = 30.minutes
 
   belongs_to :document, optional: true
+  # Projet concerne : choisi a l'import, sinon devine par la synthese (Meetings::Summarizer)
+  # tant que la reunion n'a pas ete consignee. Le compte rendu passe alors au journal de
+  # bord du projet (Projects::Journal.record_meeting).
+  belongs_to :project, optional: true
   # Import d'un fichier.
   has_one_attached :audio
   # Enregistrement en direct : un morceau toutes les 30 s (MediaRecorder avec timeslice).

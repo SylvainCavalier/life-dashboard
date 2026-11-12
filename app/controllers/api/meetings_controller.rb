@@ -14,7 +14,7 @@ module Api
     CHUNK_TYPES = %r{\A(audio/(webm|mp4|ogg)|video/(webm|mp4))\z}
 
     def index
-      render json: Meeting.recent.includes(:document).map { |meeting| meeting_json(meeting) }
+      render json: Meeting.recent.includes(:document, :project).map { |meeting| meeting_json(meeting) }
     end
 
     def show
@@ -41,6 +41,8 @@ module Api
     # qui refait la synthese et le PDF avec les nouveaux noms.
     def update
       if @meeting.update(meeting_params)
+        # Projet change apres coup : l'entree du journal suit (creee, deplacee ou retiree).
+        Projects::Journal.record_meeting(@meeting) if @meeting.done? && @meeting.saved_change_to_project_id?
         render json: meeting_json(@meeting, full: true)
       else
         render json: { errors: @meeting.errors.full_messages }, status: :unprocessable_entity
@@ -112,7 +114,7 @@ module Api
     end
 
     def meeting_params
-      permitted = params.require(:meeting).permit(:title, :kind, :held_at, :participants, :context, speaker_names: {})
+      permitted = params.require(:meeting).permit(:title, :kind, :held_at, :participants, :context, :project_id, speaker_names: {})
       permitted[:speaker_names] = permitted[:speaker_names].to_h.transform_values { |name| name.to_s.strip } if permitted.key?(:speaker_names)
       permitted
     end
@@ -125,6 +127,8 @@ module Api
         held_at: meeting.held_at,
         participants: meeting.participants,
         context: meeting.context,
+        project_id: meeting.project_id,
+        project_name: meeting.project&.name,
         status: meeting.status,
         step: meeting.step,
         error: meeting.error,

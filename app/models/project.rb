@@ -11,6 +11,7 @@
 #  priority    :integer          default(0)
 #  progress    :integer          default(0)
 #  site_url    :string
+#  slug        :string
 #  status      :string           default("en_cours")
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
@@ -18,6 +19,7 @@
 # Indexes
 #
 #  index_projects_on_category  (category)
+#  index_projects_on_slug      (slug) UNIQUE
 #
 class Project < ApplicationRecord
   STATUSES = %w[en_cours en_attente termine abandonne].freeze
@@ -44,13 +46,35 @@ class Project < ApplicationRecord
   has_many :project_contacts, dependent: :destroy
   has_many :contacts, through: :project_contacts
 
+  has_many :events, dependent: :nullify
+  has_many :meetings, dependent: :nullify
+
+  # Identifiant stable du projet, cite dans le CLAUDE.md du depot de code correspondant
+  # (« Projet du life-dashboard : `prudo` ») : c'est par lui que /historyupdate range une
+  # session de code dans le journal (Api::ProjectJournalController).
+  SLUG_FORMAT = /\A[a-z0-9][a-z0-9_-]*\z/
+
+  before_validation :assign_default_slug, if: -> { slug.blank? && name.present? }
+  before_validation { self.slug = slug.strip.downcase if slug.present? }
+
   validates :name, presence: true
+  validates :slug, presence: true, uniqueness: true, length: { maximum: 60 },
+                   format: { with: SLUG_FORMAT, message: ": minuscules, chiffres, tirets ou soulignes" }
   validates :status, inclusion: { in: STATUSES }
   validates :category, inclusion: { in: CATEGORIES }
   validates :priority, numericality: { in: 0..5 }, allow_nil: true
   validates :progress, numericality: { in: 0..100 }, allow_nil: true
 
   scope :ordered, -> { order(priority: :desc, name: :asc) }
+
+  scope :active, -> { where(status: %w[en_cours en_attente]) }
+
+  # Un depot connu (Projects::DocsBundle::REPOSITORIES) garde son nom de dossier, le
+  # reste prend son nom en minuscules sans accents ; suffixe de l'id en cas de collision.
+  def self.default_slug_for(name)
+    folder = Projects::DocsBundle::REPOSITORIES.find { |_, config| config[:name].casecmp?(name.to_s) }&.first
+    (folder || name.to_s.parameterize).downcase.presence
+  end
 
   # Date de la derniere entree du journal : ce qui dit si le projet avance.
   def last_entry_on
@@ -77,5 +101,18 @@ class Project < ApplicationRecord
       skills: project_skills.sort_by { |s| [s.position, s.id] }.map(&:api_attributes),
       links: project_links.sort_by { |l| [l.position, l.id] }.map(&:api_attributes)
     )
+  end
+
+  private
+
+  def assign_default_slug
+    base = self.class.default_slug_for(name) || "projet"
+    candidate = base
+    index = 2
+    while self.class.where.not(id: id).exists?(slug: candidate)
+      candidate = "#{base}-#{index}"
+      index += 1
+    end
+    self.slug = candidate
   end
 end

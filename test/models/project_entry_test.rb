@@ -6,6 +6,8 @@
 #  body        :text
 #  kind        :string           default("travail"), not null
 #  occurred_on :date             not null
+#  source      :string           default("manual"), not null
+#  source_ref  :string
 #  title       :string           not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
@@ -17,6 +19,7 @@
 #  index_project_entries_on_contact_id                  (contact_id)
 #  index_project_entries_on_project_id                  (project_id)
 #  index_project_entries_on_project_id_and_occurred_on  (project_id,occurred_on)
+#  index_project_entries_on_project_id_and_source_ref   (project_id,source_ref) UNIQUE WHERE (source_ref IS NOT NULL)
 #
 # Foreign Keys
 #

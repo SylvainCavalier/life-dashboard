@@ -39,7 +39,7 @@ module Api
     def event_params
       params.require(:event).permit(
         :title, :description, :event_type, :start_time, :end_time,
-        :location, :color, :all_day, :reminder_minutes
+        :location, :color, :all_day, :reminder_minutes, :project_id
       )
     end
   end

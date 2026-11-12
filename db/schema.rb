@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_12_162313) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -430,9 +430,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
     t.datetime "google_updated_at"
     t.bigint "deadline_id"
     t.datetime "notified_at"
+    t.bigint "project_id"
+    t.datetime "journaled_at"
     t.index ["deadline_id"], name: "index_events_on_deadline_id"
     t.index ["event_type"], name: "index_events_on_event_type"
     t.index ["google_event_id"], name: "index_events_on_google_event_id", unique: true
+    t.index ["project_id"], name: "index_events_on_project_id"
     t.index ["start_time"], name: "index_events_on_start_time"
   end
 
@@ -762,8 +765,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
     t.bigint "document_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "project_id"
+    t.datetime "journaled_at"
     t.index ["document_id"], name: "index_meetings_on_document_id"
     t.index ["held_at"], name: "index_meetings_on_held_at"
+    t.index ["project_id"], name: "index_meetings_on_project_id"
   end
 
   create_table "notes", force: :cascade do |t|
@@ -850,8 +856,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
     t.text "body"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "source", default: "manual", null: false
+    t.string "source_ref"
     t.index ["contact_id"], name: "index_project_entries_on_contact_id"
     t.index ["project_id", "occurred_on"], name: "index_project_entries_on_project_id_and_occurred_on"
+    t.index ["project_id", "source_ref"], name: "index_project_entries_on_project_id_and_source_ref", unique: true, where: "(source_ref IS NOT NULL)"
     t.index ["project_id"], name: "index_project_entries_on_project_id"
   end
 
@@ -887,7 +896,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "category", default: "developpement", null: false
+    t.string "slug"
     t.index ["category"], name: "index_projects_on_category"
+    t.index ["slug"], name: "index_projects_on_slug", unique: true
   end
 
   create_table "properties", force: :cascade do |t|
@@ -1394,6 +1405,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
   add_foreign_key "documents", "projects"
   add_foreign_key "documents", "vehicles", on_delete: :nullify
   add_foreign_key "events", "deadlines", on_delete: :nullify
+  add_foreign_key "events", "projects", on_delete: :nullify
   add_foreign_key "file_transfers", "users"
   add_foreign_key "insurance_coverages", "insurances"
   add_foreign_key "insured_items", "insurances"
@@ -1407,6 +1419,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
   add_foreign_key "letters", "documents", on_delete: :nullify
   add_foreign_key "loans", "contacts", on_delete: :nullify
   add_foreign_key "meetings", "documents", on_delete: :nullify
+  add_foreign_key "meetings", "projects", on_delete: :nullify
   add_foreign_key "project_contacts", "contacts"
   add_foreign_key "project_contacts", "projects"
   add_foreign_key "project_entries", "contacts", on_delete: :nullify

@@ -36,6 +36,10 @@
               <input v-model="form.title" type="text" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Facultatif (par defaut : « Reunion du ... »)" />
             </div>
             <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Projet</label>
+              <ProjectSelect v-model="form.project_id" placeholder="— Aucun (l'IA le devine si la réunion porte sur un projet) —" />
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Participants</label>
               <input v-model="form.participants" type="text" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Sylvain, Marie Dupont... (aide a nommer les voix)" />
             </div>
@@ -145,6 +149,7 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import apiClient from '../../plugins/axios'
 import { useMeetingRecorder, canRecordMic, canCaptureTab } from '../../composables/useMeetingRecorder'
 import { timecode } from '../../utils/meetingFormat'
+import ProjectSelect from '../../components/projects/ProjectSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -154,7 +159,7 @@ const { state, notice, elapsed, micLevel, tabLevel, sent, pending, retrying, wak
 const micSupported = canRecordMic()
 const tabSupported = canCaptureTab()
 const mode = ref('in_person')
-const form = ref({ title: '', participants: '', context: '' })
+const form = ref({ title: '', participants: '', context: '', project_id: null })
 const resumeMeeting = ref(null)
 const meetingId = ref(null)
 const title = ref('')

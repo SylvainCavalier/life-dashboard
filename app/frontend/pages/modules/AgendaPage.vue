@@ -85,6 +85,11 @@
           </div>
         </div>
         <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Projet</label>
+          <ProjectSelect v-model="form.project_id" placeholder="— Aucun projet (deviné d'après le titre si vide) —" />
+          <p class="text-xs text-gray-400 mt-1">Une fois passé, le rendez-vous est consigné au journal de bord du projet.</p>
+        </div>
+        <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea v-model="form.description" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Notes ou détails..."></textarea>
         </div>
@@ -244,6 +249,12 @@
                     class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0"
                     :style="{ backgroundColor: getEventColor(event) + '20', color: getEventColor(event) }"
                   >{{ eventTypeLabel(event.event_type) }}</span>
+                  <router-link
+                    v-if="event.project_id"
+                    :to="`/projects/${event.project_id}`"
+                    class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex-shrink-0"
+                    title="Rendez-vous rattaché à ce projet"
+                  >{{ projectNames[event.project_id] || 'Projet' }}</router-link>
                 </div>
                 <p v-if="event.location" class="text-xs text-gray-400 mt-0.5 truncate">{{ event.location }}</p>
               </div>
@@ -269,11 +280,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useApi } from '../../composables/useApi'
 import DeadlinesPanel from '../../components/deadlines/DeadlinesPanel.vue'
+import ProjectSelect from '../../components/projects/ProjectSelect.vue'
 
 const { useCrud, get, post } = useApi()
 const { list, create, update, destroy } = useCrud('events')
 
 const events = ref([])
+const projectNames = ref({})
 const showForm = ref(false)
 const editingId = ref(null)
 const editingDeadlineId = ref(null)
@@ -314,6 +327,7 @@ const defaultForm = () => ({
   location: '',
   all_day: false,
   reminder_minutes: 60,
+  project_id: null,
 })
 
 const form = ref(defaultForm())
@@ -438,6 +452,17 @@ const fetchEvents = async () => {
   events.value = await list()
 }
 
+// Noms des projets pour le badge de la liste (une requete, seulement si un evenement en a un).
+const fetchProjectNames = async () => {
+  if (!events.value.some(e => e.project_id)) return
+  try {
+    const projects = await get('/projects')
+    projectNames.value = Object.fromEntries((projects || []).map(p => [p.id, p.name]))
+  } catch {
+    projectNames.value = {}
+  }
+}
+
 const openForm = (event = null) => {
   editingDeadlineId.value = event?.deadline_id || null
   if (event) {
@@ -451,6 +476,7 @@ const openForm = (event = null) => {
       location: event.location || '',
       all_day: event.all_day,
       reminder_minutes: event.reminder_minutes ?? 60,
+      project_id: event.project_id ?? null,
     }
   } else {
     editingId.value = null
@@ -470,6 +496,7 @@ const saveEvent = async () => {
   }
   showForm.value = false
   await fetchEvents()
+  fetchProjectNames()
   await fetchAlerts()
 }
 
@@ -582,6 +609,7 @@ const formatSyncTime = (dateStr) => {
 // === Lifecycle ===
 onMounted(async () => {
   await fetchEvents()
+  fetchProjectNames()
   await fetchAlerts()
   await fetchSync()
   if (sync.value?.active) syncInterval = setInterval(pollSync, 3000)

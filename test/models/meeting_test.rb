@@ -8,6 +8,7 @@
 #  error            :text
 #  finished_at      :datetime
 #  held_at          :datetime         not null
+#  journaled_at     :datetime
 #  kind             :string           default("in_person"), not null
 #  participants     :text
 #  requested_at     :datetime
@@ -21,15 +22,18 @@
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
 #  document_id      :bigint
+#  project_id       :bigint
 #
 # Indexes
 #
 #  index_meetings_on_document_id  (document_id)
 #  index_meetings_on_held_at      (held_at)
+#  index_meetings_on_project_id   (project_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (document_id => documents.id) ON DELETE => nullify
+#  fk_rails_...  (project_id => projects.id) ON DELETE => nullify
 #
 require "test_helper"
 

@@ -50,6 +50,11 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Lien GitHub</label>
           <input v-model="form.github_url" type="url" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://github.com/..." />
         </div>
+        <div v-if="initial">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Identifiant</label>
+          <input v-model="form.slug" type="text" pattern="[a-z0-9][a-z0-9_\-]*" class="w-full border rounded-lg px-3 py-2 text-sm font-mono" placeholder="prudo" />
+          <p class="text-xs text-gray-400 mt-1">Cité dans le CLAUDE.md du dépôt de code : les sessions /historyupdate arrivent dans ce journal. Le changer impose de mettre le CLAUDE.md à jour.</p>
+        </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Lien principal (site, chaîne, page...)</label>
           <input v-model="form.site_url" type="url" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
@@ -90,6 +95,7 @@ const form = ref({
   github_url: props.initial?.github_url || '',
   site_url: props.initial?.site_url || '',
   description: props.initial?.description || '',
+  ...(props.initial ? { slug: props.initial.slug || '' } : {}),
 })
 
 // Le depot GitHub n'a de sens que pour du code, sauf s'il est deja renseigne.

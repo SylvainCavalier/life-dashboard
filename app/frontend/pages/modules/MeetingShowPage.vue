@@ -16,6 +16,11 @@
                 <span v-if="meeting.duration_seconds"> · {{ formatDuration(meeting.duration_seconds) }}</span>
               </p>
               <p v-if="meeting.participants" class="text-sm text-gray-500">Participants : {{ meeting.participants }}</p>
+              <p v-if="meeting.project_id" class="text-sm text-gray-500">
+                Projet :
+                <router-link :to="`/projects/${meeting.project_id}`" class="text-blue-600 hover:underline">{{ meeting.project_name }}</router-link>
+                <span class="text-xs text-gray-400">(compte rendu consigné à son journal de bord)</span>
+              </p>
             </div>
             <span :class="['flex-shrink-0 text-xs px-2 py-0.5 rounded-full', statusClass(meeting)]">{{ statusLabel(meeting) }}</span>
           </div>
@@ -88,6 +93,11 @@
             <div class="md:col-span-2">
               <label class="block text-xs font-medium text-gray-600 mb-1">Titre</label>
               <input v-model="infos.title" type="text" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-medium text-gray-600 mb-1">Projet</label>
+              <ProjectSelect v-model="infos.project_id" />
+              <p class="text-xs text-gray-400 mt-1">Changer de projet déplace l'entrée du journal ; « Aucun projet » la retire.</p>
             </div>
             <div class="md:col-span-2">
               <label class="block text-xs font-medium text-gray-600 mb-1">Participants</label>
@@ -195,6 +205,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '../../plugins/axios'
+import ProjectSelect from '../../components/projects/ProjectSelect.vue'
 import { STEP_LABELS, formatDateTime, formatDuration, timecode, statusClass, statusLabel } from '../../utils/meetingFormat'
 
 const props = defineProps({ id: { type: [String, Number], required: true } })
@@ -298,8 +309,8 @@ const saveNamesAndRegenerate = async () => {
 const toggleEdit = () => {
   editing.value = !editing.value
   if (editing.value) {
-    const { title, participants, context } = meeting.value
-    infos.value = { title, participants: participants || '', context: context || '' }
+    const { title, participants, context, project_id } = meeting.value
+    infos.value = { title, participants: participants || '', context: context || '', project_id: project_id ?? null }
   }
 }
 

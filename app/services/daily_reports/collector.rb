@@ -328,6 +328,7 @@ module DailyReports
           "last_entry_on" => last_entry_on&.iso8601,
           "recent_entries" => entries.select { |e| e.occurred_on >= @date - PROJECT_JOURNAL_DAYS }.first(3).map do |entry|
             { "date" => entry.occurred_on.iso8601, "kind" => entry.kind_label, "title" => entry.title,
+              "source" => ProjectEntry::SOURCE_LABELS[entry.source],
               "with" => entry.contact && [entry.contact.first_name, entry.contact.last_name].compact_blank.join(" ") }.compact
           end.presence
         }.compact

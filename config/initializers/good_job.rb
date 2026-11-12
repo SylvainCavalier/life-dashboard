@@ -47,6 +47,11 @@ Rails.application.configure do
       class: "DailyReportJob",
       description: "Rapport du matin d'Alfred a 9h (rattrapage jusqu'a 11h si le dyno redemarrait)"
     },
+    project_journal: {
+      cron: "5 * * * *",
+      class: "ProjectJournalJob",
+      description: "Consigne au journal de bord de leur projet les rendez-vous passes (Event avec project_id)"
+    },
     alfred_reindex: {
       cron: "30 4 * * *",
       class: "AlfredReindexJob",

@@ -73,9 +73,9 @@
             <input v-model="form.location" type="text" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Adresse ou lien visio" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Rappel</label>
-            <select v-model="form.reminder_minutes" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option :value="0">Pas de rappel</option>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Notification</label>
+            <select v-model="form.reminder_minutes" class="w-full border rounded-lg px-3 py-2 text-sm" :disabled="form.all_day" title="Notification push sur l'iPhone et le Mac (pas pour une journée entière)">
+              <option :value="0">Pas de notification</option>
               <option :value="5">5 minutes avant</option>
               <option :value="15">15 minutes avant</option>
               <option :value="30">30 minutes avant</option>

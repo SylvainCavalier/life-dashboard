@@ -10,6 +10,7 @@
 #  event_type        :string           default("autre"), not null
 #  google_updated_at :datetime
 #  location          :string
+#  notified_at       :datetime
 #  reminder_minutes  :integer          default(60)
 #  start_time        :datetime         not null
 #  title             :string           not null

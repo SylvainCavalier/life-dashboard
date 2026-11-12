@@ -30,6 +30,11 @@ Rails.application.configure do
       class: "ReminderDispatchJob",
       description: "Envoie les rappels echus (notification push, relances, mail de secours) chaque minute"
     },
+    event_notification: {
+      cron: "* * * * *",
+      class: "EventNotificationJob",
+      description: "Previent par notification push des rendez-vous a venir (reminder_minutes avant, 1 h par defaut)"
+    },
     deadline_events: {
       cron: "15 4 * * *",
       class: "DeadlineEventsJob",

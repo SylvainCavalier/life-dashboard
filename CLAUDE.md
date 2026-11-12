@@ -269,6 +269,12 @@ et le router navigue. C'est la page qui appelle `seen` / `done` / `snooze` : le 
 Un abonnement que le service push declare expire (404/410) est supprime a l'envoi suivant.
 Tests : `reminder_test.rb`, `reminder_dispatch_job_test.rb`, `reminders_test.rb` (transport push factice,
 `PushNotifications.transport=`).
+**Notification des rendez-vous** (sans `Reminder`) : `EventNotificationJob` (cron chaque minute) envoie une notification push
+`events.reminder_minutes` avant chaque `Event` a heure precise (defaut 60, reglable dans le formulaire de l'agenda, 0 = aucune ;
+journee entiere et `echeance` exclues), y compris pour les evenements venus de Google (`reminder_minutes` reste local). Une
+seule notification, ni relance ni mail ; ouvre `/agenda`. `events.notified_at` la marque et se remet a zero quand `start_time`,
+`reminder_minutes` ou `all_day` change (`Event#rearm_notification`). Rien ne part si l'evenement a deja commence. Le flux ICS
+pose la meme alarme : un iPhone abonne au flux sonnerait deux fois. Tests : `event_notification_job_test.rb`.
 
 ### Échéances notables (module sous l'agenda)
 `Deadline` : `title`, `category` (`CATEGORIES`), `due_on` (première échéance), `recurrence` (none | monthly | quarterly |

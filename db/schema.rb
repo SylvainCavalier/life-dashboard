@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_05_103953) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_12_160530) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -429,6 +429,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_05_103953) do
     t.string "google_event_id"
     t.datetime "google_updated_at"
     t.bigint "deadline_id"
+    t.datetime "notified_at"
     t.index ["deadline_id"], name: "index_events_on_deadline_id"
     t.index ["event_type"], name: "index_events_on_event_type"
     t.index ["google_event_id"], name: "index_events_on_google_event_id", unique: true

@@ -162,9 +162,11 @@ Rails.application.routes.draw do
       resources :project_entries, only: [:index, :create, :update, :destroy]
       resources :project_contacts, only: [:index, :create, :update, :destroy]
     end
-    # Sessions de code envoyees par /historyupdate (jeton PROJECT_JOURNAL_TOKEN, sans session)
+    # Sessions de code envoyees par /historyupdate, rattrapage par /updatejournal
+    # (jeton PROJECT_JOURNAL_TOKEN, sans session)
     resource :project_journal, only: [:create], controller: "project_journal" do
       get "/", action: :index
+      post :sync
     end
     resources :budget_entries, only: [:index, :create, :update, :destroy] do
       collection do

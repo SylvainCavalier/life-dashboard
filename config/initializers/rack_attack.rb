@@ -64,7 +64,7 @@ class Rack::Attack
 
   # Journal des sessions de code (jeton, sans session) : borne aussi les essais de jeton.
   Rack::Attack.throttle('project journal', limit: 20, period: 60.seconds) do |req|
-    req.ip if req.path == '/api/project_journal'
+    req.ip if req.path.start_with?('/api/project_journal')
   end
 
   # Dictee vocale : chaque requete est une transcription payante (Voxtral).

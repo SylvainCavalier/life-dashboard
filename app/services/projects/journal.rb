@@ -82,13 +82,44 @@ module Projects
     # l'entree de history.md) : la renvoyer enrichie met l'entree a jour au lieu d'en
     # creer une seconde. Renvoie [entry, created].
     def record_code_session(project:, title:, occurred_on: Date.current, body: nil, ref: nil)
-      key = (ref.presence || "#{occurred_on} #{title}").to_s.parameterize.first(150)
-      entry = project.project_entries.find_or_initialize_by(source_ref: "code:#{key}")
+      entry = code_session_entry(project, title: title, occurred_on: occurred_on, body: body, ref: ref)
       created = entry.new_record?
-      entry.assign_attributes(source: "code", kind: "travail", occurred_on: occurred_on,
-                              title: title.to_s.strip.truncate(200), body: body.to_s.strip.presence)
       entry.save!
       [entry, created]
+    end
+
+    # Plafond d'un rattrapage (/updatejournal) : un history.md entier tient largement dessous.
+    MAX_SYNC_SESSIONS = 200
+
+    # Rattrapage de plusieurs sessions d'un coup (history.md d'un projet commence avant le
+    # lien avec /historyupdate). Chaque session est « new », « unchanged » ou « changed »
+    # par rapport au journal ; en `dry_run`, rien n'est ecrit. Une session invalide est
+    # signalee (« invalid ») sans empecher les autres. Renvoie un Hash par session.
+    def sync_code_sessions(project:, sessions:, dry_run: false)
+      sessions.first(MAX_SYNC_SESSIONS).map do |session|
+        entry = code_session_entry(project, **session.slice(:title, :occurred_on, :body, :ref))
+        status = if entry.new_record? then "new"
+                 elsif entry.changed? then "changed"
+                 else "unchanged"
+                 end
+        result = { ref: session[:ref], title: entry.title, occurred_on: entry.occurred_on, status: status,
+                   id: entry.id }
+        unless entry.valid?
+          next result.merge(status: "invalid", error: entry.errors.full_messages.join(", "))
+        end
+
+        entry.save! if !dry_run && status != "unchanged"
+        result.merge(id: entry.id)
+      end
+    end
+
+    def code_session_entry(project, title:, occurred_on: nil, body: nil, ref: nil)
+      occurred_on ||= Date.current
+      key = (ref.presence || "#{occurred_on} #{title}").to_s.parameterize.first(150)
+      entry = project.project_entries.find_or_initialize_by(source_ref: "code:#{key}")
+      entry.assign_attributes(source: "code", kind: "travail", occurred_on: occurred_on,
+                              title: title.to_s.strip.truncate(200), body: body.to_s.strip.presence)
+      entry
     end
 
     # --- Rendez-vous ---

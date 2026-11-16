@@ -451,8 +451,14 @@ Corpus : `ProjectEntry` a sa fiche, `ProjectContact` fait reindexer le projet, d
   (unique, nom de dossier pour un dépôt de `Projects::DocsBundle::REPOSITORIES`, sinon nom paramétré ; modifiable dans le
   formulaire du projet) cité dans le CLAUDE.md du dépôt : ``Projet du life-dashboard : `prudo` `` (la page du projet
   affiche la ligne à copier). Côté Mac : la commande `~/.claude/commands/historyupdate.md` (étape 5) appelle
-  `~/.claude/scripts/project-journal` (`slug` | `list` | `send`), jeton dans le trousseau (`life-dashboard-journal-token`)
-  ou `PROJECT_JOURNAL_TOKEN`, URL `LIFE_DASHBOARD_URL` (défaut https://life-dashboard.online).
+  `~/.claude/scripts/project-journal` (`slug` | `list` | `send` | `entries` | `history` | `sync`), jeton dans le trousseau
+  (`life-dashboard-journal-token`) ou `PROJECT_JOURNAL_TOKEN`, URL `LIFE_DASHBOARD_URL` (défaut https://life-dashboard.online).
+  **Rattrapage** (`/updatejournal`, `~/.claude/commands/updatejournal.md`) : `GET /api/project_journal?project=slug`
+  (`since=`) lit le journal du projet, toutes sources ; le script découpe `history.md` (titres `### AAAA-MM-JJ — Titre`,
+  périodes `2025-08 → 2025-10` ou `2026-01 (fin)` datées à leur fin) ; `POST /api/project_journal/sync`
+  (`{ project, dry_run, sessions: [...] }`, 200 au plus, `Projects::Journal.sync_code_sessions`) renvoie le statut de
+  chaque session (new | unchanged | changed | invalid) et, sans `dry_run`, écrit les nouvelles et les modifiées. La
+  commande compare avec les entrées saisies à la main et attend l'accord de Sylvain avant d'écrire.
 Le journal affiche ces entrées avec un badge « auto · Agenda / Réunion / Code » ; le rapport du matin reçoit la source.
 Tests : `project_entry_test.rb`, `projects_test.rb`, `collector_test.rb`, `tools_test.rb`, `test/services/projects/`,
 `project_journal_test.rb`, `meeting_process_job_test.rb`, `summarizer_test.rb`.

@@ -50,7 +50,7 @@ module Alfred
           payload: { attributes: { "destinataire" => correspondent.name, "texte" => body }, before: {},
                      correspondent_id: correspondent.id }.to_json
         )
-        { action_id: action.id, status: "en attente de la confirmation de Monsieur dans le chat", note: "Rien n'est parti pour l'instant." }
+        proposal_result(action, "Rien n'est parti pour l'instant.")
       end
     end
   end

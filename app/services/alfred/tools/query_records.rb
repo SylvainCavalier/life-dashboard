@@ -36,6 +36,7 @@ module Alfred
       def call(input)
         name = input["model"].to_s
         klass = DataAccess.readable_class(name)
+        @context.untrusted = true if name == "SmsMessage" # textos ecrits par des tiers
         allowed = DataAccess.readable_fields(name)
 
         relation = apply_where(DataAccess.readable_relation(name), klass, allowed, input["where"] || {})

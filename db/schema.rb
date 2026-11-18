@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_12_162313) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_18_120819) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -56,6 +56,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_162313) do
     t.datetime "resolved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "auto_confirmed", default: false, null: false
     t.index ["alfred_conversation_id"], name: "index_alfred_actions_on_alfred_conversation_id"
     t.index ["alfred_message_id"], name: "index_alfred_actions_on_alfred_message_id"
     t.index ["status"], name: "index_alfred_actions_on_status"
@@ -145,6 +146,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_162313) do
     t.jsonb "suggestions", default: [], null: false
     t.text "sms_public_facts"
     t.datetime "sms_open_until"
+    t.jsonb "auto_confirm", default: [], null: false
   end
 
   create_table "budget_entries", force: :cascade do |t|

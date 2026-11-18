@@ -18,7 +18,7 @@ module Alfred
         text, record_id = perform!
         @action.update!(status: "executed", record_id: record_id, resolved_at: Time.current)
         Rails.logger.info "[Alfred::ActionExecutor] action ##{@action.id} executee : #{@action.operation} #{@action.target_model}##{record_id} (#{@action.new_attributes.keys.join(', ')})"
-        note(text)
+        note(@action.auto_confirmed ? "#{text} (Action dispensee de confirmation par Sylvain : executee sans carte.)" : text)
       end
       @action
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Stale, DataAccess::Denied,

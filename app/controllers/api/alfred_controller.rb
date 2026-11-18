@@ -10,11 +10,13 @@ module Api
     # `custom_instructions` : texte libre ajoute au prompt. `prompt_overrides` : { section => texte },
     # un texte vide (ou null) remet la section au texte par defaut du code.
     # `suggestions` : liste des phrases d'accueil du widget ; vide (ou null) = phrases par defaut.
+    # `auto_confirm` : regles "Modele:operation" dispensees de confirmation (Alfred::AutoConfirm), liste complete.
     def update
       setting = AlfredSetting.instance
       setting.update!(custom_instructions: params[:custom_instructions].to_s.strip.presence) if params.key?(:custom_instructions)
       setting.merge_overrides!(overrides_params) if params.key?(:prompt_overrides)
       setting.replace_suggestions!(suggestions_params) if params.key?(:suggestions)
+      setting.update!(auto_confirm: Array(params[:auto_confirm]).map(&:to_s).uniq) if params.key?(:auto_confirm)
       render json: overview_json
     rescue ActiveRecord::RecordInvalid => e
       render json: { error: e.message }, status: :unprocessable_content
@@ -61,6 +63,8 @@ module Api
         default_suggestions: AlfredSetting::DEFAULT_SUGGESTIONS,
         suggestions_customized: setting.suggestions.any?,
         max_suggestions: AlfredSetting::MAX_SUGGESTIONS,
+        auto_confirm: setting.auto_confirm,
+        auto_confirm_catalog: ::Alfred::AutoConfirm.catalog,
         prompt_sections: ::Alfred::Prompt::SECTIONS.map do |section|
           {
             key: section[:key], title: section[:title], help: section[:help],

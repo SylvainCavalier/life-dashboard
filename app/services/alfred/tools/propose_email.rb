@@ -12,7 +12,7 @@ module Alfred
           name: "propose_email",
           description: "Propose un mail a envoyer depuis la boite de Monsieur (mode send) ou a ranger en brouillon Gmail " \
                        "(mode draft). RIEN ne part : Monsieur voit le mail complet dans le chat et confirme ou annule " \
-                       "lui-meme. Pour repondre, lire d'abord le fil (read_mail_thread) et passer reply_to_thread_id : " \
+                       "lui-meme (un brouillon peut etre dispense de confirmation : le resultat dit alors status executee). Pour repondre, lire d'abord le fil (read_mail_thread) et passer reply_to_thread_id : " \
                        "la reponse est rattachee au fil avec les bons en-tetes. Ecrire le corps en texte brut, en " \
                        "francais sauf demande contraire, signe « Sylvain ». Ne jamais inventer un destinataire : " \
                        "le demander. Apres l'appel, annoncer la proposition en une phrase et s'arreter.",
@@ -59,8 +59,7 @@ module Alfred
           summary: input["summary"].to_s.truncate(250),
           payload: { attributes: attributes, before: {}, headers: headers }.to_json
         )
-        { action_id: action.id, status: "en attente de la confirmation de Monsieur dans le chat",
-          note: operation == "send_email" ? "Rien n'a ete envoye pour l'instant." : "Aucun brouillon cree pour l'instant." }
+        proposal_result(action, operation == "send_email" ? "Rien n'a ete envoye pour l'instant." : "Aucun brouillon cree pour l'instant.")
       end
 
       private

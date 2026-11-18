@@ -16,7 +16,9 @@ module Alfred
 
     # seen : [type, id] des enregistrements renvoyes au modele pendant ce tour, seuls
     # citables comme sources (voir Alfred::Citations).
-    Context = Struct.new(:conversation, :message, :seen, keyword_init: true)
+    # untrusted : vrai des qu'un outil a ramene du texte ecrit par un tiers (mail, texto) ;
+    # aucune action n'est alors executee sans confirmation (Alfred::AutoConfirm).
+    Context = Struct.new(:conversation, :message, :seen, :untrusted, keyword_init: true)
 
     module_function
 

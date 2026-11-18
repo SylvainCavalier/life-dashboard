@@ -703,6 +703,20 @@ donner au modele un outil qui ecrit directement. `DataAccess` double les listes 
 (`query.rb` / `write.rb`) : **un modele ajoute ou renomme se met a jour aux trois endroits** (voir la checklist plus haut).
 Les tables d'Alfred (`alfred_*`, `embedding_caches`) ne sont volontairement exposees a aucune des deux skills.
 
+**Actions dispensees de confirmation** (onglet Confirmations de `/alfred`, `AlfredSetting#auto_confirm`, liste de regles
+`"Modele:operation"` : `ShoppingItem:shopping_add`, `Task:create`, `Gmail:draft_email`...). Le modele ne fait toujours que
+proposer : c'est `Tools::Base#proposal_result`, appele par chaque outil `propose_*` apres creation de l'`AlfredAction`, qui
+la fait executer aussitot par `ActionExecutor` (memes verifications) via `Alfred::AutoConfirm.apply!`, marque
+`alfred_actions.auto_confirmed` ; le resultat d'outil dit `status: "executee"` et le prompt (section `writes`) dit de
+l'annoncer comme faite. Garde-fous independants du reglage, dans `AutoConfirm` : `LOCKED` (envoi de mail, de texto : jamais
+dispensables, refuses par validation) ; aucune execution d'office dans une conversation de texto (`sms_correspondent_id`),
+de rapport du matin (`daily_report_id`), ni des qu'Alfred y a lu des mails (`steps` contenant `search_mails` /
+`read_mail_thread`, persistant sur la conversation) ou des `SmsMessage` pendant le tour (`Context#untrusted`) : une
+instruction cachee dans un mail ne doit pas ecrire en silence. Brouillon et tri Gmail echappent a la regle des mails lus
+(rattrapables, et sans objet sans lecture de la boite). Le widget signale les cartes executees d'office et emet
+`alfred:action-resolved` pour elles (`useAlfred#trackAutoActions`). Un nouvel outil de proposition doit finir par
+`proposal_result`, et une nouvelle operation s'ajoute au `catalog` d'`AutoConfirm`. Tests : `tools_test.rb`, `alfred_api_test.rb`.
+
 Deja branches : Gmail (voir « Gmail pour Alfred ») et Google Agenda (par ricochet : `Event` est le miroir de l'agenda
 Google, voir « Google Calendar »). Les rappels passent par `propose_write` sur `Reminder` (le prompt dit qu'un « rappelle-moi » est un Reminder, ni une
 Task ni un Event). Courrier : section « Courriers » du prompt (`Prompt::DEFAULTS["letters"]`) : Alfred demande expediteur, destinataire et contenu,

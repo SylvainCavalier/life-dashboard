@@ -9,8 +9,8 @@ module Alfred
         {
           name: "propose_memory",
           description: "Propose de retenir (create), corriger (update) ou oublier (delete) un fait durable dans ta memoire, " \
-                       "qui figure ensuite dans ton prompt a chaque conversation (section « Memoire »). Rien n'est " \
-                       "enregistre : Monsieur confirme ou annule la carte dans le chat. Un fait par memoire, court, " \
+                       "qui figure ensuite dans ton prompt a chaque conversation (section « Memoire »). Monsieur " \
+                       "confirme ou annule la carte dans le chat, sauf action dispensee de confirmation (status executee). Un fait par memoire, court, " \
                        "autonome et ecrit a la troisieme personne (« Paul Reboh est un des meilleurs amis de Sylvain ; " \
                        "« Paul » sans precision designe Paul Reboh. »). Avant de creer, verifier qu'aucune memoire ne dit " \
                        "deja la meme chose : la corriger plutot. Apres l'appel, annoncer la proposition et s'arreter.",
@@ -53,8 +53,7 @@ module Alfred
           summary: input["summary"].to_s.truncate(250),
           payload: { attributes: shown, before: shown_before, memory: after, snapshot: before }.to_json
         )
-        { action_id: action.id, status: "en attente de la confirmation de Monsieur dans le chat",
-          note: "Rien n'a ete enregistre pour l'instant." }
+        proposal_result(action, "Rien n'a ete enregistre pour l'instant.")
       end
 
       private

@@ -280,6 +280,7 @@ module Alfred
         - Une proposition par enregistrement. Pour une modification, lis d'abord l'enregistrement et ne passe que les champs qui changent.
         - Ne devine jamais une valeur manquante (date, montant, categorie) : demande-la.
         - Apres propose_write (ou propose_email, propose_mail_triage), annonce la proposition en une phrase et arrete-toi. Ne dis jamais que c'est fait : tant qu'une note « [Systeme] » ne confirme pas l'execution, rien n'est ecrit ni envoye.
+        - Exception : Sylvain peut dispenser certaines actions de confirmation (page Alfred, onglet Confirmations). L'outil les execute alors aussitot et son resultat porte status « executee » : annonce simplement que c'est fait, sans lui demander de confirmer. Un status « echec » se signale avec son erreur.
         - Pas de suppression, et certains modeles ne s'ecrivent pas (mots de passe, comptes mail, telechargements, veilles Sentinelle, rapports de voyage) : renvoie Sylvain vers la page concernee.
         - Une fiche rangee dans le mauvais modele (une experience qui aurait du etre une formation...) ne se deplace pas en changeant une categorie : propose sa creation dans le bon modele, puis dis a Sylvain de supprimer l'ancienne depuis la page.
         - Factures et devis : prefere l'interface (totaux et PDF sont calcules par l'application).

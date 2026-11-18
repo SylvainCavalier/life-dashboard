@@ -3,11 +3,13 @@
 # (Alfred::Prompt::SECTIONS) ; `custom_instructions` s'ajoute a la fin.
 # `suggestions` : phrases proposees a l'ouverture d'une conversation vide dans le
 # widget ; tableau vide = phrases par defaut (DEFAULT_SUGGESTIONS).
+# `auto_confirm` : actions executees sans carte a confirmer dans le chat (Alfred::AutoConfirm).
 # == Schema Information
 #
 # Table name: alfred_settings
 #
 #  id                  :bigint           not null, primary key
+#  auto_confirm        :jsonb            not null
 #  custom_instructions :text
 #  prompt_overrides    :jsonb            not null
 #  sms_open_until      :datetime
@@ -27,6 +29,7 @@ class AlfredSetting < ApplicationRecord
 
   validate :prompt_overrides_known
   validate :suggestions_well_formed
+  validate :auto_confirm_known
 
   def self.instance
     first_or_create!
@@ -102,6 +105,14 @@ class AlfredSetting < ApplicationRecord
   def prompt_overrides_known
     unknown = prompt_overrides.keys - Alfred::Prompt::SECTIONS.map { |s| s[:key] }
     errors.add(:prompt_overrides, "sections inconnues : #{unknown.join(', ')}") if unknown.any?
+  end
+
+  # Regles d'Alfred::AutoConfirm ; l'envoi d'un mail ou d'un texto n'en fait jamais partie.
+  def auto_confirm_known
+    return errors.add(:auto_confirm, "doit etre une liste") unless auto_confirm.is_a?(Array)
+
+    unknown = auto_confirm - Alfred::AutoConfirm.known_keys
+    errors.add(:auto_confirm, "regles inconnues ou interdites : #{unknown.join(', ')}") if unknown.any?
   end
 
   def suggestions_well_formed

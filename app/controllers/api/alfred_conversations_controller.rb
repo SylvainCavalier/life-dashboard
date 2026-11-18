@@ -87,7 +87,7 @@ module Api
     def self.action_json(action)
       {
         id: action.id, operation: action.operation, target_model: action.target_model, record_id: action.record_id,
-        summary: action.summary, status: action.status, error: action.error,
+        summary: action.summary, status: action.status, error: action.error, auto_confirmed: action.auto_confirmed,
         attributes: action.new_attributes, before: action.before_attributes
       }
     end

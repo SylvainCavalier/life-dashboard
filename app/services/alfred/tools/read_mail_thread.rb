@@ -20,6 +20,7 @@ module Alfred
 
       def call(input)
         ensure_gmail!
+        @context.untrusted = true
 
         thread_id = input["thread_id"].to_s.strip
         raise ArgumentError, "`thread_id` est requis" if thread_id.blank?

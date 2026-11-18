@@ -16,8 +16,8 @@ module Alfred
       def self.definition
         {
           name: "propose_mail_triage",
-          description: "Propose un tri sur un lot de fils Gmail : #{ACTIONS.join(', ')}. Rien n'est modifie : Monsieur " \
-                       "voit la liste des fils et les actions dans le chat et confirme lui-meme. Une proposition par lot " \
+          description: "Propose un tri sur un lot de fils Gmail : #{ACTIONS.join(', ')}. Monsieur voit " \
+                       "la liste des fils et les actions dans le chat et confirme lui-meme, sauf tri dispense de confirmation (status executee). Une proposition par lot " \
                        "homogene (memes actions pour tous les fils). Pas de suppression definitive : trash met a la " \
                        "corbeille (30 jours). Apres l'appel, annoncer la proposition en une phrase et s'arreter.",
           input_schema: {
@@ -60,8 +60,7 @@ module Alfred
           summary: input["summary"].to_s.truncate(250),
           payload: { attributes: attributes, before: {}, triage: { thread_ids: thread_ids, actions: actions, label: label } }.to_json
         )
-        { action_id: action.id, status: "en attente de la confirmation de Monsieur dans le chat",
-          note: "Rien n'a ete modifie pour l'instant." }
+        proposal_result(action, "Rien n'a ete modifie pour l'instant.")
       end
 
       private

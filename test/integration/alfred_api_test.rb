@@ -108,6 +108,25 @@ class AlfredApiTest < ActionDispatch::IntegrationTest
     assert_empty AlfredSetting.instance.suggestions
   end
 
+  test "la page Alfred regle les actions dispensees de confirmation" do
+    sign_in_owner
+
+    get "/api/alfred", headers: JSON_HEADERS
+    assert_empty response.parsed_body["auto_confirm"]
+    catalog = response.parsed_body["auto_confirm_catalog"]
+    assert catalog.find { |g| g["key"] == "gmail" }["rules"].find { |r| r["key"] == "Gmail:send_email" }["locked"]
+
+    patch "/api/alfred", params: { auto_confirm: %w[ShoppingItem:shopping_add Task:create] }.to_json, headers: JSON_HEADERS
+    assert_response :success
+    assert_equal %w[ShoppingItem:shopping_add Task:create], response.parsed_body["auto_confirm"]
+
+    patch "/api/alfred", params: { auto_confirm: %w[Gmail:send_email] }.to_json, headers: JSON_HEADERS
+    assert_response :unprocessable_content
+
+    patch "/api/alfred", params: { auto_confirm: [] }.to_json, headers: JSON_HEADERS
+    assert_empty AlfredSetting.instance.reload.auto_confirm
+  end
+
   test "une conversation s'exporte en PDF et se vide" do
     sign_in_owner
     conversation = AlfredConversation.create!(title: "Test")

@@ -12,8 +12,8 @@ module Alfred
           name: "propose_shopping",
           description: "Propose une modification de la liste de courses (page Courses, une seule liste) : add = ajouter " \
                        "des articles, remove = retirer des articles (par leur id ShoppingItem), clear = vider toute la " \
-                       "liste (apres les courses). Rien n'est modifie : Monsieur confirme ou annule la carte dans le " \
-                       "chat. Tous les articles d'une demande vont dans le meme appel. Un article deja dans la liste " \
+                       "liste (apres les courses). Monsieur confirme ou annule la carte dans le chat, sauf action " \
+                       "dispensee de confirmation (le resultat dit alors status executee). Tous les articles d'une demande vont dans le meme appel. Un article deja dans la liste " \
                        "est signale et ignore. Apres l'appel, annoncer la proposition et s'arreter.",
           input_schema: {
             type: "object",
@@ -42,8 +42,7 @@ module Alfred
           message: @context.message, operation: operation, target_model: "ShoppingItem",
           summary: input["summary"].to_s.truncate(250), payload: payload.to_json
         )
-        { action_id: action.id, status: "en attente de la confirmation de Monsieur dans le chat",
-          note: "Rien n'a ete modifie pour l'instant." }.merge(payload.slice(:already_listed))
+        proposal_result(action, "Rien n'a ete modifie pour l'instant.").merge(payload.slice(:already_listed))
       end
 
       private

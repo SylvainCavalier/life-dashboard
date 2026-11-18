@@ -19,6 +19,23 @@ const error = ref(null)
 // sur une conversation (« En parler a Alfred » depuis un rapport du matin).
 const panelOpen = ref(false)
 let timer = null
+// Actions executees sans confirmation deja signalees aux pages (evenement alfred:action-resolved).
+const announced = new Set()
+
+const announce = (action, decision) => {
+  window.dispatchEvent(new window.CustomEvent('alfred:action-resolved', { detail: { targetModel: action.target_model, decision } }))
+}
+
+// A l'ouverture d'une conversation, ce qui s'est deja passe n'est pas rejoue (announce = false).
+const trackAutoActions = (conv, notify) => {
+  for (const message of conv?.messages || []) {
+    for (const action of message.actions || []) {
+      if (!action.auto_confirmed || action.status !== 'executed' || announced.has(action.id)) continue
+      announced.add(action.id)
+      if (notify) announce(action, 'confirm')
+    }
+  }
+}
 
 const rememberedId = () => {
   try {
@@ -54,6 +71,7 @@ export function useAlfred() {
     timer = setTimeout(async () => {
       try {
         conversation.value = (await apiClient.get(`/alfred_conversations/${conversation.value.id}`)).data
+        trackAutoActions(conversation.value, true)
       } catch (err) {
         error.value = messageOf(err)
       }
@@ -68,6 +86,7 @@ export function useAlfred() {
   const open = async (id) => {
     error.value = null
     conversation.value = (await apiClient.get(`/alfred_conversations/${id}`)).data
+    trackAutoActions(conversation.value, false)
     remember(conversation.value.id)
     poll()
   }
@@ -147,7 +166,7 @@ export function useAlfred() {
     try {
       await apiClient.post(`/alfred_actions/${action.id}/${decision}`)
       // Une page ouverte sous le widget peut se relire (ex. liste de courses) sans rechargement.
-      window.dispatchEvent(new window.CustomEvent('alfred:action-resolved', { detail: { targetModel: action.target_model, decision } }))
+      announce(action, decision)
     } catch (err) {
       error.value = messageOf(err)
     }
@@ -168,6 +187,11 @@ export function useAlfred() {
     overview.value = (await apiClient.patch('/alfred', { suggestions })).data
   }
 
+  // Regles "Modele:operation" dispensees de confirmation dans le chat (liste complete).
+  const saveAutoConfirm = async (rules) => {
+    overview.value = (await apiClient.patch('/alfred', { auto_confirm: rules })).data
+  }
+
   const loadPrompt = async () => (await apiClient.get('/alfred/prompt')).data.text
 
   const reindex = async () => {
@@ -186,7 +210,7 @@ export function useAlfred() {
   return {
     overview, conversation, conversations, messages, busy, error, panelOpen,
     loadOverview, resume, open, openInPanel, startNew, loadConversations, remove, clear, exportUrl, send, resolveAction,
-    saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex,
+    saveInstructions, savePromptOverrides, saveSuggestions, saveAutoConfirm, loadPrompt, reindex,
     loadMemories, createMemory, updateMemory, deleteMemory,
   }
 }

@@ -5,6 +5,7 @@
 # Table name: alfred_actions
 #
 #  id                     :bigint           not null, primary key
+#  auto_confirmed         :boolean          default(FALSE), not null
 #  error                  :text
 #  operation              :string           not null
 #  payload                :text             not null

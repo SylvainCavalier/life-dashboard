@@ -221,7 +221,7 @@
             <h2 class="font-semibold text-gray-900 mb-1">Outils</h2>
             <p class="text-xs text-gray-500 mb-4">
               Ce qu'Alfred peut appeler pendant une reponse. Les outils « proposition » ne font rien seuls : ils creent une
-              carte que vous confirmez dans le chat. La liste vient du code (<code>Alfred::Tools::ALL</code>).
+              carte que vous confirmez dans le chat (sauf actions dispensees, onglet Confirmations). La liste vient du code (<code>Alfred::Tools::ALL</code>).
             </p>
             <ul class="divide-y divide-gray-100">
               <li v-for="tool in overview.tools" :key="tool.name" class="py-3 flex items-start gap-3">
@@ -252,6 +252,76 @@
             <p class="text-xs font-medium text-gray-700 mb-2">Ecriture sur confirmation ({{ overview.writable_models.length }})</p>
             <div class="flex flex-wrap gap-1.5">
               <span v-for="m in overview.writable_models" :key="`w-${m}`" class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{{ m }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirmations -->
+        <div v-else-if="tab === 'confirmations'" class="space-y-4">
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <h2 class="font-semibold text-gray-900">Actions sans confirmation</h2>
+              <span v-if="saved === 'confirmations'" class="text-xs text-green-700">Enregistre</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-2">
+              Par defaut, tout ce qu'Alfred propose apparait dans le chat sous forme de carte a confirmer. Cochez les actions
+              qu'il peut faire directement : il les execute aussitot (memes verifications qu'une confirmation) et la carte
+              s'affiche deja traitee.
+            </p>
+            <p class="text-xs text-gray-500 mb-4">
+              Garde-fous qui priment sur ces reglages : l'envoi d'un mail ou d'un texto se confirme toujours ; et dans une
+              conversation ou Alfred a lu des mails ou des textos, issue d'un texto ou ouverte depuis un rapport du matin,
+              tout redevient a confirmer (une instruction cachee dans un mail ne doit pas pouvoir ecrire en silence). Seuls
+              le brouillon et le tri de mails restent dispenses apres lecture de la boite.
+            </p>
+
+            <div v-for="group in ruleGroups" :key="group.key" class="mb-5">
+              <p class="text-xs font-medium text-gray-700 mb-2">{{ group.label }}</p>
+              <ul class="rounded-lg border border-gray-100 divide-y divide-gray-100">
+                <li v-for="rule in group.rules" :key="rule.key" class="px-3 py-2">
+                  <label class="flex items-center gap-3 text-sm" :class="rule.locked ? 'text-gray-400' : 'text-gray-800 cursor-pointer'">
+                    <input
+                      type="checkbox"
+                      class="rounded border-gray-300"
+                      :checked="!rule.locked && autoRules.has(rule.key)"
+                      :disabled="rule.locked || saving === 'confirmations'"
+                      @change="toggleRule(rule.key)"
+                    >
+                    <span class="flex-1">{{ rule.label }}</span>
+                    <span v-if="rule.locked" class="text-[11px]">toujours confirme</span>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <div v-if="recordGroup">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <p class="text-xs font-medium text-gray-700">{{ recordGroup.label }}</p>
+                <input v-model="modelFilter" type="search" placeholder="Filtrer..." class="rounded-lg border border-gray-300 px-2 py-1 text-xs w-40">
+              </div>
+              <table class="w-full text-sm rounded-lg border border-gray-100">
+                <thead>
+                  <tr class="text-xs text-gray-500 bg-gray-50">
+                    <th class="text-left font-medium px-3 py-2">Modele</th>
+                    <th class="font-medium px-3 py-2 w-28">Creation</th>
+                    <th class="font-medium px-3 py-2 w-28">Modification</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr v-for="row in filteredModels" :key="row.model">
+                    <td class="px-3 py-1.5 text-gray-800"><code class="text-xs">{{ row.model }}</code></td>
+                    <td v-for="key in [row.create, row.update]" :key="key" class="px-3 py-1.5 text-center">
+                      <input
+                        type="checkbox"
+                        class="rounded border-gray-300"
+                        :checked="autoRules.has(key)"
+                        :disabled="saving === 'confirmations'"
+                        @change="toggleRule(key)"
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -373,13 +443,14 @@ import { useAlfred } from '../../composables/useAlfred'
 import avatar from '../../images/alfred-avatar.png'
 
 const {
-  overview, loadOverview, saveInstructions, savePromptOverrides, saveSuggestions, loadPrompt, reindex,
+  overview, loadOverview, saveInstructions, savePromptOverrides, saveSuggestions, saveAutoConfirm, loadPrompt, reindex,
   loadMemories, createMemory, updateMemory, deleteMemory,
 } = useAlfred()
 
 const tabs = [
   { key: 'instructions', label: 'Instructions' },
   { key: 'tools', label: 'Outils et connexions' },
+  { key: 'confirmations', label: 'Confirmations' },
   { key: 'memory', label: 'Memoire' },
 ]
 
@@ -494,6 +565,24 @@ const saveMemory = () => withMemory(() =>
   updateMemory(editing.value.id, { content: editing.value.content.trim(), category: editing.value.category }))
 
 const removeMemory = (memory) => withMemory(() => deleteMemory(memory.id))
+
+// Confirmations : chaque case enregistre aussitot la liste complete des regles.
+const modelFilter = ref('')
+const autoRules = computed(() => new Set(overview.value?.auto_confirm || []))
+const ruleGroups = computed(() => (overview.value?.auto_confirm_catalog || []).filter((g) => g.rules))
+const recordGroup = computed(() => (overview.value?.auto_confirm_catalog || []).find((g) => g.models))
+const filteredModels = computed(() => {
+  const query = modelFilter.value.trim().toLowerCase()
+  const models = recordGroup.value?.models || []
+  return query ? models.filter((m) => m.model.toLowerCase().includes(query)) : models
+})
+
+const toggleRule = (key) => withSaving('confirmations', async () => {
+  const rules = new Set(autoRules.value)
+  if (rules.has(key)) rules.delete(key)
+  else rules.add(key)
+  await saveAutoConfirm([...rules])
+})
 
 const rowsFor = (text) => Math.min(24, Math.max(4, (text || '').split('\n').length + 1))
 

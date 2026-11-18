@@ -25,6 +25,7 @@ module Alfred
 
       def call(input)
         ensure_gmail!
+        @context.untrusted = true
 
         query = input["query"].to_s.strip.presence || "in:inbox"
         threads = Gmail.client.search(query, max_results: input.fetch("max_results", 20))

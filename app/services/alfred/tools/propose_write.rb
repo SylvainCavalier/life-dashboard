@@ -7,8 +7,9 @@ module Alfred
       def self.definition
         {
           name: "propose_write",
-          description: "Propose la creation ou la modification d'UN enregistrement. Rien n'est ecrit : Monsieur voit une carte " \
-                       "avant/apres dans le chat et confirme ou annule lui-meme. Pour une modification, lire d'abord " \
+          description: "Propose la creation ou la modification d'UN enregistrement. Monsieur voit une carte " \
+                       "avant/apres dans le chat et confirme ou annule lui-meme, sauf action dispensee de confirmation " \
+                       "(le resultat dit alors status executee). Pour une modification, lire d'abord " \
                        "l'enregistrement (query_records) et ne passer que les champs qui changent. Ne jamais inventer une valeur " \
                        "manquante : la demander. Pas de suppression. Apres l'appel, annoncer brievement la proposition et s'arreter.",
           input_schema: {
@@ -48,8 +49,7 @@ module Alfred
           message: @context.message, operation: operation, target_model: name, record_id: record.id,
           summary: input["summary"].to_s.truncate(250), payload: { attributes: attributes, before: before }.to_json
         )
-        { action_id: action.id, status: "en attente de la confirmation de Monsieur dans le chat",
-          note: "Rien n'a ete ecrit pour l'instant." }
+        proposal_result(action, "Rien n'a ete ecrit pour l'instant.")
       end
     end
   end

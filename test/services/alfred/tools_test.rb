@@ -354,4 +354,51 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_match "Validation refusee", result[:error]
     assert_equal 0, @conversation.actions.count
   end
+
+  test "une action dispensee de confirmation est executee aussitot" do
+    AlfredSetting.instance.update!(auto_confirm: %w[ShoppingItem:shopping_add Task:create])
+
+    result, error = run_tool("propose_shopping", { "operation" => "add", "items" => %w[Pates], "summary" => "Pates" })
+    assert_not error
+    assert_equal "executee", result[:status]
+    assert_equal %w[Pates], ShoppingItem.ordered.pluck(:name)
+    action = @conversation.actions.last
+    assert action.auto_confirmed
+    assert_equal "executed", action.status
+    assert_match "sans carte", @conversation.messages.where(role: "event").last.content
+
+    result, = run_tool("propose_write", { "operation" => "create", "model" => "Task", "summary" => "x",
+                                          "attributes" => { "description" => "Passeport" } })
+    assert_equal "executee", result[:status]
+    assert Task.exists?(description: "Passeport")
+
+    result, = run_tool("propose_write", { "operation" => "create", "model" => "Note", "summary" => "x",
+                                          "attributes" => { "title" => "Idee", "content" => "..." } })
+    assert_match "en attente", result[:status], "une action non cochee reste a confirmer"
+    assert_not Note.exists?(title: "Idee")
+  end
+
+  test "rien n'est execute d'office apres lecture d'un mail ou dans une conversation de rapport" do
+    AlfredSetting.instance.update!(auto_confirm: %w[ShoppingItem:shopping_add])
+    @conversation.messages.create!(role: "assistant", status: "done", content: "Lu",
+                                   steps: [{ "tool" => "read_mail_thread", "label" => "x" }])
+
+    result, = run_tool("propose_shopping", { "operation" => "add", "items" => %w[Pates], "summary" => "Pates" })
+    assert_match "en attente", result[:status]
+    assert_match "malgre le reglage", result[:note]
+    assert_equal 0, ShoppingItem.count
+
+    report = create(:daily_report)
+    context = Alfred::Tools::Context.new(conversation: AlfredConversation.create!(daily_report: report), message: @message, seen: Set.new)
+    result, = Alfred::Tools.run("propose_shopping", { "operation" => "add", "items" => %w[Riz], "summary" => "Riz" }, context)
+    assert_match "en attente", result[:status]
+  end
+
+  test "l'envoi d'un mail ou d'un texto ne peut pas etre dispense de confirmation" do
+    setting = AlfredSetting.instance
+    assert_not setting.update(auto_confirm: %w[Gmail:send_email])
+    assert_not setting.update(auto_confirm: %w[Sms:send_sms])
+    assert_not setting.update(auto_confirm: %w[PasswordEntry:create])
+    assert setting.update(auto_confirm: %w[Gmail:draft_email ShoppingItem:shopping_clear])
+  end
 end

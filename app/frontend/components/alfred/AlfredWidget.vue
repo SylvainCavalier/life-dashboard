@@ -366,7 +366,7 @@ const actionStatusClass = (action) => ({
 }[action.status])
 
 const actionStatusLabel = (action) => ({
-  executed: action.operation === 'send_email' ? 'Confirme et envoye.' : 'Confirme et execute.',
+  executed: action.auto_confirmed ? 'Fait, sans confirmation (reglage de la page Alfred).' : (action.operation === 'send_email' ? 'Confirme et envoye.' : 'Confirme et execute.'),
   cancelled: 'Annule, rien n\'a ete fait.',
   failed: `Echec : ${action.error || 'erreur inconnue'}`,
 }[action.status])

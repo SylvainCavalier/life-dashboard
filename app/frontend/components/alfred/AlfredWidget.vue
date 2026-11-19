@@ -331,12 +331,13 @@ const display = (value) => {
 }
 
 // Ce qui disparait (memoire oubliee, articles retires de la liste de courses) : barre sur la carte.
-const STRUCK_OPERATIONS = ['forget', 'shopping_remove', 'shopping_clear']
+const STRUCK_OPERATIONS = ['forget', 'shopping_remove', 'shopping_clear', 'destroy']
 
 // Ecritures en base (create / update), actions Gmail, memoire d'Alfred et liste de courses, confirmees par la meme carte.
 const operationLabel = (action) => ({
   create: 'Creation',
   update: 'Modification',
+  destroy: 'Suppression',
   send_email: 'Envoi d\'un mail',
   draft_email: 'Brouillon Gmail',
   triage_email: 'Tri de mails',

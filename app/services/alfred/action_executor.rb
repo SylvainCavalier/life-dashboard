@@ -21,7 +21,7 @@ module Alfred
         note(@action.auto_confirmed ? "#{text} (Action dispensee de confirmation par Sylvain : executee sans carte.)" : text)
       end
       @action
-    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Stale, DataAccess::Denied,
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, ActiveRecord::RecordNotDestroyed, Stale, DataAccess::Denied,
            Gmail::Client::Error, TwilioSms::Error => e
       @action.update!(status: "failed", error: e.message.truncate(500), resolved_at: Time.current)
       note("Echec de l'action proposee (#{@action.operation} #{@action.target_model}) : #{e.message.truncate(300)}")
@@ -47,6 +47,8 @@ module Alfred
       return [ShoppingActions.execute!(@action), nil] if @action.shopping?
       return [SmsActions.execute!(@action), nil] if @action.sms?
 
+      return destroy! if @action.operation == "destroy"
+
       record = write!
       ["Ecriture confirmee par Sylvain et executee : #{@action.operation} #{@action.target_model} ##{record.id} (#{@action.summary}).",
        record.id]
@@ -66,6 +68,17 @@ module Alfred
         record.update!(attributes)
         record
       end
+    end
+
+    def destroy!
+      fields = DataAccess::DELETABLE[@action.target_model] or
+        raise DataAccess::Denied, "Suppression impossible sur #{@action.target_model}"
+      record = DataAccess.writable_class(@action.target_model).find(@action.record_id)
+      raise DataAccess::Denied, "Champs de controle inattendus" unless (@action.before_attributes.keys - fields).empty?
+
+      ensure_fresh!(record)
+      record.destroy!
+      ["Suppression confirmee par Sylvain et executee : #{@action.target_model} ##{record.id} (#{@action.summary}).", record.id]
     end
 
     # La carte montre un avant/apres : si l'« avant » n'est plus vrai, on n'ecrit pas.

@@ -99,6 +99,7 @@
             <span class="text-sm text-gray-700">Journée entière</span>
           </label>
           <div class="flex gap-2">
+            <button v-if="editingId" @click="deleteEvent(editingId)" class="text-sm text-red-500 hover:text-red-700 px-4 py-2">Supprimer</button>
             <button @click="showForm = false" class="text-sm text-gray-500 hover:text-gray-700 px-4 py-2">Annuler</button>
             <button @click="saveEvent" class="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition">
               {{ editingId ? 'Modifier' : 'Ajouter' }}
@@ -503,6 +504,7 @@ const saveEvent = async () => {
 const deleteEvent = async (id) => {
   if (!confirm('Supprimer cet événement ?')) return
   await destroy(id)
+  if (editingId.value === id) showForm.value = false
   await fetchEvents()
   await fetchAlerts()
 }

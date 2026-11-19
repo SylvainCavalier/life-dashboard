@@ -697,7 +697,9 @@ rendu francais pour la carte (`attributes`, `before`). Sylvain les edite aussi a
 **Ecritures : le modele ne peut que proposer.** `propose_write` valide (liste blanche `DataAccess::WRITABLE`, memes
 tiers que la skill write, `record.valid?`) et cree une `AlfredAction` `proposed`, rien d'autre. Le chat affiche une carte
 avant/apres ; seul `POST /api/alfred_actions/:id/confirm` (`Alfred::ActionExecutor`) ecrit, apres avoir tout reverifie
-et refuse si l'enregistrement a change depuis la proposition. Pas de suppression. Une note `event` consigne le
+et refuse si l'enregistrement a change depuis la proposition. Pas de suppression, sauf `DataAccess::DELETABLE` (`Event` seul :
+`propose_write` operation `destroy` avec `id`, champs de la carte = controle de fraicheur, jamais dispensable de
+confirmation, la suppression part dans Google Agenda). Une note `event` consigne le
 resultat dans la conversation, c'est par elle que le modele sait au tour suivant que l'ecriture a eu lieu. Ne jamais
 donner au modele un outil qui ecrit directement. `DataAccess` double les listes blanches des skills locales
 (`query.rb` / `write.rb`) : **un modele ajoute ou renomme se met a jour aux trois endroits** (voir la checklist plus haut).

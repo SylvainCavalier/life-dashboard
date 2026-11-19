@@ -159,7 +159,7 @@ module Alfred
     }.freeze
 
     # :all = toutes les colonnes sauf SYSTEM_FIELDS ; { create:, update: } = listes explicites.
-    # Pas de suppression. Interdits : PasswordEntry, MailAccount, Language, FileTransfer,
+    # Suppression : DELETABLE seulement. Interdits : PasswordEntry, MailAccount, Language, FileTransfer,
     # TripPlan, VideoDownload, VideoTranscript, SentinelWeek, SentinelDocument (voir CLAUDE.md).
     # ShoppingItem passe par son propre outil (propose_shopping), qui sait aussi vider la liste.
     WRITABLE = {
@@ -197,6 +197,13 @@ module Alfred
       "Warranty" => :all, "Loan" => :all, "ShoppingPreset" => :all,
       "Vehicle" => :all, "VehicleIntervention" => :all,
       "Script" => :all, "ScriptFolder" => :all
+    }.freeze
+
+    # Modeles qu'Alfred peut proposer de supprimer, avec les champs montres sur la carte (et
+    # compares a l'execution : un rendez-vous modifie entre-temps n'est pas supprime). Event :
+    # la suppression part aussi dans Google Agenda (callbacks d'Event).
+    DELETABLE = {
+      "Event" => %w[title start_time end_time all_day location]
     }.freeze
 
     module_function

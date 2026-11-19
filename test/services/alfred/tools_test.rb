@@ -401,4 +401,38 @@ class AlfredToolsTest < ActiveSupport::TestCase
     assert_not setting.update(auto_confirm: %w[PasswordEntry:create])
     assert setting.update(auto_confirm: %w[Gmail:draft_email ShoppingItem:shopping_clear])
   end
+
+  test "propose_write supprime un rendez-vous sur confirmation, et rien d'autre" do
+    event = Event.create!(title: "Dentiste", start_time: 2.days.from_now, event_type: "rdv")
+
+    result, error = run_tool("propose_write", { "operation" => "destroy", "model" => "Event", "id" => event.id, "summary" => "x" })
+    assert_not error
+    assert_match "en attente", result[:status]
+    action = @conversation.actions.last
+    assert_equal "Dentiste", action.new_attributes["title"]
+    assert Event.exists?(event.id), "rien n'est supprime avant la confirmation"
+
+    Alfred::ActionExecutor.new(action).confirm!
+    assert_equal "executed", action.reload.status
+    assert_not Event.exists?(event.id)
+
+    note = Note.create!(title: "Garder", content: "...")
+    result, error = run_tool("propose_write", { "operation" => "destroy", "model" => "Note", "id" => note.id, "summary" => "x" })
+    assert error
+    assert_match "Suppression impossible", result[:error]
+  end
+
+  test "un rendez-vous modifie apres la proposition n'est pas supprime" do
+    event = Event.create!(title: "Dentiste", start_time: 2.days.from_now, event_type: "rdv")
+    run_tool("propose_write", { "operation" => "destroy", "model" => "Event", "id" => event.id, "summary" => "x" })
+    event.update!(start_time: 3.days.from_now)
+
+    action = Alfred::ActionExecutor.new(@conversation.actions.last).confirm!
+    assert_equal "failed", action.status
+    assert Event.exists?(event.id)
+  end
+
+  test "une suppression n'est jamais dispensee de confirmation" do
+    assert_not AlfredSetting.instance.update(auto_confirm: %w[Event:destroy])
+  end
 end

@@ -37,7 +37,8 @@ class AlfredAction < ApplicationRecord
   # (Alfred::MemoryActions), target_model "AlfredMemory". shopping_add /
   # shopping_remove / shopping_clear : liste de courses (Alfred::ShoppingActions),
   # target_model "ShoppingItem", sans record_id (un lot d'articles).
-  WRITE_OPERATIONS = %w[create update].freeze
+  # destroy : suppression, reservee a DataAccess::DELETABLE et jamais dispensee de confirmation.
+  WRITE_OPERATIONS = %w[create update destroy].freeze
   MAIL_OPERATIONS = %w[send_email draft_email triage_email].freeze
   MEMORY_OPERATIONS = %w[remember revise_memory forget].freeze
   SHOPPING_OPERATIONS = %w[shopping_add shopping_remove shopping_clear].freeze

@@ -5,6 +5,13 @@ Les nouvelles entrées sont ajoutées par la commande `/historyupdate` en fin de
 
 ---
 
+### 2026-11-19 — Confirmations d'Alfred et suppression de rendez-vous
+- [feat] Onglet **Confirmations** sur la page Alfred : choix des actions qu'Alfred exécute directement, sans carte à confirmer dans le chat (liste de courses, mémoire, brouillon et tri Gmail, création / modification par modèle du dashboard) ; la carte s'affiche déjà traitée avec la mention « sans confirmation » et la page concernée se rafraîchit
+- [security] Garde-fous qui priment sur ce réglage : l'envoi d'un mail ou d'un texto et toute suppression se confirment toujours ; plus rien n'est exécuté d'office dans une conversation issue d'un texto, ouverte depuis un rapport du matin, ou dès qu'Alfred y a lu des mails ou des textos (sauf brouillon et tri Gmail), pour qu'une consigne cachée dans un mail ne puisse pas écrire en silence
+- [db] Colonnes `alfred_settings.auto_confirm` (règles « Modèle:opération ») et `alfred_actions.auto_confirmed`
+- [fix] Agenda : bouton « Supprimer » ajouté au formulaire d'un rendez-vous ouvert depuis le calendrier (il n'existait que dans la vue liste)
+- [feat] Alfred peut proposer de supprimer un rendez-vous de l'agenda (supprimé aussi dans Google Agenda), toujours sur confirmation, refusé si le rendez-vous a changé depuis la proposition ; aucune autre suppression possible
+
 ### 2026-10-30 — Scripts de vidéos et de threads
 - [feat] Nouvelle page **Scripts** (`/scripts`, tuile sur le dashboard avec les scripts en cours) : dossiers par chaîne YouTube ou compte de réseau social (plateforme, identifiant, lien, ligne éditoriale), scripts non classés, filtres par statut (idée, brouillon, à relire, prêt, publié, abandonné) et par format (vidéo, short, thread, post), recherche
 - [feat] Éditeur de script (`/scripts/:id`) : enregistrement automatique, compteurs de mots et de caractères, durée lue estimée (150 mots/min), threads découpés par `---` avec aperçu et compteur de 280 caractères par message, notes et sources, publication prévue / faite avec lien, dictée vocale
